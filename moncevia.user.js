@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.5.2
+// @version      3.5.3
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -113,6 +113,7 @@
   let compactCard, compareOutput, transferOutput, historyOutput, history=[], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
   let pickerActive=false, flashTarget=null, flashTimer=null, pendingTab='calculator';
   let observer, timer, selectionTimer, tab = 'calculator';
+  let panelOpenTicket = 0;
   let settingsBankGroup = null;
   const verifyBoxes = Object.create(null);
   let fxRequest = null, cryptoRequest = null;
@@ -737,8 +738,7 @@
       coinsLabel.classList.add('clplens-warning');
     }
     renderCalc();
-    renderCompact();
-    renderHistory();
+    if (tab === 'history') renderHistory();
   }
   // v2.1: sincronizacion de la calculadora con opciones de compra seleccionadas.
   // La pagina permanece intacta; solo se lee el texto visible y nunca se inicia un pago.
@@ -1243,7 +1243,7 @@
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.4.0'));
+    headerActions.append(languageButton,node('span','mv-version','v3.5.3'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
@@ -1275,7 +1275,7 @@
         navButtons[key].setAttribute('aria-selected',String(key===name));
         navButtons[key].tabIndex=key===name?0:-1;
       }
-      renderHistory();
+      if (name === 'history') renderHistory();
       panel.scrollTop=0;
     };
     for(const [key,label,symbol] of navItems){
