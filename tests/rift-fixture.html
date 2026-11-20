@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<h1>RiftBot Base</h1>
+<section id="options">
+<div class="option" id="opt3" onclick="pick('3 Days Key',24.99)"><strong>3 Days Key</strong><div>€8.33 per day</div><strong>€24.99</strong></div>
+<div class="option" id="opt7" onclick="pick('1 Week Key',49.99)"><strong>1 Week Key</strong><div>€7.14 per day</div><strong>€49.99</strong></div>
+<div class="option" id="opt14" onclick="pick('2 Weeks Key',74.99)"><strong>2 Weeks Key</strong><div>€5.36 per day</div><strong>€74.99</strong></div>
+</section>
+<button id="plus" onclick="quantity++; update()">+</button><button id="minus" onclick="quantity=Math.max(1,quantity-1);update()">-</button>
+<aside id="summary"><p>SELECTED ACCESS</p><div><strong id="access">3 Days Key</strong><strong id="total">€24.99</strong></div></aside>
+<button id="add">Añadir al carrito</button>
+<script>
+let title='3 Days Key',amount=24.99,quantity=1;
+function pick(t,a){ title=t; amount=a; update();}
+function update(){document.querySelector('#access').textContent=title; document.querySelector('#total').textContent=`€${(amount*quantity).toFixed(2)}`;}
+</script></body></html>
