@@ -16,7 +16,7 @@ with sync_playwright() as p:
     if tab=='crypto':
       for d in page.locator('#mv-page-crypto details').all(): d.evaluate('(el) => el.open=true')
     content=page.locator('#mv-page-'+tab).inner_text()
-    expected={'calculator':'Equivalent in Chilean pesos','crypto':'Crypto payment',
+    expected={'calculator':'Result in CLP','crypto':'Crypto payment',
               'compare':'Compare payment methods','history':'Local history','settings':'Settings'}[tab]
     assert expected.lower() in content.lower(),(tab,content[:400])
     assert 'No envíes' not in content and 'Configuración' not in content,tab

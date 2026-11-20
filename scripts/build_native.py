@@ -19,7 +19,7 @@ def build():
         manifest = json.loads((src / 'manifest.json').read_text())
         assert manifest['manifest_version'] == 3
         for name in files: shutil.copyfile(src / name, target / name)
-        with ZipFile(OUT / f'moncevia-{browser}-0.1.0-beta.zip','w',ZIP_DEFLATED) as archive:
+        with ZipFile(OUT / f'moncevia-{browser}-0.1.1-beta.zip','w',ZIP_DEFLATED) as archive:
             for name in files: archive.write(target / name, name)
         print('Built', browser, 'extension package')
 

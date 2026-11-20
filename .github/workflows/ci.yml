@@ -26,6 +26,7 @@ jobs:
           python tests/test_ui_mobile.py
           python tests/test_i18n.py
           python tests/test_cross_platform.py
+          python tests/test_currency_pairs.py
       - name: Native extension manifest and broker tests
         run: |
           python scripts/build_native.py

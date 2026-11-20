@@ -1,6 +1,6 @@
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.1.0 beta (motor de cálculo compartido con Moncevia Userscript 3.5.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.1.1 beta (motor de cálculo compartido con Moncevia Userscript 3.5.1). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 

@@ -1,12 +1,37 @@
 {
- "manifest_version":3,
- "name":"Moncevia — Currency & Crypto Companion",
- "short_name":"Moncevia",
- "version":"0.1.0",
- "description":"Conversor informativo de divisas y criptomonedas. Autoriza cada sitio antes de convertir precios.",
- "permissions":["storage"],
- "host_permissions":["https://data-api.binance.vision/*","https://api.binance.com/*","https://open.er-api.com/*","https://api.coingecko.com/*","https://api.coinbase.com/*"],
- "content_scripts":[{"matches":["https://*/*"],"js":["bridge.js","engine.js"],"run_at":"document_idle","all_frames":false}],
- "background":{"service_worker":"background.js"},
- "action":{"default_title":"Moncevia","default_popup":"popup.html"}
+  "manifest_version": 3,
+  "name": "Moncevia — Currency & Crypto Companion",
+  "short_name": "Moncevia",
+  "version": "0.1.1",
+  "description": "Conversor informativo de divisas y criptomonedas. Autoriza cada sitio antes de convertir precios.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://data-api.binance.vision/*",
+    "https://api.binance.com/*",
+    "https://open.er-api.com/*",
+    "https://api.coingecko.com/*",
+    "https://api.coinbase.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*/*"
+      ],
+      "js": [
+        "bridge.js",
+        "engine.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Moncevia",
+    "default_popup": "popup.html"
+  }
 }
