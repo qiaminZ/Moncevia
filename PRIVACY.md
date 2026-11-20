@@ -1,0 +1,10 @@
+# Privacidad / Privacy
+
+- Moncevia no crea cuentas, no pide contraseñas, API keys ni direcciones de billetera, no inicia compras, ni realiza retiros.
+- Guarda en el **almacenamiento local de Userscripts**: ajustes, dominios autorizados, tasas cacheadas e historial de consultas que el usuario guarda de forma explícita (máximo 30). El dominio no se añade a nuevas entradas de historial por defecto. Las entradas antiguas pueden conservar el dominio si se guardaron con versiones previas.
+- Para consultar tasas solicita datos públicos desde `data-api.binance.vision`, `api.binance.com`, `open.er-api.com`, `api.coingecko.com` o `api.coinbase.com`. Esos servicios ven la conexión y pueden aplicar sus propias políticas de registros/IP.
+- En sitios no autorizados no lee los precios ni consulta APIs, aunque puede mostrar el botón de activación para solicitar permiso. El script tiene acceso de ejecución general HTTPS por limitación funcional de los userscripts; usa exclusiones y una lista de sitios autorizados.
+- Para borrar el historial utiliza «Borrar historial local» en la pestaña Historial. Para eliminar todos los ajustes, revisa las opciones de eliminación de datos en la extensión Userscripts.
+- Un sitio financiero no contemplado por las exclusiones no debe autorizarse manualmente. No uses Moncevia en páginas de autenticación o pago.
+
+**English:** Settings, cached rates and manually saved history reside in Userscripts storage. Public rates requests go to third-party providers. The tool does not transmit your history to a Moncevia server or ask for exchange credentials. New sites require explicit opt-in before market requests or price scanning.
