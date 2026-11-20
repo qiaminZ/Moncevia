@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.5.1
+// @version      3.5.2
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -97,7 +97,7 @@
   const CRYPTOS = ['BTC','ETH','LTC'];
   const COIN_ID = { BTC:'bitcoin', ETH:'ethereum', LTC:'litecoin' };
   const DEFAULTS = {
-    enabled:true, disabledSites:[], bareDollarSites:[], allowedSites:['shop.riftbot.org'], historySite:false, compareInline:false,
+    enabled:true, disabledSites:[], bareDollarSites:[], dollarCurrencySites:{}, allowedSites:['shop.riftbot.org'], historySite:false, compareInline:false,
     usdClpManual:0, eurClpManual:0, prexExtra:0, santanderExtra:0, taxExtra:0,
     showCryptoInline:true, autoSyncSelection:true,
     feeBTC:0, feeETH:0, feeLTC:0,
@@ -162,6 +162,13 @@
     'Desactivar en este sitio':'Disable on this website',
     'Guardar dominio en nuevas consultas de historial':'Save domain with future history entries',
     'Tratar $ como USD solo aquí':'Treat $ as USD on this website only',
+    'Moneda de $ en este sitio':'Currency for $ on this site',
+    'Sin definir (preguntar al tocar)':'Unset (ask when tapped)',
+    'Selecciona la moneda de $':'Select the currency for $',
+    'El símbolo $ no identifica una divisa única. Elige cómo interpretar los precios de este sitio.':'The $ symbol is ambiguous. Choose the currency used for prices on this website.',
+    'Confirmar moneda':'Confirm currency',
+    'Cancelar':'Cancel',
+    'Usar esta tarifa':'Use this price',
     'Mostrar BTC / ETH / LTC junto a precios':'Show BTC / ETH / LTC beside prices',
     'Comparar Prex / Santander en precios':'Show Prex / Santander beside prices',
     'Divisas y tarjetas':'Currencies & cards',
@@ -395,6 +402,11 @@
   const figure = String.raw`(?:\d{1,3}(?:[.,\s\u00a0\u202f]\d{3})+(?:[.,]\d{1,8})?|\d+(?:[.,]\d{1,8})?)`;
   const prefixRE = new RegExp(String.raw`(?<![\p{L}\d])(?:US\$|U\$S|USD|EUR|GBP|CAD|AUD|JPY|KRW|BRL|CNY|BTC|ETH|LTC|R\$|€|£|¥|₿|Ξ|Ł|\$)\s*(${figure})(?![\p{L}\d])`, 'giu');
   const suffixRE = new RegExp(String.raw`(?<![\p{L}\d])(${figure})\s*(USD|EUR|GBP|CAD|AUD|JPY|KRW|BRL|CNY|BTC|ETH|LTC)(?![\p{L}\d])`, 'giu');
+  function dollarCurrencyForSite() {
+    const choice=settings.dollarCurrencySites?.[HOST];
+    return ['USD','CLP','CAD','AUD'].includes(choice)?choice:
+      (settings.bareDollarSites.includes(HOST)?'USD':null); // backwards compatible
+  }
   function prefixCurrency(prefix) {
     const s = prefix.toUpperCase();
     if (s === '€') return 'EUR';
@@ -404,7 +416,7 @@
     if (s === 'Ł') return 'LTC';
     if (s === '¥') return HOST.endsWith('.jp') ? 'JPY' : (HOST.endsWith('.cn') ? 'CNY' : null);
     if (s === 'R$') return 'BRL';
-    if (s === '$') return settings.bareDollarSites.includes(HOST) ? 'USD' : null;
+    if (s === '$') return dollarCurrencyForSite();
     if (s === 'US$' || s === 'U$S') return 'USD';
     return FIAT.includes(s) || CRYPTOS.includes(s) ? s : null;
   }
@@ -804,6 +816,82 @@
     }
     return null;
   }
+  // A bare $ is ambiguous. Detect candidate *amounts* without assuming their currency.
+  // Read the smallest visible card containing one price; never inspect forms, checkouts or links.
+  function unlabeledDollarPrice(target) {
+    if (dollarCurrencyForSite() || !target || target.nodeType!==1 ||
+        target.closest('#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, form, a, button, input, textarea, select, [contenteditable]')) return null;
+    const rx=new RegExp(String.raw`(?<![\p{L}\d])\$\s*(${figure})(?![\p{L}\d])`, 'gu');
+    let el=target;
+    for (let depth=0;el && depth<7 && el!==document.body;depth++,el=el.parentElement) {
+      const raw=originalText(el);
+      if (!raw || raw.length>520) continue;
+      const matches=[...raw.matchAll(rx)].filter(m=>Number.isFinite(parseAmount(m[1],'USD')));
+      if (matches.length!==1) continue;
+      // If another explicit currency also appears, don't override that price.
+      if (matchesInText(raw).length) continue;
+      const amount=parseAmount(matches[0][1],'USD');
+      const lines=raw.split('\n').map(x=>x.trim()).filter(Boolean);
+      const label=lines.find(x=>/\b(?:days?|weeks?|months?|lifetime|annual|year|plan|tier|license)\b/i.test(x) && !x.includes('$'));
+      return {amount,code:null,label:label||'Precio seleccionado',source:'precio estático'};
+    }
+    return null;
+  }
+  function selectPriceDirect(price) {
+    if (!price || !SUPPORTED_CURRENCIES.includes(price.code)) return;
+    manualOverride=false;pendingSelection=null;
+    if (settings.autoSyncSelection) applySelectedPrice(price);
+    else {
+      settings.calcAmount=String(price.amount);settings.calcCurrency=price.code;
+      if (settings.targetCurrency===price.code) settings.targetCurrency=targetFallback(price.code);
+      if(targetSelect) targetSelect.value=settings.targetCurrency;
+      if(calcInput) calcInput.value=settings.calcAmount;
+      if(calcSelect) calcSelect.value=settings.calcCurrency;
+      currentSelection=price;renderCalc();renderCompact();updateSourceLabel();
+    }
+    if(panel) {panel.hidden=false;activateTab('calculator');}
+  }
+  function setDollarCurrencyForSite(code) {
+    if (!settings.dollarCurrencySites || typeof settings.dollarCurrencySites!=='object' || Array.isArray(settings.dollarCurrencySites))
+      settings.dollarCurrencySites={};
+    if (['USD','CLP','CAD','AUD'].includes(code)) settings.dollarCurrencySites[HOST]=code;
+    else delete settings.dollarCurrencySites[HOST];
+    // Legacy checkbox setting cannot override an explicit CLP/CAD/AUD selection.
+    settings.bareDollarSites=settings.bareDollarSites.filter(site=>site!==HOST);
+    persist();refresh();reScan(true);
+  }
+  function showDollarCurrencyChooser(price) {
+    if (!price || document.getElementById('moncevia-dollar-dialog')) return;
+    const english=uiLanguage()==='en';
+    const overlay=node('div');overlay.id='moncevia-dollar-dialog';
+    overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    overlay.setAttribute('aria-label',tr('Selecciona la moneda de $'));
+    overlay.style.cssText='position:fixed!important;inset:0!important;z-index:2147483647!important;background:rgba(3,8,18,.75)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:20px!important;box-sizing:border-box!important;';
+    const card=node('div');
+    card.style.cssText='box-sizing:border-box!important;max-width:370px!important;width:100%!important;background:#101c2d!important;border:1px solid #4b647a!important;border-radius:16px!important;padding:20px!important;color:#f8fafc!important;font:15px/1.45 system-ui!important;box-shadow:0 16px 50px rgba(0,0,0,.4)!important;';
+    const title=node('strong','',tr('Selecciona la moneda de $'));title.style.cssText='display:block!important;font-size:18px!important;margin-bottom:10px!important;';
+    const explanation=node('p','',tr('El símbolo $ no identifica una divisa única. Elige cómo interpretar los precios de este sitio.'));
+    explanation.style.cssText='margin:0 0 12px!important;color:#cbd5e1!important;';
+    const priceLabel=node('div','',`$${price.amount} · ${price.label||HOST}`);priceLabel.style.cssText='color:#5eead4!important;font-weight:650!important;margin-bottom:10px!important;';
+    const choice=node('select');choice.setAttribute('aria-label',tr('Moneda de $ en este sitio'));
+    choice.style.cssText='display:block!important;width:100%!important;min-height:44px!important;background:#1e293b!important;color:white!important;border:1px solid #64748b!important;border-radius:8px!important;padding:8px!important;';
+    for (const code of ['USD','CLP','CAD','AUD']) {const o=node('option','',code);o.value=code;choice.append(o);}
+    const actions=node('div');actions.style.cssText='display:flex!important;gap:10px!important;margin-top:15px!important;';
+    const confirm=node('button','',tr('Confirmar moneda'));
+    const cancel=node('button','',tr('Cancelar'));
+    for(const b of [confirm,cancel]) {b.type='button';b.style.cssText='flex:1!important;padding:10px!important;border-radius:9px!important;border:1px solid #64748b!important;background:#1e293b!important;color:white!important;font:600 14px system-ui!important;';}
+    confirm.style.background='#115e59';confirm.style.borderColor='#2dd4bf';
+    const close=()=>{overlay.remove();if(panel)panel.hidden=false;};
+    cancel.addEventListener('click',close);
+    overlay.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close();}});
+    confirm.addEventListener('click',()=>{
+      setDollarCurrencyForSite(choice.value);
+      close();
+      selectPriceDirect({...price,code:choice.value});
+    });
+    actions.append(confirm,cancel);card.append(title,explanation,priceLabel,choice,actions);overlay.append(card);document.body.append(overlay);
+    choice.focus();
+  }
   function tappedPrice(target) {
     if (!target || target.nodeType!==1 || target.closest('#clplens-widget,.clplens-badge,[data-clplens-ignore],input,textarea,select,[contenteditable],form')) return null;
     // Buscar la tarjeta mas pequena que contenga el elemento tocado y un precio.
@@ -841,7 +929,7 @@
   }
   function applySelectedPrice(price) {
     if (!price || !settings.autoSyncSelection || manualOverride || !isActive()) return;
-    if (!['EUR','USD','CLP','BTC','ETH','LTC'].includes(price.code) || !validPositive(price.amount)) return;
+    if (!SUPPORTED_CURRENCIES.includes(price.code) || !validPositive(price.amount)) return;
     const signature=priceSignature(price);
     if (lastAppliedSelection!==signature || String(settings.calcAmount)!==String(price.amount) || settings.calcCurrency!==price.code) {
       settings.calcAmount=String(price.amount);
@@ -891,7 +979,14 @@
       }
       event.preventDefault(); event.stopImmediatePropagation();
       const price=tappedPrice(event.target);
-      if (!price) return;
+      if (!price) {
+        const unknown=unlabeledDollarPrice(event.target);
+        if (unknown) {
+          stopPicker();
+          showDollarCurrencyChooser(unknown);
+        }
+        return;
+      }
       pickerActive=false;
       document.body.classList.remove('clplens-picking');
       manualOverride=false; pendingSelection=null;
@@ -911,6 +1006,11 @@
     if (!settings.autoSyncSelection || !isActive()) return;
     const price=tappedPrice(event.target);
     if (!price) {
+      // A static price can be tapped even if the page has no selection mechanics.
+      // Only open the currency chooser when the touched element actually shows one
+      // unambiguous $ amount; the site itself is not modified.
+      const unknown=unlabeledDollarPrice(event.target);
+      if (unknown) {showDollarCurrencyChooser(unknown);return;}
       // Botones +/- de cantidad y selectores sin precio pueden alterar el total;
       // el resumen seleccionado se vuelve a leer al mutar la pagina.
       if (currentSelection) scheduleSelectionSync(240);
@@ -1291,9 +1391,14 @@
       settings.disabledSites=v ? [...new Set([...settings.disabledSites,HOST])] : settings.disabledSites.filter(x=>x!==HOST);
     });
     checkbox(pageSettings,'Guardar dominio en nuevas consultas de historial',()=>settings.historySite,v=>settings.historySite=v);
-    checkbox(pageSettings,'Tratar $ como USD solo aquí',()=>settings.bareDollarSites.includes(HOST),v=>{
-      settings.bareDollarSites=v ? [...new Set([...settings.bareDollarSites,HOST])] : settings.bareDollarSites.filter(x=>x!==HOST);
-    });
+    const dollarRow=node('label');dollarRow.append(node('span','','Moneda de $ en este sitio'));
+    const dollarSelect=node('select');dollarSelect.setAttribute('aria-label','Moneda de $ en este sitio');
+    for(const [code,label] of [['','Sin definir (preguntar al tocar)'],['USD','USD'],['CLP','CLP'],['CAD','CAD'],['AUD','AUD']]) {
+      const option=node('option','',label);option.value=code;dollarSelect.append(option);
+    }
+    dollarSelect.value=dollarCurrencyForSite()||'';
+    dollarSelect.addEventListener('change',()=>setDollarCurrencyForSite(dollarSelect.value));
+    dollarRow.append(dollarSelect);pageSettings.append(dollarRow);
     checkbox(pageSettings,'Mostrar BTC / ETH / LTC junto a precios',()=>settings.showCryptoInline,v=>settings.showCryptoInline=v);
     checkbox(pageSettings,'Comparar Prex / Santander en precios',()=>settings.compareInline,v=>settings.compareInline=v);
     const bankSection=disclosure(pageSettingsRoot,'Divisas y tarjetas',false,'mv-settings-group');
@@ -1415,6 +1520,7 @@
     return style.display==='none' || style.visibility==='hidden' || !parent.getClientRects().length;
   }
   function createBadge(lines) {
+    // Display-only annotations: don't intercept clicks on the site's controls.
     const badge=node('span','clplens-badge');
     badge.dataset.clplensBadge='2';
     badge.setAttribute('aria-label','Conversion aproximada de Moncevia');
@@ -1559,6 +1665,9 @@
       if (settings.targetCurrency === settings.calcCurrency) settings.targetCurrency=targetFallback(settings.calcCurrency);
       if(!['auto','es','en'].includes(settings.language)) settings.language='auto';
       for (const key of ['bareDollarSites','disabledSites','allowedSites']) if (!Array.isArray(settings[key])) settings[key]=[];
+      if(!settings.dollarCurrencySites || typeof settings.dollarCurrencySites!=='object' || Array.isArray(settings.dollarCurrencySites)) settings.dollarCurrencySites={};
+      settings.dollarCurrencySites=Object.fromEntries(Object.entries(settings.dollarCurrencySites)
+        .filter(([host,currency])=>/^[a-z0-9.-]{1,255}$/.test(host) && ['USD','CLP','CAD','AUD'].includes(currency)).slice(0,100));
       settings.allowedSites=settings.allowedSites.filter(host=>typeof host==='string' && /^[a-z0-9.-]{1,255}$/.test(host)).slice(0,100);
       const oldFX=await storage.getValue(FX_KEY,null);
       if (oldFX && Number.isFinite(oldFX.fetchedAt) && validPositive(oldFX.rates?.CLP)) fx=oldFX;

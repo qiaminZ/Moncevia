@@ -1,3 +1,12 @@
+## 3.5.2 / Desktop 0.1.2-beta — 2026-11-20
+
+- Reconocimiento de tarifas estáticas que no tienen control propio de selección; permite tocar el importe o elegir la tarjeta desde el modo visual.
+- El símbolo `$` ambiguo exige seleccionar una vez su moneda por sitio (USD/CLP/CAD/AUD); conserva las preferencias previas que trataban `$` como USD.
+- Las etiquetas de conversión no interceptan clics originales de la página ni alteran compras.
+- La sincronización visual ahora admite las 13 monedas del conversor, no solo seis.
+- Pruebas con tarjetas genéricas, selección en USD/CLP/CAD, compatibilidad RIFT, accesos excluidos y configuraciones anteriores.
+- Motor compartido sincronizado con extensiones Chromium y Firefox. No se realizan operaciones financieras.
+
 ## 3.5.1 / Desktop 0.1.1-beta — 2026-11-20
 
 - Nuevo selector de moneda de destino y botón para invertir el par (⇄).
