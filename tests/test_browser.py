@@ -55,6 +55,10 @@ def test():
   assert hist and hist[0]['site']=='no guardado', hist
   page.get_by_role('button',name='Historial').click()
   assert page.get_by_role('button',name='Reutilizar').count()==1
+  with page.expect_download() as downloaded:
+   page.get_by_role('button',name='Exportar historial CSV').click()
+  csvfile=downloaded.value.path()
+  assert 'no guardado' in Path(csvfile).read_text(encoding='utf-8-sig')
   page.get_by_role('button',name='Calculadora').click()
   page.get_by_text('Usar importe exacto solicitado en cripto').click()
   page.locator('#clplens-panel .clplens-inputrow input').nth(1).fill('0.53340448')
@@ -66,10 +70,21 @@ def test():
   fee.fill('0.001');fee.dispatch_event('change')
   spot=page.get_by_text('Comisión de compra Spot (%)').locator('..').locator('input')
   spot.fill('0.1');spot.dispatch_event('change')
+  # Changing a previously verified commission must revoke its verified status.
+  assert not page.get_by_text('Comisión de retiro LTC verificada').locator('..').locator('input').is_checked()
+  assert not page.get_by_text('Comisión Spot verificada',exact=True).locator('..').locator('input').is_checked()
+  page.get_by_text('Comisión de retiro LTC verificada').click()
+  page.get_by_text('Comisión Spot verificada',exact=True).click()
   page.get_by_role('button',name='Calculadora').click()
   payment=page.locator('#clplens-panel .clplens-payment').all_text_contents()
   assert len(payment)==1 and '0.53493942' in payment[0],payment
   assert 'USDT' in payment[0],payment
+  page.get_by_role('button',name='Ajustes').click()
+  page.get_by_text('Red de retiro LTC').locator('..').locator('input').fill('Other-Network')
+  page.get_by_text('Red de retiro LTC').locator('..').locator('input').dispatch_event('change')
+  assert not page.get_by_text('Comisión de retiro LTC verificada').locator('..').locator('input').is_checked()
+  page.get_by_role('button',name='Calculadora').click()
+  assert 'pendiente de verificar' in page.locator('#clplens-panel .clplens-payment').inner_text()
   page.get_by_role('button',name='Elegir precio en pantalla').click()
   page.locator('#opt14').click()
   assert a.input_value()=='74.99'
@@ -90,7 +105,17 @@ def test():
   checkout.set_content('<h1>Checkout €19.99</h1>')
   checkout.evaluate(INIT);checkout.add_script_tag(content=Path(S).read_text().replace('const HOST = location.hostname.toLowerCase();',"const HOST = 'shop.riftbot.org';").replace('location.pathname','"/checkout"'));checkout.wait_for_timeout(150)
   assert checkout.locator('#clplens-widget,#moncevia-optin').count()==0
-  print('PASS: synced plan+quantity, Binance Spot with USDT/USD 1.002, exact LTC, opt-in, local privacy, checkout exclusion, UI no JS errors')
+  # Explicitly disabled websites make no rate requests, even when previously authorized.
+  disabled=browser.new_page()
+  disabled.set_content('<p>€12.00</p>')
+  disabled.evaluate(INIT)
+  disabled.evaluate("window._persist.clplens_v1={allowedSites:['shop.riftbot.org'],disabledSites:['shop.riftbot.org']}")
+  disabled.add_script_tag(content=Path(S).read_text().replace('const HOST = location.hostname.toLowerCase();',"const HOST = 'shop.riftbot.org';"))
+  disabled.wait_for_selector('#clplens-widget')
+  disabled.wait_for_timeout(180)
+  assert disabled.evaluate('window._requests.length')==0
+  assert disabled.locator('.clplens-badge').count()==0
+  print('PASS: synced plan+quantity, Binance Spot with USDT/USD 1.002, LTC safeguards, CSV export, opt-in privacy, disabled-site network silence, checkout exclusion, UI no JS errors')
   browser.close()
 
 if __name__=='__main__': test()

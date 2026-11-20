@@ -4,7 +4,17 @@
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.1.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.2.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+
+## Compartir e instalar / Share & install
+
+**Enlace público para compartir:** https://github.com/qiaminZ/Moncevia
+
+**Script instalable:** https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
+
+En iPhone: instala Userscripts para Safari, guarda el archivo `.user.js` desde el enlace anterior en la carpeta configurada en Userscripts y recarga el sitio. No es necesario descargar el ZIP de ChatGPT. El enlace a la rama `main` siempre sirve la versión publicada más reciente; el gestor podrá consultar los campos `@updateURL` y `@downloadURL`, según sus capacidades. Para ayuda consulta el apartado de instalación.
+
+**Read this before paying:** Moncevia only estimates values. Always confirm the actual crypto amount, network and withdrawal fee at the exchange. No transfer is executed by this script.
 
 ## Qué hace / Features
 
@@ -12,7 +22,7 @@ Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices an
 - Conversión estimada a CLP y criptomonedas; calculadora con ingreso manual, selección de importes tocados y sincronización con planes y cantidades en páginas compatibles, incluido RIFT.
 - Datos de FX de [ExchangeRate-API](https://www.exchangerate-api.com/), cripto de **Binance Spot** `bookTicker` para BTC/ETH/LTC expresados en USDT, y **USDT/USD de CoinGecko** por separado. Si falla alguna fuente, puede usar referencias cripto en USD de CoinGecko/Coinbase; no presenta esos precios como compra Spot ejecutable.
 - Simula el costo aproximado en USDT incluyendo comisión de negociación, retiro por red y colchón configurados manualmente; compara alternativas solo si el usuario las marcó como verificadas.
-- Historial local de hasta 30 consultas, modo compacto y autorización por sitio. **No se guardan dominios en nuevas consultas salvo que lo actives**.
+- Historial local de hasta 30 consultas con **exportación CSV voluntaria**, modo compacto, revocación de autorización y acceso por sitio. **No se guardan dominios en nuevas consultas salvo que lo actives**.
 
 ## Instalación en iPhone / iOS Safari
 
@@ -23,6 +33,13 @@ Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices an
 5. **Desactiva** instalaciones antiguas de CLP Lens o Moncevia antes de activar esta versión, para no duplicar botones ni conversiones. Revisa si tus preferencias se conservaron: los cambios de nombre pueden crear identidades nuevas según el gestor.
 
 Moncevia ejecuta un control inicial en sitios HTTPS para ofrecer la autorización, pero no realiza escaneo de precios ni peticiones de cotización en dominios no aprobados. No se inicia en páginas de pagos, banca, autenticación, dominios `.cl` ni otros sitios sensibles contemplados por las exclusiones. Es una defensa de mejor esfuerzo, **no una garantía universal**.
+
+## Controles de seguridad y privacidad
+
+- Cambiar el valor de una comisión Spot, de retiro, costo de fondeo o margen bancario **revoca el estado «verificado»** hasta que lo marques nuevamente. Cambiar la red de retiro hace lo mismo con su comisión.
+- «Revocar acceso a este sitio» está en **Ajustes**: elimina su autorización y recarga la página. Cuando desactivas un dominio no se consultan tasas desde ese sitio.
+- El historial se guarda solo al pulsar «Guardar consulta». En Historial puedes descargarlo como CSV (archivo local), o borrarlo. Revisa su contenido antes de compartirlo; un historial guardado con la opción correspondiente puede contener dominios de tiendas.
+- Las cotizaciones FX deben contener fecha de actualización del proveedor no mayor a siete días. Las cotizaciones pueden estar desactualizadas entre consultas; se indica su fuente y antigüedad.
 
 ## Cómo estimar un pago cripto / Crypto payments
 

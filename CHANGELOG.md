@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.2.0 — 2026-11-20
+
+- Revoca automáticamente indicadores «verificado» cuando cambian comisiones, margen bancario, costo de fondeo o red de retiro; exige reconfirmación antes de usar esos datos como verificados.
+- Exportación voluntaria del historial local a CSV, con protección frente a fórmulas de hojas de cálculo.
+- Botón «Revocar acceso a este sitio»: retira autorización y recarga la página. Los sitios desactivados no disparan consultas automáticas de mercado.
+- Coordina las solicitudes FX y cripto concurrentes para evitar llamadas duplicadas en cambios de visibilidad y actualizaciones.
+- Verifica la fecha del proveedor FX; rechaza tasas con marca de tiempo de más de siete días o del futuro.
+- Amplía regresiones en Chromium, documenta instalación y enlace público compartible.
+- Mantiene claves de preferencias, historial y enlaces de actualización de v3.1.x.
+
 ## 3.1.0 — 2026-11-20
 
 - Primera versión pública de Moncevia preparada para instalar desde GitHub.

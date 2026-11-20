@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.1.0
+// @version      3.2.0
 // @description  Conversion de precios a CLP y cripto con Binance Spot, USDT/USD explicito, simulador, historial y activacion por sitio.
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -69,6 +69,8 @@
   let compactCard, compareOutput, transferOutput, historyOutput, history=[], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
   let pickerActive=false, flashTarget=null, flashTimer=null, pendingTab='calculator';
   let observer, timer, selectionTimer, tab = 'calculator';
+  const verifyBoxes = Object.create(null);
+  let fxRequest = null, cryptoRequest = null;
   let manualOverride = false, pendingSelection = null, currentSelection = null;
   let lastAppliedSelection = '', clickSequence = 0;
   const formatCLP = v => Number.isFinite(v) ? new Intl.NumberFormat('es-CL', { style:'currency', currency:'CLP', maximumFractionDigits:0 }).format(Math.round(v)) : '—';
@@ -312,7 +314,16 @@
     input.value=String(settings[key]);
     input.addEventListener('change',() => {
       const v=Number(input.value);
+      const before = Number(settings[key]);
       settings[key]=Number.isFinite(v) ? Math.min(max,Math.max(0,v)) : 0;
+      if (before !== settings[key]) {
+        const dependent = /^fee(BTC|ETH|LTC)$/.test(key) ? 'feeKnown'+key.slice(3) :
+          ({spotFeePct:'spotFeeKnown',usdtFundPct:'usdtFundKnown',prexExtra:'prexKnown',santanderExtra:'santanderKnown'})[key];
+        if (dependent) {
+          settings[dependent] = false;
+          if (verifyBoxes[dependent]) verifyBoxes[dependent].checked = false;
+        }
+      }
       input.value=String(settings[key]); persist(); refresh(); reScan(true);
     });
     row.append(input); parent.append(row);
@@ -719,7 +730,7 @@
     fab=node('button','','CLP · ₿'); fab.type='button'; fab.id='clplens-fab';
     fab.setAttribute('aria-label','Abrir Moncevia');
     panel=node('section'); panel.id='clplens-panel'; panel.hidden=true;
-    panel.append(node('h2','','Moncevia · v3.1.0')); panel.setAttribute('aria-label','Calculadora de Moncevia');
+    panel.append(node('h2','','Moncevia · v3.2.0')); panel.setAttribute('aria-label','Calculadora de Moncevia');
     line(panel,'Conversiones orientativas, sin compras ni operaciones automáticas.');
     stateLabel=line(panel,'Consultando cambio…','clplens-strong');
     coinsLabel=line(panel,'Consultando criptomonedas…','clplens-strong');
@@ -816,8 +827,8 @@
     });
     checkbox(pageSettings,'Mostrar BTC / ETH / LTC junto a precios',()=>settings.showCryptoInline,v=>settings.showCryptoInline=v);
     checkbox(pageSettings,'Comparar Prex / Santander en precios',()=>settings.compareInline,v=>settings.compareInline=v);
-    checkbox(pageSettings,'Ajuste Prex verificado por ti',()=>settings.prexKnown,v=>settings.prexKnown=v);
-    checkbox(pageSettings,'Ajuste Santander verificado por ti',()=>settings.santanderKnown,v=>settings.santanderKnown=v);
+    verifyBoxes.prexKnown = checkbox(pageSettings,'Ajuste Prex verificado por ti',()=>settings.prexKnown,v=>settings.prexKnown=v);
+    verifyBoxes.santanderKnown = checkbox(pageSettings,'Ajuste Santander verificado por ti',()=>settings.santanderKnown,v=>settings.santanderKnown=v);
     numberSetting(pageSettings,'1 USD en CLP (0 = automático)','usdClpManual',10000);
     numberSetting(pageSettings,'1 EUR en CLP (0 = automático)','eurClpManual',15000);
     numberSetting(pageSettings,'Ajuste Prex (%)','prexExtra',30);
@@ -828,18 +839,26 @@
     numberSetting(pageSettings,'Retiro ETH (ETH)','feeETH',100,'0.00000001');
     numberSetting(pageSettings,'Retiro LTC (LTC)','feeLTC',100,'0.00000001');
     for (const c of CRYPTOS) {
-      checkbox(pageSettings,`Comisión de retiro ${c} verificada`,()=>settings['feeKnown'+c],v=>settings['feeKnown'+c]=v);
+      verifyBoxes['feeKnown'+c] = checkbox(pageSettings,`Comisión de retiro ${c} verificada`,()=>settings['feeKnown'+c],v=>settings['feeKnown'+c]=v);
       const nr=node('label');nr.append(node('span','',`Red de retiro ${c}`));
       const ni=node('input');ni.type='text';ni.maxLength=32;ni.value=settings['network'+c]||c;
-      ni.addEventListener('change',()=>{settings['network'+c]=safeLabel(ni.value);persist();refresh();});
+      ni.addEventListener('change',()=>{
+        const next = safeLabel(ni.value);
+        if (settings['network'+c] !== next) {
+          settings['feeKnown'+c] = false;
+          if (verifyBoxes['feeKnown'+c]) verifyBoxes['feeKnown'+c].checked = false;
+        }
+        settings['network'+c] = next; persist(); refresh();
+      });
       nr.append(ni);pageSettings.append(nr);
     }
     line(pageSettings,'Binance Spot: usamos el precio de venta (ask) para estimar cuánto cuesta comprar BTC/ETH/LTC con USDT. La comisión de trading depende de tu nivel y descuentos; no se presupone.');
     numberSetting(pageSettings,'Comisión de compra Spot (%)','spotFeePct',5,'0.001');
-    checkbox(pageSettings,'Comisión Spot verificada',()=>settings.spotFeeKnown,v=>settings.spotFeeKnown=v);
+    verifyBoxes.spotFeeKnown = checkbox(pageSettings,'Comisión Spot verificada',()=>settings.spotFeeKnown,v=>settings.spotFeeKnown=v);
     numberSetting(pageSettings,'Recargo / coste de adquirir USDT (%)','usdtFundPct',30,'0.01');
-    checkbox(pageSettings,'Costo de fondeo USDT verificado',()=>settings.usdtFundKnown,v=>settings.usdtFundKnown=v);
+    verifyBoxes.usdtFundKnown = checkbox(pageSettings,'Costo de fondeo USDT verificado',()=>settings.usdtFundKnown,v=>settings.usdtFundKnown=v);
     numberSetting(pageSettings,'Margen adicional de fluctuación (%)','bufferPct',20,'0.01');
+    line(pageSettings,'Al cambiar una comisión, un margen bancario o una red se desmarca su verificación anterior. Confirma el dato nuevo directamente antes de marcarlo otra vez.');
     line(pageSettings,'El simulador NO puede obtener comisiones privadas de retiro de tu cuenta Binance sin autenticación. Nunca introduzcas API keys en este script. Comprueba red, comisión, mínimo, habilitación y monto recibido en Binance.');
     line(pageSettings,'La comparación de tarjetas aplica un porcentaje configurado sobre CLP. No constituye una cotización oficial de Prex o Santander. Las comisiones de retiro no se aplican automáticamente al texto de los precios.');
     line(pageSettings,'El importe se actualiza cuando tocas una opcion con precio o cuando cambia un resumen de seleccion reconocido (por ejemplo SELECTED ACCESS). Si escribes manualmente, se mantiene tu cifra hasta tocar otra opcion o pulsar Usar precio seleccionado.');
@@ -847,12 +866,48 @@
     line(pageSettings,'Binance publica pares en USDT; el cambio de USDT a USD se obtiene por separado. Si falta, se deshabilita la conversión cruzada de Binance. Los retiros necesitan verificar red, mínimo y comisión en Binance.');
     line(pageSettings,'No actúa en dominios .cl, sitios financieros protegidos ni rutas de pago. $ sin prefijo solo se trata como USD cuando lo autorices para este sitio.');
 
+    // La revocación borra la autorización para este dominio y vuelve a cargar
+    // para desmontar observadores, estilos y conversiones actuales.
+    const revokeSite = node('button','','Revocar acceso a este sitio');
+    revokeSite.type = 'button';
+    revokeSite.addEventListener('click',async()=>{
+      if (!window.confirm('¿Revocar acceso de Moncevia a este dominio?')) return;
+      settings.allowedSites=settings.allowedSites.filter(host=>host!==HOST);
+      settings.disabledSites=settings.disabledSites.filter(host=>host!==HOST);
+      try {await GM.setValue(SETTINGS_KEY,JSON.parse(JSON.stringify(settings)));}
+      catch(e) { window.alert('No fue posible guardar la revocación.');return; }
+      location.reload();
+    });
+    pageSettings.append(revokeSite);
+
     historyOutput=node('div');pageHistory.append(historyOutput);
     const clearHistory=node('button','','Borrar historial local');clearHistory.type='button';
     clearHistory.addEventListener('click',async()=>{
       if (!window.confirm('¿Borrar las consultas guardadas en Moncevia?')) return;
       history=[];try{await GM.setValue(HISTORY_KEY,[]);}catch(e){}renderHistory();
     });pageHistory.append(clearHistory);
+    const exportHistory = node('button','','Exportar historial CSV');
+    exportHistory.type='button';
+    exportHistory.addEventListener('click',()=>{
+      if (!history.length) {window.alert('No hay consultas guardadas.');return;}
+      // Escapa fórmulas para que Excel/Sheets no interpreten datos del sitio como instrucciones.
+      const cell = value => {
+        let str=String(value ?? '').replace(/[\r\n]/g,' ');
+        if (/^\s*[=+\-@]/.test(str)) str="'"+str;
+        return '"'+str.replace(/"/g,'""')+'"';
+      };
+      const rows=[['fecha_utc','sitio','importe','moneda','clp_estimado','fuente_cripto','btc','eth','ltc']];
+      for (const h of history) rows.push([
+        new Date(h.at).toISOString(),h.site||'',h.amount,h.code,h.clp,h.cryptoSource||'',
+        h.units?.BTC ?? '',h.units?.ETH ?? '',h.units?.LTC ?? ''
+      ]);
+      const csv='\ufeff'+rows.map(row=>row.map(cell).join(',')).join('\r\n');
+      const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+      const a=node('a');a.href=url;a.download='moncevia_historial.csv';
+      document.body.append(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+    });
+    pageHistory.append(exportHistory);
     line(pageHistory,'Los datos se conservan localmente en Userscripts. No se envían tus consultas ni direcciones a servidores. Las tasas futuras se comparan solo al abrir el historial.');
     panel.append(pageCalc,pageSettings,pageHistory);
     setTab(tab);
@@ -932,11 +987,14 @@
     if (!result || result.status!==200) throw Error('HTTP '+result?.status);
     return JSON.parse(result.responseText || result.response);
   }
-  async function updateFX(force=false) {
+  async function updateFXImpl(force=false) {
     if (!force && inDate(fx,FX_TTL)) return;
     try {
       const data=await requestJSON('https://open.er-api.com/v6/latest/USD');
-      if (data.result!=='success' || data.base_code!=='USD' || !validPositive(data.rates?.CLP) || !validPositive(data.rates?.EUR)) throw Error('FX invalida');
+      const providerTime = Number(data.time_last_update_unix) * 1000;
+      if (data.result!=='success' || data.base_code!=='USD' || !validPositive(data.rates?.CLP) || !validPositive(data.rates?.EUR) ||
+          !Number.isFinite(providerTime) || providerTime > Date.now()+3600_000 || Date.now()-providerTime > 7*86400_000)
+        throw Error('FX invalida u obsoleta');
       const rates={};
       for (const c of [...FIAT,'CLP']) if (validPositive(data.rates[c])) rates[c]=Number(data.rates[c]);
       fx={ fetchedAt:Date.now(),updatedAt:dateTime(Number(data.time_last_update_unix)*1000 || Date.now()),rates };
@@ -944,7 +1002,7 @@
     } catch(e) { console.info('[Moncevia] FX no disponible:',e?.message || e); }
     refresh(); reScan(true);
   }
-  async function updateCrypto(force=false) {
+  async function updateCryptoImpl(force=false) {
     if (!force && inDate(crypto,CRYPTO_TTL) && activeCrypto() && crypto.source?.startsWith('Binance')) return;
     // Binance Spot publica ask/bid de los pares USDT, sin credenciales.
     // USDT no es USD: sus precios se usan como aproximación al convertir a CLP.
@@ -1004,6 +1062,18 @@
     }
     refresh(); reScan(true);
   }
+  async function updateFX(force=false) {
+    if (!force && inDate(fx,FX_TTL)) return;
+    if (fxRequest) return fxRequest;
+    fxRequest = updateFXImpl(force);
+    try {return await fxRequest;} finally {fxRequest = null;}
+  }
+  async function updateCrypto(force=false) {
+    if (!force && inDate(crypto,CRYPTO_TTL) && activeCrypto() && crypto.source?.startsWith('Binance')) return;
+    if (cryptoRequest) return cryptoRequest;
+    cryptoRequest = updateCryptoImpl(force);
+    try {return await cryptoRequest;} finally {cryptoRequest = null;}
+  }
   async function boot() {
     try {
       const previous=await GM.getValue(SETTINGS_KEY,null);
@@ -1050,7 +1120,7 @@
     });
     observer.observe(document.body,{childList:true,subtree:true,characterData:true});
     const syncRates = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && isActive()) {
         void Promise.all([updateFX(false),updateCrypto(false)]);
         refresh(); reScan(true);
       }
@@ -1058,7 +1128,7 @@
     window.addEventListener('pageshow',syncRates);
     document.addEventListener('visibilitychange',syncRates);
     window.setInterval(syncRates, 10 * 60_000);
-    void Promise.all([updateFX(false),updateCrypto(false)]);
+    if (isActive()) void Promise.all([updateFX(false),updateCrypto(false)]);
   }
   boot();
 })();
