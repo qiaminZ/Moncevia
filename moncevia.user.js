@@ -1501,9 +1501,22 @@
     });
     closeBtn.addEventListener('click',()=>{ panel.hidden=true;renderCompact(); });
     actions.append(refreshBtn,closeBtn); panel.append(actions);
-    fab.addEventListener('click',()=>{ if (pickerActive) stopPicker();panel.hidden=!panel.hidden; refresh();renderCompact(); });
+    // Open immediately; defer expensive calculations until the initial paint.
+    function openPanelFast() {
+      panel.hidden = false;
+      const ticket = ++panelOpenTicket;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (ticket !== panelOpenTicket || panel.hidden) return;
+        refresh();
+      }));
+    }
+    fab.addEventListener('click',()=>{
+      if (pickerActive) stopPicker();
+      if (panel.hidden) openPanelFast();
+      else { panel.hidden=true; ++panelOpenTicket; renderCompact(); }
+    });
     compactCard=node('div');compactCard.id='clplens-compact';compactCard.hidden=true;
-    compactCard.addEventListener('click',()=>{panel.hidden=false;refresh();renderCompact();});
+    compactCard.addEventListener('click',()=>openPanelFast());
     widget.append(panel,compactCard,fab); document.body.append(widget);
     refresh();
     watchLocalization();
