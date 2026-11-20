@@ -1,5 +1,12 @@
 # Moncevia
 
+## Novedad v3.5.1 — Cualquier par de monedas / Any currency pair
+
+El módulo **Convertir** permite seleccionar **moneda de origen y moneda de destino** de forma independiente: CLP, USD, EUR, GBP, CAD, AUD, JPY, KRW, BRL, CNY, BTC, ETH y LTC. El botón **⇄** invierte el par; el resultado principal corresponde a la moneda de destino, no siempre a CLP. La selección de un precio de un sitio autorizado actualiza el origen sin fijar el destino. **RIFT se utiliza únicamente para pruebas**, no es un requisito ni una limitación. La versión desktop beta 0.1.1 reutiliza el mismo motor.
+
+**English:** Select source and target currencies independently, swap the pair, and convert across all 13 supported fiat and crypto currencies on any compatible authorized website. A missing or stale quote is reported as unavailable. Crypto payments remain a separate estimate-only module.
+
+
 ## Extensión nativa para PC / Native desktop extension (beta)
 
 La edición **0.1.0 beta** reutiliza el motor del userscript y ofrece una instalación sin Tampermonkey en **Chrome, Edge, Opera/Opera GX, Brave y Vivaldi** para PC/laptop. En Firefox de escritorio existe un paquete de prueba temporal, pendiente de firma oficial. Android Firefox y Safari iOS siguen utilizando el userscript universal.
@@ -13,7 +20,7 @@ La edición **0.1.0 beta** reutiliza el motor del userscript y ofrece una instal
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.5.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.5.1 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
 
 ## Soporte multiplataforma / Cross-platform v3.5.0
 

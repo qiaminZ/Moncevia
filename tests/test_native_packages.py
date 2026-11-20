@@ -11,7 +11,7 @@ def main():
         folder=ROOT/'extension'/name
         manifest=json.loads((folder/'manifest.json').read_text())
         assert manifest['manifest_version']==3
-        assert manifest['version']=='0.1.0'
+        assert manifest['version']=='0.1.1'
         assert manifest['permissions']==['storage']
         assert manifest['content_scripts'][0]['matches']==['https://*/*']
         assert manifest['content_scripts'][0]['js']==['bridge.js','engine.js']
@@ -22,7 +22,7 @@ def main():
         if name=='chromium': assert manifest['background']=={'service_worker':'background.js'}
         else: assert manifest['background']=={'scripts':['background.js']}
         assert sha256((folder/'engine.js').read_bytes()).digest()==sha256(ENGINE.read_bytes()).digest()
-        zipfile=ROOT/'dist'/f'moncevia-{name}-0.1.0-beta.zip'
+        zipfile=ROOT/'dist'/f'moncevia-{name}-0.1.1-beta.zip'
         with ZipFile(zipfile) as z:
             assert set(z.namelist())=={'manifest.json','bridge.js','background.js','engine.js','popup.html'}
             assert z.testzip() is None

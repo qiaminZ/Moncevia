@@ -1,3 +1,13 @@
+## 3.5.1 / Desktop 0.1.1-beta — 2026-11-20
+
+- Nuevo selector de moneda de destino y botón para invertir el par (⇄).
+- Conversión cruzada entre 10 divisas (incluido CLP) y BTC/ETH/LTC, con el mismo motor universal; el resultado principal ahora usa el destino elegido.
+- Si CLP se selecciona como origen, se evita por defecto el resultado redundante CLP→CLP (el destino pasa a USD, pero puedes elegir el mismo par manualmente).
+- Guarda el par elegido en el historial y conserva la compatibilidad con consultas anteriores.
+- Moneda de origen dinámica al seleccionar cualquier precio reconocido; RIFT es un ejemplo de prueba, no una dependencia.
+- Extensiones Chromium y Firefox sincronizadas con el motor 3.5.1 (beta 0.1.1).
+- Pruebas de pares en un sitio genérico independiente, además de regresiones de Binance y diseños móviles.
+
 ## Native desktop extension 0.1.0-beta — 2026-11-20
 
 - Dos paquetes Manifest V3 basados en un único motor Moncevia v3.5.0.

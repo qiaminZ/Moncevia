@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.5.0
+// @version      3.5.1
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -106,10 +106,10 @@
     spotFeePct:0,spotFeeKnown:false,usdtFundPct:0,usdtFundKnown:false,bufferPct:0,
     compactMode:false,visualPick:true,prexKnown:false,santanderKnown:false,
     exactPayEnabled:false,exactPayAmount:'',exactPayCurrency:'LTC',
-    calcAmount:'24.99', calcCurrency:'EUR', language:'auto'
+    calcAmount:'24.99', calcCurrency:'EUR', targetCurrency:'CLP', language:'auto'
   };
   let settings = { ...DEFAULTS }, fx = null, crypto = null;
-  let widget, fab, panel, stateLabel, sampleLabel, coinsLabel, calcOutput, calcInput, calcSelect, calcSource;
+  let widget, fab, panel, stateLabel, sampleLabel, coinsLabel, calcOutput, calcInput, calcSelect, targetSelect, calcSource;
   let compactCard, compareOutput, transferOutput, historyOutput, history=[], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
   let pickerActive=false, flashTarget=null, flashTimer=null, pendingTab='calculator';
   let observer, timer, selectionTimer, tab = 'calculator';
@@ -141,6 +141,9 @@
     'Costos orientativos configurados, no cargos confirmados.':'Configured estimates, not confirmed charges.',
     'Historial local':'Local history','Configuración':'Settings',
     'Importe y moneda de origen':'Amount and source currency',
+    'Moneda de destino':'Target currency',
+    'Invertir monedas':'Swap currencies',
+    'Resultado en':'Result in',
     'Precio elegido':'Use selected price','Seleccionar en web':'Pick price on page',
     'Elegir precio en pantalla':'Pick price on page','Cancelar selección':'Cancel selection',
     'Guardar':'Save','Vista compacta':'Compact view',
@@ -348,6 +351,15 @@
   }
   const formatCLP = v => Number.isFinite(v) ? new Intl.NumberFormat(uiLanguage()==='en'?'en-US':'es-CL', { style:'currency', currency:'CLP', maximumFractionDigits:0 }).format(Math.round(v)) : '—';
   const formatDecimal = (v, digits = 2) => new Intl.NumberFormat(uiLanguage()==='en'?'en-US':'es-CL', { maximumFractionDigits:digits, minimumFractionDigits:0 }).format(v);
+  const SUPPORTED_CURRENCIES = ['CLP',...FIAT,...CRYPTOS];
+  const targetFallback = source => source === 'CLP' ? 'USD' : 'CLP';
+  const formatConversion = (amount, code) => {
+    if (!Number.isFinite(amount)) return '—';
+    if (code === 'CLP') return formatCLP(amount);
+    if (CRYPTOS.includes(code)) return `${code} ${formatCoin(amount,code)}`;
+    const digits = (code === 'JPY' || code === 'KRW') ? 0 : 2;
+    return `${code} ${new Intl.NumberFormat(uiLanguage()==='en'?'en-US':'es-CL', {minimumFractionDigits:digits, maximumFractionDigits:digits}).format(amount)}`;
+  };
   const percent = v => Math.max(0, Math.min(30, Number(v) || 0));
   const validPositive = n => Number.isFinite(Number(n)) && Number(n) > 0;
   const isAuthorized = () => settings.allowedSites.includes(HOST);
@@ -445,7 +457,7 @@
     if (usd == null) return null;
     if (toCode === 'USD') return usd;
     if (toCode === 'EUR' && validPositive(settings.eurClpManual) && usdClp()) return usd * usdClp() / Number(settings.eurClpManual);
-    if (toCode === 'EUR' && activeFX()) return usd * fx.rates.EUR;
+    if (FIAT.includes(toCode) && activeFX() && validPositive(fx.rates[toCode])) return usd * fx.rates[toCode];
     if (CRYPTOS.includes(toCode) && activeCrypto()) return usd / spotAsk(toCode);
     return null;
   }
@@ -587,6 +599,10 @@
       #clplens-panel .mv-page {padding:14px 15px 12px!important;min-height:160px!important;}
       #clplens-panel .mv-page > h2 {margin:1px 0 10px!important;font-size:16px!important;}
       #clplens-panel .mv-hint {font-size:11px!important;color:#97adbe!important;margin:5px 0 12px!important;line-height:1.4!important;}
+      #clplens-panel .mv-target-row {display:flex!important;gap:8px!important;align-items:stretch!important;margin-top:6px!important;}
+      #clplens-panel .mv-target-row select {flex:1!important;min-width:0!important;width:auto!important;}
+      #clplens-panel .mv-swap {flex:none!important;min-width:52px!important;min-height:41px!important;border:1px solid #2cc3b4!important;border-radius:9px!important;background:#123e4b!important;color:#ccfbf1!important;font-size:22px!important;cursor:pointer!important;}
+      #clplens-panel .mv-swap:focus-visible {outline:2px solid #5eead4!important;outline-offset:2px!important;}
       #clplens-panel .mv-hero {border:1px solid #235462!important;background:linear-gradient(145deg,#143443,#112538)!important;border-radius:14px!important;padding:12px!important;margin:10px 0 13px!important;}
       #clplens-panel .mv-hero .mv-kicker {font-size:10px!important;color:#b6d2d7!important;letter-spacing:.6px!important;text-transform:uppercase!important;}
       #clplens-panel .mv-hero .mv-big {font-size:27px!important;line-height:1.25!important;font-weight:750!important;color:#e9fffa!important;overflow-wrap:anywhere!important;font-variant-numeric:tabular-nums!important;}
@@ -830,6 +846,8 @@
     if (lastAppliedSelection!==signature || String(settings.calcAmount)!==String(price.amount) || settings.calcCurrency!==price.code) {
       settings.calcAmount=String(price.amount);
       settings.calcCurrency=price.code;
+      if (settings.targetCurrency===price.code) settings.targetCurrency=targetFallback(price.code);
+      if (targetSelect) targetSelect.value=settings.targetCurrency;
       if (calcInput) calcInput.value=settings.calcAmount;
       if (calcSelect) calcSelect.value=price.code;
       lastAppliedSelection=signature;
@@ -880,6 +898,8 @@
       if (settings.autoSyncSelection) applySelectedPrice(price);
       else {
         settings.calcAmount=String(price.amount);settings.calcCurrency=price.code;
+        if (settings.targetCurrency===price.code) settings.targetCurrency=targetFallback(price.code);
+        if (targetSelect) targetSelect.value=settings.targetCurrency;
         calcInput.value=settings.calcAmount;calcSelect.value=price.code;
         currentSelection=price;renderCalc();renderCompact();updateSourceLabel();
       }
@@ -1044,7 +1064,8 @@
   function snapshotHistory() {
     const amount=Number(settings.calcAmount),code=settings.calcCurrency;
     if (!validPositive(amount) || !validPositive(toCLP(amount,code))) return;
-    const entry={at:Date.now(),site:settings.historySite?HOST:'no guardado',amount,code,clp:toCLP(amount,code),
+    const entry={at:Date.now(),site:settings.historySite?HOST:'no guardado',amount,code,
+      targetCurrency:settings.targetCurrency,targetAmount:toUnits(amount,code,settings.targetCurrency),clp:toCLP(amount,code),
       cryptoSource:activeCrypto()?crypto.source:'no disponible',cryptoAt:crypto?.fetchedAt||null,
       fxAt:fx?.fetchedAt||null,units:Object.fromEntries(CRYPTOS.map(c=>[c,toUnits(amount,code,c)]))};
     history=[entry,...history].slice(0,30);
@@ -1072,7 +1093,11 @@
       }
       const load=node('button','','Reutilizar');load.type='button';load.addEventListener('click',()=>{
         manualOverride=true;pendingSelection=null;settings.calcAmount=String(record.amount);settings.calcCurrency=record.code;
-        calcInput.value=settings.calcAmount;calcSelect.value=record.code;persist();activateTab('calculator');refresh();updateSourceLabel();
+        if (SUPPORTED_CURRENCIES.includes(record.targetCurrency)) settings.targetCurrency=record.targetCurrency;
+        else settings.targetCurrency=targetFallback(record.code);
+        calcInput.value=settings.calcAmount;calcSelect.value=record.code;
+        if (targetSelect) targetSelect.value=settings.targetCurrency;
+        persist();activateTab('calculator');refresh();updateSourceLabel();
       });row.append(load);historyOutput.append(row);
     }
   }
@@ -1088,17 +1113,19 @@
       calcOutput.append(node('div','mv-fee-notice','Introduce un importe positivo.'));
       computePayment();renderCompare();renderCompact();return;
     }
-    const clp=toCLP(amount,code);
+    const destination=SUPPORTED_CURRENCIES.includes(settings.targetCurrency)?settings.targetCurrency:'CLP';
+    const result=toUnits(amount,code,destination);
     const hero=node('section','mv-hero');
-    hero.append(node('div','mv-kicker','Equivalencia en pesos chilenos'));
-    hero.append(node('div','mv-big',clp!=null?formatCLP(clp):'Sin tasa disponible'));
+    hero.append(node('div','mv-kicker',tr('Resultado en')+' '+destination));
+    hero.append(node('div','mv-big',result!=null?formatConversion(result,destination):tr('Sin tasa disponible')));
     hero.append(node('div','mv-sub','Valor de referencia · no es el cobro final de tu banco'));
     calcOutput.append(hero);
     const grid=node('div','mv-grid');
-    for (const c of CRYPTOS) grid.append(cardRow(c,formatCoin(toUnits(amount,code,c),c)));
-    const usd=toUnits(amount,code,'USD'),eur=toUnits(amount,code,'EUR');
-    grid.append(cardRow('USD',usd!=null?formatDecimal(usd):'—'));
-    grid.append(cardRow('EUR',eur!=null?formatDecimal(eur):'—'));
+    for (const c of ['CLP','USD','EUR',...CRYPTOS]) {
+      if (c===destination) continue;
+      const value=toUnits(amount,code,c);
+      grid.append(cardRow(c,value!=null?(c==='CLP'?formatCLP(value):CRYPTOS.includes(c)?formatCoin(value,c):formatDecimal(value)):'—'));
+    }
     calcOutput.append(grid);
     computePayment();renderCompare();renderCompact();
   }
@@ -1177,14 +1204,35 @@
     const inputRow=node('div','clplens-inputrow');
     const amountInput=node('input'); calcInput=amountInput; amountInput.type='number'; amountInput.inputMode='decimal'; amountInput.step='any'; amountInput.min='0'; amountInput.value=String(settings.calcAmount);
     const select=node('select'); calcSelect=select;
-    for (const code of ['EUR','USD','CLP','BTC','ETH','LTC']) {
+    for (const code of SUPPORTED_CURRENCIES) {
       const option=node('option','',code); option.value=code; select.append(option);
     }
     select.value=settings.calcCurrency;
     amountInput.addEventListener('input',()=>{ manualOverride=true; pendingSelection=null; settings.calcAmount=amountInput.value; updateSourceLabel(); renderCalc(); });
     amountInput.addEventListener('change',()=>persist());
-    select.addEventListener('change',()=>{ manualOverride=true; pendingSelection=null; settings.calcCurrency=select.value; updateSourceLabel(); persist(); renderCalc(); });
+    select.addEventListener('change',()=>{
+      manualOverride=true; pendingSelection=null;settings.calcCurrency=select.value;
+      if (settings.targetCurrency===settings.calcCurrency) settings.targetCurrency=targetFallback(settings.calcCurrency);
+      if (targetSelect) targetSelect.value=settings.targetCurrency;
+      updateSourceLabel();persist();renderCalc();
+    });
     inputRow.append(amountInput,select); field.append(inputRow); pageCalc.append(field);
+    const targetField=node('label','clplens-field');targetField.append(node('span','','Moneda de destino'));
+    const targetRow=node('div','mv-target-row');
+    targetSelect=node('select');targetSelect.setAttribute('aria-label','Moneda de destino');
+    for(const code of SUPPORTED_CURRENCIES){const option=node('option','',code);option.value=code;targetSelect.append(option);}
+    targetSelect.value=settings.targetCurrency;
+    targetSelect.addEventListener('change',()=>{settings.targetCurrency=targetSelect.value;persist();renderCalc();});
+    const swapButton=node('button','mv-swap','⇄');swapButton.type='button';swapButton.setAttribute('aria-label','Invertir monedas');
+    swapButton.setAttribute('title','Invertir monedas');
+    swapButton.addEventListener('click',()=>{
+      const oldSource=settings.calcCurrency;
+      settings.calcCurrency=settings.targetCurrency;settings.targetCurrency=oldSource;
+      manualOverride=true;pendingSelection=null;
+      select.value=settings.calcCurrency;targetSelect.value=settings.targetCurrency;
+      updateSourceLabel();persist();renderCalc();
+    });
+    targetRow.append(targetSelect,swapButton);targetField.append(targetRow);pageCalc.append(targetField);
     calcSource=line(pageCalc,'','clplens-strong');
     updateSourceLabel();
     const reselect=node('button','','Precio elegido');reselect.classList.add('mv-action-primary'); reselect.type='button';
@@ -1506,6 +1554,9 @@
     try {
       const previous=await storage.getValue(SETTINGS_KEY,null);
       if (previous && typeof previous==='object' && !Array.isArray(previous)) settings={...DEFAULTS,...previous};
+      if (!SUPPORTED_CURRENCIES.includes(settings.calcCurrency)) settings.calcCurrency='EUR';
+      if (!SUPPORTED_CURRENCIES.includes(settings.targetCurrency)) settings.targetCurrency='CLP';
+      if (settings.targetCurrency === settings.calcCurrency) settings.targetCurrency=targetFallback(settings.calcCurrency);
       if(!['auto','es','en'].includes(settings.language)) settings.language='auto';
       for (const key of ['bareDollarSites','disabledSites','allowedSites']) if (!Array.isArray(settings[key])) settings[key]=[];
       settings.allowedSites=settings.allowedSites.filter(host=>typeof host==='string' && /^[a-z0-9.-]{1,255}$/.test(host)).slice(0,100);
