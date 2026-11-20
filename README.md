@@ -4,7 +4,7 @@
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.2.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.3.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
 
 ## Compartir e instalar / Share & install
 
@@ -15,6 +15,22 @@ Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices an
 En iPhone: instala Userscripts para Safari, guarda el archivo `.user.js` desde el enlace anterior en la carpeta configurada en Userscripts y recarga el sitio. No es necesario descargar el ZIP de ChatGPT. El enlace a la rama `main` siempre sirve la versión publicada más reciente; el gestor podrá consultar los campos `@updateURL` y `@downloadURL`, según sus capacidades. Para ayuda consulta el apartado de instalación.
 
 **Read this before paying:** Moncevia only estimates values. Always confirm the actual crypto amount, network and withdrawal fee at the exchange. No transfer is executed by this script.
+
+## Interfaz móvil v3.3.0 / Mobile interface
+
+Moncevia ahora funciona como una miniaplicación de **cinco secciones**, en lugar de una página larga:
+
+1. **Convertir / Convert:** introduce un importe o selecciona el precio de un producto y consulta CLP, BTC, ETH, LTC, USD y EUR. Los resultados principales aparecen primero.
+2. **Pagar / Pay:** simula el importe necesario para un pago con BTC, ETH o LTC. Expande solo la moneda que quieras consultar. Si tienes la cantidad exacta exigida por el comercio, activa su casilla e introdúcela.
+3. **Comparar / Compare:** revisa la estimación de Prex, Santander y Binance en una vista independiente. No presenta como ganadora una opción sin costos verificados.
+4. **Historial / History:** guarda, revisa, reutiliza o exporta tus consultas localmente.
+5. **Ajustes / Settings:** organiza permisos, tasas manuales, tarjetas, Binance, redes y ayuda mediante bloques desplegables.
+
+En la cabecera, **Tasas y fuentes** expone las cotizaciones detalladas solo cuando las solicitas. La navegación admite teclado y tiene etiquetas accesibles; en iPhone puedes cambiar de sección tocando las cinco pestañas. Las advertencias se han resumido sin suprimir las limitaciones financieras.
+
+La v3.3.0 es una **refactorización de UI/UX**: no añade permisos nuevos, no ejecuta pagos ni reemplaza las comprobaciones de Binance. Se ha probado con Chromium en pantallas de 320, 375 y 390 px y en orientación horizontal, además de regresiones del motor. Falta comprobación en Safari iOS real para la versión 3.3.0.
+
+**English:** Five focused tabs: Convert, Pay, Compare, History and Settings. Payment details and settings are collapsible; rates and data sources are available on demand. Financial estimates and all existing safety limits remain unchanged.
 
 ## Qué hace / Features
 
@@ -57,6 +73,7 @@ python -m pip install -r requirements-dev.txt
 python -m playwright install chromium
 node --check moncevia.user.js
 python tests/test_browser.py
+python tests/test_ui_mobile.py
 ```
 
 Las pruebas usan respuestas de mercado **simuladas** y una página local, y comprueban conversión USDT/USD, selección de planes, cantidad, retiro LTC, privacidad básica y exclusión de checkout. **No sustituyen pruebas físicas en Safari y Userscripts iOS**.
