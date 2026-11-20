@@ -14,3 +14,7 @@ Moncevia is an informational userscript, **not a financial execution system**.
 ## Reporting
 
 Open a GitHub issue without posting account details, addresses, tokens or screenshots with private information. Include affected browser/userscript version, site type (avoid private URLs), expected behavior and reproduction steps. For a sensitive report, ask the repository owner for a private reporting channel rather than disclosing an exploit in public.
+
+## Extensión nativa (0.1.0-beta)
+
+Utiliza almacenamiento local para preferencias, permisos HTTPS específicos para proveedores públicos y un script de contenido en páginas HTTPS. El usuario autoriza cada dominio antes de consultas. El broker restringe las rutas de cotización y rechaza redirecciones y solicitudes desde checkout o dominios financieros excluidos. No obtiene credenciales ni inicia operaciones. Estos controles no son una certificación de seguridad. Consulta `docs/INSTALLATION.md`.

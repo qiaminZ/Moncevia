@@ -26,3 +26,8 @@ jobs:
           python tests/test_ui_mobile.py
           python tests/test_i18n.py
           python tests/test_cross_platform.py
+      - name: Native extension manifest and broker tests
+        run: |
+          python scripts/build_native.py
+          python tests/test_native_packages.py
+          node tests/test_native_bridges.js

@@ -1,3 +1,10 @@
+## Native desktop extension 0.1.0-beta — 2026-11-20
+
+- Dos paquetes Manifest V3 basados en un único motor Moncevia v3.5.0.
+- Puente de almacenamiento y consultas de cotizaciones públicas con rutas estrictamente limitadas.
+- Popup informativo, guía bilingüe por plataforma y pruebas de seguridad del puente.
+- No se modifican las fórmulas financieras ni el userscript existente. Firma Firefox y publicación en tiendas pendientes.
+
 ## 3.5.0 — 2026-11-20
 
 - Una sola base de código para gestores de userscripts en Safari iOS, Firefox Android y navegadores de escritorio compatibles.

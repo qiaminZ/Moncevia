@@ -1,5 +1,14 @@
 # Moncevia
 
+## Extensión nativa para PC / Native desktop extension (beta)
+
+La edición **0.1.0 beta** reutiliza el motor del userscript y ofrece una instalación sin Tampermonkey en **Chrome, Edge, Opera/Opera GX, Brave y Vivaldi** para PC/laptop. En Firefox de escritorio existe un paquete de prueba temporal, pendiente de firma oficial. Android Firefox y Safari iOS siguen utilizando el userscript universal.
+
+**Tutorial por dispositivo y navegador:** [Guía de instalación ES/EN](docs/INSTALLATION.md). Para PC Chromium descarga el ZIP del repositorio, extráelo y carga **`extension/chromium`** como extensión descomprimida desde la página de extensiones con Modo desarrollador. Firefox permite pruebas temporales desde **`extension/firefox`**, pero no una instalación permanente hasta que Mozilla firme el complemento.
+
+**Estado:** prototipo beta probado mediante mocks y regresiones del motor; no ha sido instalado físicamente en todos los navegadores ni está publicado en tiendas. No requiere credenciales ni acceso a carteras. No instala actualizaciones automáticamente. Consulta [estado y límites](docs/EXTENSION_STATUS.md).
+
+
 **Currency & Crypto Companion — universal browser userscript**
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
