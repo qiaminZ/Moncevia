@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.3.0 — 2026-11-20
+
+- Rediseño mobile-first: cinco vistas separadas (**Convertir**, **Pagar**, **Comparar**, **Historial**, **Ajustes**) con pestañas accesibles y navegación de teclado.
+- Convertir muestra el equivalente CLP como resultado principal y reúne las monedas alternativas en tarjetas; acciones rápidas sin información de pagos mezclada.
+- El simulador usa tarjetas desplegables para BTC, ETH y LTC, indicando estado de verificación y dejando las cifras detalladas disponibles al expandir.
+- La comparación queda en su propia vista y los ajustes se agrupan en secciones plegables. Ayuda y fuentes quedan bajo demanda.
+- El importe exacto solicitado por un comercio aparece solo al activar la opción correspondiente.
+- Conserva almacenamiento, enlaces de actualización, fuentes públicas de mercado y lógica de cálculo de v3.2.0.
+- Amplía pruebas automatizadas con navegación entre cinco vistas y comprobación de desbordamiento a 320/375/390 px y en orientación horizontal.
+- La versión no se considera validada en Safari iOS físico hasta completar pruebas manuales.
+
+
 ## 3.2.0 — 2026-11-20
 
 - Revoca automáticamente indicadores «verificado» cuando cambian comisiones, margen bancario, costo de fondeo o red de retiro; exige reconfirmación antes de usar esos datos como verificados.
