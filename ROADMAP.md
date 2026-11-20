@@ -1,3 +1,8 @@
+## v3.5.0 — Expansión multiplataforma
+La v3.5 incorpora un único userscript para gestores compatibles y un puente moderno/clásico de GM. Se publican instrucciones por sistema y pruebas Chromium de móvil y escritorio.
+
+**Pendiente:** pruebas físicas de Safari/iOS, Firefox Android (Violentmonkey/Tampermonkey), Firefox escritorio y Chrome/Edge/Opera; revisar los permisos del gestor. Una futura extensión nativa de escritorio requerirá empaquetado, permisos y distribución propios; no resolverá Chrome Android.
+
 # Moncevia — pendientes antes de la próxima expansión
 
 La v3.4.0 se centra en la interfaz bilingüe, sin ampliar la superficie financiera.

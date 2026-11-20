@@ -1,3 +1,11 @@
+## 3.5.0 — 2026-11-20
+
+- Una sola base de código para gestores de userscripts en Safari iOS, Firefox Android y navegadores de escritorio compatibles.
+- Puente de API `GM.*` con promesas, callbacks y `GM_*` heredado, sin añadir acceso a credenciales ni métodos privados.
+- Panel de PC con ancho 490 px; se conserva el diseño móvil.
+- Nuevas pruebas automatizadas para gestores y tamaño de pantalla; documentación y limitaciones por navegador.
+- Sin cambios en fórmulas financieras. Chrome Android oficial continúa sin extensiones convencionales.
+
 # Changelog
 
 ## 3.4.0 — 2026-11-20

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.4.0
-// @description  Conversion de precios a CLP y cripto con Binance Spot, USDT/USD explicito, simulador, historial y activacion por sitio.
+// @version      3.5.0
+// @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
 // @updateURL    https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -12,6 +12,9 @@
 // @grant        GM.getValue
 // @grant        GM.setValue
 // @grant        GM.xmlHttpRequest
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
 // @connect      data-api.binance.vision
 // @connect      api.binance.com
 // @connect      open.er-api.com
@@ -23,8 +26,49 @@
   'use strict';
   // No accede a cookies, formularios, credenciales, wallets ni API privadas.
   // Solo solicita cotizaciones publicas; nunca efectua compras o transferencias.
-  if (window.top !== window.self || !document.body || typeof GM === 'undefined' ||
-      typeof GM.getValue !== 'function' || typeof GM.xmlHttpRequest !== 'function') return;
+  // Adaptador multiplataforma: GM.* moderno (Userscripts, Tampermonkey y Violentmonkey)
+  // y GM_* clasico (gestores que aun usan callbacks). Sin acceso directo a fetch/CORS.
+  const modernGM = typeof GM !== 'undefined' && GM !== null ? GM : null;
+  const getModern = typeof modernGM?.getValue === 'function';
+  const setModern = typeof modernGM?.setValue === 'function';
+  const reqModern = typeof modernGM?.xmlHttpRequest === 'function';
+  const getLegacy = typeof GM_getValue === 'function';
+  const setLegacy = typeof GM_setValue === 'function';
+  const reqLegacy = typeof GM_xmlhttpRequest === 'function';
+  if (window.top !== window.self || !document.body ||
+      !(getModern || getLegacy) || !(setModern || setLegacy) || !(reqModern || reqLegacy)) return;
+  const storage = {
+    async getValue(key, fallback) {
+      return getModern ? modernGM.getValue(key, fallback) : GM_getValue(key, fallback);
+    },
+    async setValue(key, value) {
+      return setModern ? modernGM.setValue(key, value) : GM_setValue(key, value);
+    },
+    xmlHttpRequest(options) {
+      return new Promise((resolve, reject) => {
+        let completed = false;
+        const finish = (ok, value) => {
+          if (completed) return;
+          completed = true;
+          (ok ? resolve : reject)(value);
+        };
+        const wrapped = {
+          ...options,
+          onload: data => finish(true, data),
+          onerror: error => finish(false, error || new Error('Network request failed')),
+          ontimeout: () => finish(false, new Error('Network request timed out')),
+          onabort: () => finish(false, new Error('Network request cancelled'))
+        };
+        try {
+          const request = reqModern ? modernGM.xmlHttpRequest(wrapped) : GM_xmlhttpRequest(wrapped);
+          // Algunos gestores devuelven Promise; otros solo llaman onload/onerror.
+          if (request && typeof request.then === 'function') {
+            request.then(data => finish(true, data), error => finish(false, error));
+          }
+        } catch (error) { finish(false, error); }
+      });
+    }
+  };
 
   const HOST = location.hostname.toLowerCase();
   const matchHost = base => HOST === base || HOST.endsWith('.' + base);
@@ -476,7 +520,7 @@
   let storePromise = Promise.resolve();
   function persist() {
     const snapshot = JSON.parse(JSON.stringify(settings));
-    storePromise = storePromise.then(() => GM.setValue(SETTINGS_KEY,snapshot)).catch(() => {});
+    storePromise = storePromise.then(() => storage.setValue(SETTINGS_KEY,snapshot)).catch(() => {});
   }
   function stylesheet() {
     const style = node('style');
@@ -591,6 +635,16 @@
       #clplens-panel .mv-record-summary small {font-size:11px!important;color:#a0b8c7!important;}
       #clplens-panel .mv-record-summary strong {font-size:13px!important;color:#e4fbf7!important;}
       #clplens-panel button:focus-visible,#clplens-panel summary:focus-visible {outline:2px solid #5eead4!important;outline-offset:2px!important;}
+      /* Escritório/PC: panel más ancho y controles legibles, sin alterar el layout móvil. */
+      @media (min-width:850px) {
+        #clplens-widget {right:20px!important;bottom:20px!important;font-size:15px!important;}
+        #clplens-panel {width:min(490px,calc(100vw - 48px))!important;max-height:min(83dvh,780px)!important;}
+        #clplens-panel .mv-page {padding:18px 20px 16px!important;}
+        #clplens-panel .mv-header {padding:17px 20px 12px!important;}
+        #clplens-panel .mv-nav button {font-size:12px!important;min-height:48px!important;}
+        #clplens-panel .mv-unit strong {font-size:13px!important;}
+        #clplens-panel .mv-hero .mv-big {font-size:30px!important;}
+      }
       @media (max-width:350px) {#clplens-panel .mv-nav button {font-size:9px!important;}#clplens-panel .mv-nav button .mv-nav-icon {font-size:14px!important;}#clplens-panel .mv-hero .mv-big {font-size:23px!important;}}
       @media (prefers-reduced-motion:reduce) {#clplens-panel *,#clplens-fab {animation:none!important;transition:none!important;}}
       @media (prefers-color-scheme: dark) { .clplens-badge { background:#064e3b!important; color:#ecfdf5!important; border-color:#047857!important; } }
@@ -994,7 +1048,7 @@
       cryptoSource:activeCrypto()?crypto.source:'no disponible',cryptoAt:crypto?.fetchedAt||null,
       fxAt:fx?.fetchedAt||null,units:Object.fromEntries(CRYPTOS.map(c=>[c,toUnits(amount,code,c)]))};
     history=[entry,...history].slice(0,30);
-    void GM.setValue(HISTORY_KEY,history).catch(()=>{});
+    void storage.setValue(HISTORY_KEY,history).catch(()=>{});
     renderHistory();
   }
   function renderHistory() {
@@ -1247,7 +1301,7 @@
       if (!window.confirm('¿Revocar acceso de Moncevia a este dominio?')) return;
       settings.allowedSites=settings.allowedSites.filter(host=>host!==HOST);
       settings.disabledSites=settings.disabledSites.filter(host=>host!==HOST);
-      try {await GM.setValue(SETTINGS_KEY,JSON.parse(JSON.stringify(settings)));}
+      try {await storage.setValue(SETTINGS_KEY,JSON.parse(JSON.stringify(settings)));}
       catch(e) { window.alert('No fue posible guardar la revocación.');return; }
       location.reload();
     });
@@ -1257,7 +1311,7 @@
     const clearHistory=node('button','','Borrar historial local');clearHistory.type='button';
     clearHistory.addEventListener('click',async()=>{
       if (!window.confirm('¿Borrar las consultas guardadas en Moncevia?')) return;
-      history=[];try{await GM.setValue(HISTORY_KEY,[]);}catch(e){}renderHistory();
+      history=[];try{await storage.setValue(HISTORY_KEY,[]);}catch(e){}renderHistory();
     });pageHistory.append(clearHistory);
     const exportHistory = node('button','','Exportar historial CSV');
     exportHistory.type='button';
@@ -1357,7 +1411,7 @@
     return false;
   }
   async function requestJSON(url) {
-    const result=await GM.xmlHttpRequest({ method:'GET',url, timeout:11000,responseType:'text',headers:{Accept:'application/json'} });
+    const result=await storage.xmlHttpRequest({ method:'GET',url, timeout:11000,responseType:'text',headers:{Accept:'application/json'} });
     if (!result || result.status!==200) throw Error('HTTP '+result?.status);
     return JSON.parse(result.responseText || result.response);
   }
@@ -1372,7 +1426,7 @@
       const rates={};
       for (const c of [...FIAT,'CLP']) if (validPositive(data.rates[c])) rates[c]=Number(data.rates[c]);
       fx={ fetchedAt:Date.now(),updatedAt:dateTime(Number(data.time_last_update_unix)*1000 || Date.now()),rates };
-      await GM.setValue(FX_KEY,fx);
+      await storage.setValue(FX_KEY,fx);
     } catch(e) { console.info('[Moncevia] FX no disponible:',e?.message || e); }
     refresh(); reScan(true);
   }
@@ -1406,7 +1460,7 @@
         askUSDT[coin]=ask;bidUSDT[coin]=bid;usd[coin]=(ask+bid)*0.5*usdtUsd;
       });
       crypto={fetchedAt:Date.now(),quotedAt:Date.now(),source:'Binance Spot + CoinGecko USDT/USD',usdtUsd,usd,askUSDT,bidUSDT};
-      await GM.setValue(CRYPTO_KEY,crypto);
+      await storage.setValue(CRYPTO_KEY,crypto);
     } catch(err) {
       console.info('[Moncevia] Binance no disponible, intentando CoinGecko:',err?.message||err);
       try {
@@ -1420,7 +1474,7 @@
           usd[coin]=Number(item.usd);quotedAt=Math.min(quotedAt,at);
         }
         crypto={fetchedAt:Date.now(),quotedAt,source:'CoinGecko (USD, respaldo)',usd};
-        await GM.setValue(CRYPTO_KEY,crypto);
+        await storage.setValue(CRYPTO_KEY,crypto);
       } catch (e) {
         console.info('[Moncevia] CoinGecko no disponible; intentando Coinbase:',e?.message||e);
         try {
@@ -1430,7 +1484,7 @@
             usd[c]=Number(b.data.amount);
           });
           crypto={fetchedAt:Date.now(),source:'Coinbase (USD, respaldo)',usd};
-          await GM.setValue(CRYPTO_KEY,crypto);
+          await storage.setValue(CRYPTO_KEY,crypto);
         } catch(error) {console.info('[Moncevia] Cotización cripto no disponible:',error?.message||error);}
       }
     }
@@ -1450,15 +1504,15 @@
   }
   async function boot() {
     try {
-      const previous=await GM.getValue(SETTINGS_KEY,null);
+      const previous=await storage.getValue(SETTINGS_KEY,null);
       if (previous && typeof previous==='object' && !Array.isArray(previous)) settings={...DEFAULTS,...previous};
       if(!['auto','es','en'].includes(settings.language)) settings.language='auto';
       for (const key of ['bareDollarSites','disabledSites','allowedSites']) if (!Array.isArray(settings[key])) settings[key]=[];
       settings.allowedSites=settings.allowedSites.filter(host=>typeof host==='string' && /^[a-z0-9.-]{1,255}$/.test(host)).slice(0,100);
-      const oldFX=await GM.getValue(FX_KEY,null);
+      const oldFX=await storage.getValue(FX_KEY,null);
       if (oldFX && Number.isFinite(oldFX.fetchedAt) && validPositive(oldFX.rates?.CLP)) fx=oldFX;
-      const hist=await GM.getValue(HISTORY_KEY,[]);history=Array.isArray(hist)?hist.slice(0,30).filter(e=>Number.isFinite(e.at)&&typeof e.code==='string'&&validPositive(e.amount)&&validPositive(e.clp)):[];
-      const oldCrypto=await GM.getValue(CRYPTO_KEY,null);
+      const hist=await storage.getValue(HISTORY_KEY,[]);history=Array.isArray(hist)?hist.slice(0,30).filter(e=>Number.isFinite(e.at)&&typeof e.code==='string'&&validPositive(e.amount)&&validPositive(e.clp)):[];
+      const oldCrypto=await storage.getValue(CRYPTO_KEY,null);
       if (oldCrypto && Number.isFinite(oldCrypto.fetchedAt) && CRYPTOS.every(c=>validPositive(oldCrypto.usd?.[c])) &&
         (!oldCrypto.source?.startsWith('Binance') || validPositive(oldCrypto.usdtUsd))) crypto=oldCrypto;
     } catch(e) { console.info('[Moncevia] Almacenamiento no disponible:',e?.message||e); }

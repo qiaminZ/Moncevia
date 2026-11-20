@@ -25,3 +25,4 @@ jobs:
           python tests/test_browser.py
           python tests/test_ui_mobile.py
           python tests/test_i18n.py
+          python tests/test_cross_platform.py
