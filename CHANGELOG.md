@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.4.0 — 2026-11-20
+
+- Interfaz en **español e inglés**, con selección Auto / ES / EN, botón rápido en el encabezado y persistencia local.
+- Localización de menús, ajustes, simulador de pagos, comparación, mensajes de seguridad, historial y elementos accesibles.
+- Formatos de CLP, cantidades y fechas acordes al idioma elegido; el texto y precio de la tienda permanecen intactos.
+- Las cinco vistas conservan la navegación y el comportamiento financiero de 3.3.0.
+- Pruebas de regresión en español, cambio de idioma en vivo, visualización en inglés y compatibilidad móvil simulada.
+- Sin nuevas operaciones financieras, API privadas ni permisos de red.
+
+
 ## 3.3.0 — 2026-11-20
 
 - Rediseño mobile-first: cinco vistas separadas (**Convertir**, **Pagar**, **Comparar**, **Historial**, **Ajustes**) con pestañas accesibles y navegación de teclado.

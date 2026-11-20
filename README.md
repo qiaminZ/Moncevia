@@ -4,7 +4,7 @@
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.3.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.4.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
 
 ## Compartir e instalar / Share & install
 
@@ -87,3 +87,17 @@ Lee [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md) y [CHANGELOG.md](CHANGE
 ---
 
 **English quick start:** Install Userscripts on iOS Safari, save `moncevia.user.js` to your Userscripts folder, reload the page and explicitly enable each new supported website. Market prices and estimated payment costs are informational, not execution guarantees. Withdrawal fees and payment networks must be checked in your own exchange before sending funds.
+
+## Idioma / Language (v3.4.0)
+
+- **Auto** usa el idioma preferido del navegador: español para variantes `es-*`, inglés para los demás idiomas.
+- El control **ES / EN** del encabezado alterna el idioma inmediatamente, sin recargar ni modificar conversiones.
+- En **Ajustes → General y sitio actual → Idioma / Language** también puedes elegir Auto, Español o English. La preferencia se guarda en Userscripts junto a los ajustes anteriores.
+- Los importes y fechas se formatean según el idioma de la interfaz (`es-CL` / `en-US`), pero los precios originales de la web no se modifican.
+- Los nombres propios, códigos de moneda, redes y texto externo de la tienda siguen su idioma original.
+
+**English:** Select `Auto`, `Español`, or `English` in Settings, or use the header ES/EN toggle. The language is saved locally and does not change market-rate calculations.
+
+## Estado de pruebas / Validation
+
+Browser regressions now run in Spanish and English. Spanish conversion/payment tests, English navigation and live switching, and responsive viewports are automated in Chromium; manual iOS Safari / Userscripts testing of v3.4.0 remains recommended before the next major expansion.

@@ -25,7 +25,7 @@ xmlHttpRequest: async({url})=>{window._requests.push(url);let data=null;
 def test():
  with sync_playwright() as p:
   browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
-  page=browser.new_page(viewport={'width':390,'height':844},device_scale_factor=2,is_mobile=True,has_touch=True)
+  page=browser.new_page(viewport={'width':390,'height':844},device_scale_factor=2,is_mobile=True,has_touch=True,locale='es-CL')
   errors=[]
   page.on('pageerror',lambda e:errors.append(str(e)))
   page.set_content(HTML)

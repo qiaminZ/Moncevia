@@ -1,4 +1,4 @@
-"""UI layout regression for Moncevia v3.3.0.
+"""UI layout regression for Moncevia v3.4.0.
 Uses deterministic mocked data; no live market APIs or payment execution.
 """
 from pathlib import Path
@@ -10,7 +10,7 @@ def run():
  with sync_playwright() as p:
   browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
   for width,height in [(320,640),(375,812),(390,844),(568,320)]:
-   page=browser.new_page(viewport={'width':width,'height':height},is_mobile=True,has_touch=True)
+   page=browser.new_page(viewport={'width':width,'height':height},is_mobile=True,has_touch=True,locale='es-CL')
    errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
    page.set_content(HTML);page.evaluate(INIT)
    page.add_script_tag(content=(ROOT/'moncevia.user.js').read_text().replace('const HOST = location.hostname.toLowerCase();',"const HOST = 'shop.riftbot.org';"))
@@ -28,6 +28,19 @@ def run():
     assert inner['scrollWidth']<=inner['clientWidth']+2,(width,label,inner)
    assert not errors,(width,errors)
    page.close()
+  # Ensure English labels also fit at the minimum supported mobile width.
+  width,height=320,640
+  page=browser.new_page(viewport={'width':width,'height':height},is_mobile=True,has_touch=True,locale='en-US')
+  page.set_content(HTML);page.evaluate(INIT)
+  page.add_script_tag(content=(ROOT/'moncevia.user.js').read_text().replace('const HOST = location.hostname.toLowerCase();',"const HOST = 'shop.riftbot.org';"))
+  page.wait_for_selector('#clplens-fab');page.locator('#clplens-fab').click()
+  for label in ('Convert','Pay','Compare','History','Settings'):
+    page.get_by_role('tab',name=label).click()
+    rect=page.locator('#clplens-panel').bounding_box()
+    assert rect['x']+rect['width']<=width+1,(label,rect)
+    inner=page.locator('#clplens-panel').evaluate('(el)=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth})')
+    assert inner['scrollWidth']<=inner['clientWidth']+2,(label,inner)
+  page.close()
   browser.close()
  print('PASS: 5-view navigation, viewport containment at 320, 375, 390px and landscape; no JS errors')
 

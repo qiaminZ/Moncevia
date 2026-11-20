@@ -8,3 +8,6 @@
 - Un sitio financiero no contemplado por las exclusiones no debe autorizarse manualmente. No uses Moncevia en páginas de autenticación o pago.
 
 **English:** Settings, cached rates and manually saved history reside in Userscripts storage. Public rates requests go to third-party providers. The tool does not transmit your history to a Moncevia server or ask for exchange credentials. New sites require explicit opt-in before market requests or price scanning.
+
+
+**Idioma / Language:** La preferencia de idioma (`auto`, `es`, `en`) se guarda exclusivamente en Userscripts junto con los demás ajustes. No se transmite a Moncevia ni a proveedores externos; la detección automática usa el idioma que Safari ya expone a la página.
