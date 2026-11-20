@@ -1,5 +1,13 @@
 # Moncevia
 
+## v3.5.2 — Detección de tarifas estáticas / Static pricing detection
+
+Algunas tiendas muestran tarjetas de precios con símbolos ambiguos como `$10` sin identificador de moneda. Moncevia **no supone automáticamente que ` significa USD**. Autoriza el sitio, toca el precio o usa **Seleccionar en web** y confirma una sola vez si ` representa USD, CLP, CAD o AUD en ese dominio. La preferencia se guarda localmente y las demás tarifas se reconocerán sin introducir los importes a mano. También puedes definir la moneda en **Ajustes → General y sitio actual → Moneda de $ en este sitio**.
+
+El reconocimiento funciona en tarjetas estáticas, incluso si no tienen controles de selección. Las anotaciones son informativas y no interceptan los botones originales de compra. Los sitios con precios en EUR, GBP, otras divisas explícitas o criptomonedas siguen funcionando como antes. **KumoriBot es un ejemplo de prueba, no una dependencia del script.** Los precios mostrados por la tienda y el cobro final no se modifican.
+
+**English:** For unlabeled ` prices, authorize the website, tap a static price and choose its currency once (USD, CLP, CAD or AUD). Moncevia then recognizes other prices on that domain. It does not silently interpret ` as USD and never changes the site's checkout controls.
+
 ## Novedad v3.5.1 — Cualquier par de monedas / Any currency pair
 
 El módulo **Convertir** permite seleccionar **moneda de origen y moneda de destino** de forma independiente: CLP, USD, EUR, GBP, CAD, AUD, JPY, KRW, BRL, CNY, BTC, ETH y LTC. El botón **⇄** invierte el par; el resultado principal corresponde a la moneda de destino, no siempre a CLP. La selección de un precio de un sitio autorizado actualiza el origen sin fijar el destino. **RIFT se utiliza únicamente para pruebas**, no es un requisito ni una limitación. La versión desktop beta 0.1.1 reutiliza el mismo motor.
@@ -20,7 +28,7 @@ La edición **0.1.0 beta** reutiliza el motor del userscript y ofrece una instal
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.5.1 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.5.2 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
 
 ## Soporte multiplataforma / Cross-platform v3.5.0
 
