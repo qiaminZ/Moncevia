@@ -39,7 +39,14 @@ def test():
   page.locator('#clplens-fab').click()
   a=page.locator('#clplens-panel .clplens-inputrow input').first
   assert a.input_value()=='24.99'
+  assert page.get_by_role('tab',name='Convertir').get_attribute('aria-selected')=='true'
+  assert page.get_by_role('tab',name='Pagar').count()==1
+  assert page.get_by_role('tab',name='Comparar').count()==1
+  assert page.get_by_role('tab',name='Historial').count()==1
+  assert page.get_by_role('tab',name='Ajustes').count()==1
+  page.get_by_text('Tasas y fuentes').click()
   assert '1 USDT' in page.locator('#clplens-panel').inner_text()
+  page.get_by_text('Tasas y fuentes').click()
   page.locator('#clplens-fab').click()
   page.locator('#opt7').click()
   page.wait_for_timeout(300)
@@ -47,22 +54,24 @@ def test():
   page.locator('#plus').click();page.wait_for_timeout(550)
   assert a.input_value()=='99.98',a.input_value()
   page.locator('#clplens-fab').click()
-  page.get_by_role('button',name='Modo compacto').click()
+  page.get_by_role('button',name='Vista compacta').click()
   assert page.locator('#clplens-compact').is_visible()
   page.locator('#clplens-fab').click()
-  page.get_by_role('button',name='Guardar consulta').click()
+  page.get_by_role('button',name='Guardar',exact=True).click()
   hist=page.evaluate('window._persist.clplens_history_v3')
   assert hist and hist[0]['site']=='no guardado', hist
-  page.get_by_role('button',name='Historial').click()
+  page.get_by_role('tab',name='Historial').click()
   assert page.get_by_role('button',name='Reutilizar').count()==1
   with page.expect_download() as downloaded:
    page.get_by_role('button',name='Exportar historial CSV').click()
   csvfile=downloaded.value.path()
   assert 'no guardado' in Path(csvfile).read_text(encoding='utf-8-sig')
-  page.get_by_role('button',name='Calculadora').click()
+  page.get_by_role('tab',name='Convertir').click()
+  page.get_by_role('tab',name='Pagar').click()
   page.get_by_text('Usar importe exacto solicitado en cripto').click()
   page.locator('#clplens-panel .clplens-inputrow input').nth(1).fill('0.53340448')
-  page.get_by_role('button',name='Ajustes').click()
+  page.get_by_role('tab',name='Ajustes').click()
+  page.get_by_text('Binance y redes de retiro').click()
   page.get_by_text('Comisión de retiro LTC verificada').click()
   page.get_by_text('Comisión Spot verificada',exact=True).click()
   page.get_by_text('Costo de fondeo USDT verificado').click()
@@ -75,20 +84,32 @@ def test():
   assert not page.get_by_text('Comisión Spot verificada',exact=True).locator('..').locator('input').is_checked()
   page.get_by_text('Comisión de retiro LTC verificada').click()
   page.get_by_text('Comisión Spot verificada',exact=True).click()
-  page.get_by_role('button',name='Calculadora').click()
-  payment=page.locator('#clplens-panel .clplens-payment').all_text_contents()
-  assert len(payment)==1 and '0.53493942' in payment[0],payment
-  assert 'USDT' in payment[0],payment
-  page.get_by_role('button',name='Ajustes').click()
+  page.get_by_role('tab',name='Pagar').click()
+  page.locator('details[data-mv-coin="LTC"] summary').click()
+  payment=page.locator('details[data-mv-coin="LTC"]').inner_text()
+  assert '0.53493942' in payment,payment
+  assert 'USDT' in payment,payment
+  page.get_by_role('tab',name='Ajustes').click()
   page.get_by_text('Red de retiro LTC').locator('..').locator('input').fill('Other-Network')
   page.get_by_text('Red de retiro LTC').locator('..').locator('input').dispatch_event('change')
   assert not page.get_by_text('Comisión de retiro LTC verificada').locator('..').locator('input').is_checked()
-  page.get_by_role('button',name='Calculadora').click()
-  assert 'pendiente de verificar' in page.locator('#clplens-panel .clplens-payment').inner_text()
-  page.get_by_role('button',name='Elegir precio en pantalla').click()
+  page.get_by_role('tab',name='Pagar').click()
+  assert 'Faltan datos de costos' in page.locator('details[data-mv-coin="LTC"]').inner_text()
+  page.get_by_role('tab',name='Convertir').click()
+  page.get_by_role('button',name='Seleccionar en web').click()
   page.locator('#opt14').click()
   assert a.input_value()=='74.99'
   assert not errors,errors
+  # Views are independent: payment setup is not visible on Convertir.
+  page.get_by_role('tab',name='Comparar').click()
+  assert page.get_by_text('Comparar métodos de pago').is_visible()
+  assert not page.get_by_text('Pago con criptomonedas').is_visible()
+  page.get_by_role('tab',name='Ajustes').click()
+  group=page.locator('details.mv-settings-group').filter(has_text='Binance y redes de retiro')
+  if group.get_attribute('open') is not None: page.get_by_text('Binance y redes de retiro').click()
+  assert not page.get_by_text('Retiro BTC (BTC)').is_visible()
+  page.get_by_text('Binance y redes de retiro').click()
+  assert page.get_by_text('Retiro BTC (BTC)').is_visible()
   # Opt-in site is silent before authorization: zero API requests.
   other=browser.new_page()
   other.set_content('<h1>Shop</h1><p>€19.99</p>')
