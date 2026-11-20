@@ -353,7 +353,15 @@
   }
   function watchLocalization() {
     if(localizationObserver) localizationObserver.disconnect();
-    localizationObserver=new MutationObserver(()=>localizeUI());
+    let scheduled=false;
+    localizationObserver=new MutationObserver(()=>{
+      if(scheduled) return;
+      scheduled=true;
+      requestAnimationFrame(()=>{
+        scheduled=false;
+        if(widget?.isConnected) localizeUI();
+      });
+    });
     localizationObserver.observe(widget,{childList:true,characterData:true,subtree:true});
     localizeUI();
   }
