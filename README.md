@@ -1,3 +1,7 @@
+## v3.5.3 — Apertura ágil / Faster panel opening
+
+Moncevia muestra primero el panel y actualiza los cálculos después del primer dibujo de la interfaz. El historial solo se reconstruye cuando abres su pestaña, y la localización agrupa cambios para reducir trabajo repetido. **No cambia conversiones, API, permisos ni la selección de precios de Kumori/RIFT.** La comprobación de rendimiento es automatizada en Chromium, no una medición física de Safari.
+
 # Moncevia
 
 ## v3.5.2 — Detección de tarifas estáticas / Static pricing detection
@@ -28,7 +32,7 @@ La edición **0.1.2 beta** reutiliza el motor del userscript y ofrece una instal
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.5.2 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.5.3 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
 
 ## Soporte multiplataforma / Cross-platform v3.5.0
 

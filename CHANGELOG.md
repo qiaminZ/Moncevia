@@ -1,3 +1,12 @@
+## 3.5.3 / Desktop 0.1.3-beta — 2026-11-20
+
+- El botón flotante muestra el panel antes de reconstruir cálculos, evitando bloquear el primer dibujo con operaciones de DOM.
+- Agrupa los trabajos de localización por fotograma y elimina el renderizado duplicado del modo compacto.
+- No reconstruye todo el historial en cada apertura; lo actualiza al entrar en Historial.
+- Corrige el indicador de versión del encabezado, antes anclado a 3.4.0.
+- Pruebas de apertura instantánea en Chromium móvil/escritorio; pruebas previas de RIFT, Kumori, Binance y otras funciones deben permanecer aprobadas.
+- Sin cambios en tasas, cálculos de pago, permisos ni acceso a cuentas.
+
 ## 3.5.2 / Desktop 0.1.2-beta — 2026-11-20
 
 - Reconocimiento de tarifas estáticas que no tienen control propio de selección; permite tocar el importe o elegir la tarjeta desde el modo visual.

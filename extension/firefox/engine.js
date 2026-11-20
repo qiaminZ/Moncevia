@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.5.2
+// @version      3.5.3
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -113,6 +113,7 @@
   let compactCard, compareOutput, transferOutput, historyOutput, history=[], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
   let pickerActive=false, flashTarget=null, flashTimer=null, pendingTab='calculator';
   let observer, timer, selectionTimer, tab = 'calculator';
+  let panelOpenTicket = 0;
   let settingsBankGroup = null;
   const verifyBoxes = Object.create(null);
   let fxRequest = null, cryptoRequest = null;
@@ -352,7 +353,15 @@
   }
   function watchLocalization() {
     if(localizationObserver) localizationObserver.disconnect();
-    localizationObserver=new MutationObserver(()=>localizeUI());
+    let scheduled=false;
+    localizationObserver=new MutationObserver(()=>{
+      if(scheduled) return;
+      scheduled=true;
+      requestAnimationFrame(()=>{
+        scheduled=false;
+        if(widget?.isConnected) localizeUI();
+      });
+    });
     localizationObserver.observe(widget,{childList:true,characterData:true,subtree:true});
     localizeUI();
   }
@@ -737,8 +746,7 @@
       coinsLabel.classList.add('clplens-warning');
     }
     renderCalc();
-    renderCompact();
-    renderHistory();
+    if (tab === 'history') renderHistory();
   }
   // v2.1: sincronizacion de la calculadora con opciones de compra seleccionadas.
   // La pagina permanece intacta; solo se lee el texto visible y nunca se inicia un pago.
@@ -1243,7 +1251,7 @@
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.4.0'));
+    headerActions.append(languageButton,node('span','mv-version','v3.5.3'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
@@ -1275,7 +1283,7 @@
         navButtons[key].setAttribute('aria-selected',String(key===name));
         navButtons[key].tabIndex=key===name?0:-1;
       }
-      renderHistory();
+      if (name === 'history') renderHistory();
       panel.scrollTop=0;
     };
     for(const [key,label,symbol] of navItems){
@@ -1501,9 +1509,22 @@
     });
     closeBtn.addEventListener('click',()=>{ panel.hidden=true;renderCompact(); });
     actions.append(refreshBtn,closeBtn); panel.append(actions);
-    fab.addEventListener('click',()=>{ if (pickerActive) stopPicker();panel.hidden=!panel.hidden; refresh();renderCompact(); });
+    // Open immediately; defer expensive calculations until the initial paint.
+    function openPanelFast() {
+      panel.hidden = false;
+      const ticket = ++panelOpenTicket;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (ticket !== panelOpenTicket || panel.hidden) return;
+        refresh();
+      }));
+    }
+    fab.addEventListener('click',()=>{
+      if (pickerActive) stopPicker();
+      if (panel.hidden) openPanelFast();
+      else { panel.hidden=true; ++panelOpenTicket; renderCompact(); }
+    });
     compactCard=node('div');compactCard.id='clplens-compact';compactCard.hidden=true;
-    compactCard.addEventListener('click',()=>{panel.hidden=false;refresh();renderCompact();});
+    compactCard.addEventListener('click',()=>openPanelFast());
     widget.append(panel,compactCard,fab); document.body.append(widget);
     refresh();
     watchLocalization();
