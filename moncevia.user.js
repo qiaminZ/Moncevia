@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.2.0
+// @version      3.3.0
 // @description  Conversion de precios a CLP y cripto con Binance Spot, USDT/USD explicito, simulador, historial y activacion por sitio.
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -69,6 +69,7 @@
   let compactCard, compareOutput, transferOutput, historyOutput, history=[], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
   let pickerActive=false, flashTarget=null, flashTimer=null, pendingTab='calculator';
   let observer, timer, selectionTimer, tab = 'calculator';
+  let settingsBankGroup = null;
   const verifyBoxes = Object.create(null);
   let fxRequest = null, cryptoRequest = null;
   let manualOverride = false, pendingSelection = null, currentSelection = null;
@@ -296,6 +297,73 @@
       #clplens-widget .clplens-mini-note {color:#cbd5e1!important;font-size:10px!important;}
       .clplens-price-flash { outline:3px solid #2dd4bf!important;outline-offset:2px!important; }
       .clplens-picking * { cursor:crosshair!important; }
+
+      /* Moncevia 3.3: mini-app modular. All selectors scoped to the userscript. */
+      #clplens-panel {width:min(410px,calc(100vw - 20px))!important; max-height:min(80dvh,700px)!important; padding:0!important; border-radius:18px!important; background:#0b1424!important; scroll-padding-top:94px!important; overscroll-behavior:contain!important;}
+      #clplens-panel .mv-header {position:relative!important;z-index:1!important;background:#0b1424!important;padding:15px 15px 9px!important;border-bottom:1px solid #243449!important;}
+      #clplens-panel .mv-titlebar {display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;}
+      #clplens-panel .mv-titlebar h2 {font-size:18px!important;margin:0!important;letter-spacing:-.35px!important;}
+      #clplens-panel .mv-version {font-size:10px!important;color:#91a3b8!important;border:1px solid #334155!important;border-radius:5px!important;padding:3px 5px!important;white-space:nowrap!important;}
+      #clplens-panel .mv-status {display:flex!important;align-items:center!important;gap:6px!important;margin:8px 0 0!important;color:#8da7b5!important;font-size:11px!important;line-height:1.35!important;}
+      #clplens-panel .mv-dot {width:7px!important;height:7px!important;flex:none!important;border-radius:50%!important;background:#2dd4bf!important;}
+      #clplens-panel .mv-dot.mv-stale {background:#f59e0b!important;}
+      #clplens-panel .mv-nav {display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2px!important;background:#101c2c!important;padding:5px!important;margin:0!important;border-bottom:1px solid #25344a!important;position:sticky!important;top:0!important;z-index:5!important;}
+      #clplens-panel .mv-nav button {min-width:0!important;min-height:43px!important;padding:5px 2px!important;border:0!important;border-radius:8px!important;background:transparent!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;font-size:10px!important;font-weight:600!important;color:#a7bbca!important;}
+      #clplens-panel .mv-nav button .mv-nav-icon {font-size:16px!important;line-height:1!important;font-weight:550!important;}
+      #clplens-panel .mv-nav button[aria-selected='true'] {background:#134e59!important;color:#ccfbf1!important;outline:1px solid #36b7ac!important;}
+      #clplens-panel .mv-page {padding:14px 15px 12px!important;min-height:160px!important;}
+      #clplens-panel .mv-page > h2 {margin:1px 0 10px!important;font-size:16px!important;}
+      #clplens-panel .mv-hint {font-size:11px!important;color:#97adbe!important;margin:5px 0 12px!important;line-height:1.4!important;}
+      #clplens-panel .mv-hero {border:1px solid #235462!important;background:linear-gradient(145deg,#143443,#112538)!important;border-radius:14px!important;padding:12px!important;margin:10px 0 13px!important;}
+      #clplens-panel .mv-hero .mv-kicker {font-size:10px!important;color:#b6d2d7!important;letter-spacing:.6px!important;text-transform:uppercase!important;}
+      #clplens-panel .mv-hero .mv-big {font-size:27px!important;line-height:1.25!important;font-weight:750!important;color:#e9fffa!important;overflow-wrap:anywhere!important;font-variant-numeric:tabular-nums!important;}
+      #clplens-panel .mv-hero .mv-sub {color:#91c9c6!important;font-size:11px!important;margin-top:5px!important;}
+      #clplens-panel .mv-disclosure.mv-rates-disclosure {margin:4px 0 0!important;border:0!important;background:transparent!important;}
+      #clplens-panel .mv-disclosure.mv-rates-disclosure > summary {font-size:11px!important;font-weight:500!important;color:#91aab9!important;padding:5px 0!important;}
+      #clplens-panel .mv-disclosure.mv-rates-disclosure .mv-details-content {border-top:0!important;padding:4px 0 7px!important;}
+      #clplens-panel .mv-rates {margin:0!important;color:#b2c6d2!important;font-size:12px!important;}
+      #clplens-panel .mv-rates b {color:#f8fafc!important;}
+      #clplens-panel .mv-grid {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;}
+      #clplens-panel .mv-unit {display:flex!important;justify-content:space-between!important;align-items:center!important;gap:7px!important;border:1px solid #26394e!important;border-radius:10px!important;background:#142237!important;padding:10px 9px!important;min-width:0!important;}
+      #clplens-panel .mv-unit span {font-size:11px!important;color:#9db0bf!important;white-space:nowrap!important;}
+      #clplens-panel .mv-unit strong {font-size:12px!important;color:#dcfef6!important;font-variant-numeric:tabular-nums!important;overflow-wrap:anywhere!important;text-align:right!important;}
+      #clplens-panel .mv-unit.mv-full {grid-column:span 2!important;}
+      #clplens-panel .clplens-action-row {margin:12px 0 0!important;gap:7px!important;}
+      #clplens-panel .clplens-action-row button {min-height:39px!important;font-size:11px!important;padding:7px!important;}
+      #clplens-panel .mv-action-primary {background:#105362!important;border-color:#2cc3b4!important;}
+      #clplens-panel .mv-subtle {font-size:11px!important;color:#9dafbd!important;margin:8px 0 0!important;}
+      #clplens-panel .mv-fee-notice {font-size:11px!important;line-height:1.4!important;color:#fed88b!important;border-left:2px solid #f59e0b!important;padding:5px 9px!important;margin:10px 0!important;background:#2b241e!important;border-radius:4px!important;}
+      #clplens-panel .mv-disclosure {border:1px solid #2d4056!important;border-radius:10px!important;background:#101e30!important;margin:8px 0!important;overflow:hidden!important;}
+      #clplens-panel .mv-disclosure > summary {cursor:pointer!important;list-style:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:12px!important;color:#f1f5f9!important;font-size:13px!important;font-weight:650!important;}
+      #clplens-panel .mv-disclosure > summary::-webkit-details-marker {display:none!important;}
+      #clplens-panel .mv-disclosure > summary:after {content:'⌄'!important;color:#93aabb!important;font-size:16px!important;flex:none!important;}
+      #clplens-panel .mv-disclosure[open] > summary:after {content:'⌃'!important;}
+      #clplens-panel .mv-disclosure .mv-details-content {padding:0 12px 11px!important;border-top:1px solid #27374b!important;}
+      #clplens-panel .mv-details-content label {min-height:42px!important;}
+      #clplens-panel .mv-payment-amount {font-weight:750!important;color:#d9fff5!important;font-size:15px!important;}
+      #clplens-panel .mv-payment-card > summary {align-items:flex-start!important;flex-wrap:wrap!important;}
+      #clplens-panel .mv-payment-card .mv-payment-status {display:block!important;width:100%!important;line-height:1.2!important;}
+      #clplens-panel .mv-payment-summary {display:flex!important;flex-direction:column!important;min-width:0!important;gap:3px!important;}
+      #clplens-panel .mv-payment-summary small {font-size:11px!important;color:#9aafc0!important;font-weight:450!important;}
+      #clplens-panel .mv-payment-status {font-size:10px!important;color:#ffcb80!important;white-space:nowrap!important;}
+      #clplens-panel .mv-payment-status.ready {color:#5eead4!important;}
+      #clplens-panel .mv-payment-details > div {margin:8px 0!important;overflow-wrap:anywhere!important;color:#cfdee7!important;font-size:12px!important;}
+      #clplens-panel .mv-payment-details .clplens-warning {color:#facf83!important;}
+      #clplens-panel .mv-linklike {background:transparent!important;border:0!important;color:#5eead4!important;padding:5px!important;font-size:12px!important;text-align:left!important;}
+      #clplens-panel .clplens-actions {margin:0!important;position:sticky!important;bottom:0!important;z-index:5!important;background:#0b1424!important;border-top:1px solid #25344a!important;padding:9px 15px calc(9px + env(safe-area-inset-bottom,0px))!important;}
+      #clplens-panel .clplens-actions button {min-height:39px!important;font-size:12px!important;}
+      #clplens-panel .mv-settings-group {margin:9px 0!important;}
+      #clplens-panel .mv-settings-group > summary {font-size:13px!important;}
+      #clplens-panel .mv-help {font-size:11px!important;color:#a8b8c5!important;line-height:1.45!important;}
+      #clplens-panel .mv-settings-group input {font-variant-numeric:tabular-nums!important;}
+      #clplens-panel .mv-settings-group label span {line-height:1.3!important;}
+      #clplens-panel .mv-section-note {color:#a3b9c8!important;font-size:11px!important;margin:5px 0 11px!important;}
+      #clplens-panel .mv-record-summary {display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:6px!important;align-items:center!important;}
+      #clplens-panel .mv-record-summary small {font-size:11px!important;color:#a0b8c7!important;}
+      #clplens-panel .mv-record-summary strong {font-size:13px!important;color:#e4fbf7!important;}
+      #clplens-panel button:focus-visible,#clplens-panel summary:focus-visible {outline:2px solid #5eead4!important;outline-offset:2px!important;}
+      @media (max-width:350px) {#clplens-panel .mv-nav button {font-size:9px!important;}#clplens-panel .mv-nav button .mv-nav-icon {font-size:14px!important;}#clplens-panel .mv-hero .mv-big {font-size:23px!important;}}
+      @media (prefers-reduced-motion:reduce) {#clplens-panel *,#clplens-fab {animation:none!important;transition:none!important;}}
       @media (prefers-color-scheme: dark) { .clplens-badge { background:#064e3b!important; color:#ecfdf5!important; border-color:#047857!important; } }
     `;
     document.head.appendChild(style);
@@ -330,13 +398,25 @@
     return input;
   }
   function line(parent,text,cls='') { const p=node('p',cls,text); parent.append(p); return p; }
+  function disclosure(parent, title, expanded=false, extra='') {
+    const details=node('details','mv-disclosure'+(extra?' '+extra:''));details.open=expanded;
+    const summary=node('summary','',title);
+    const content=node('div','mv-details-content');
+    details.append(summary,content);parent.append(details);
+    return {details,content};
+  }
+  function cardRow(key,value, full=false) {
+    const row=node('div','mv-unit'+(full?' mv-full':''));
+    row.append(node('span','',key),node('strong','',value));return row;
+  }
   function refresh() {
     if (!widget) return;
     fab.textContent = isActive() ? 'CLP · ₿' : 'CLP · OFF';
     const usd = usdClp(), euro = eurClp();
     const fxStatus = activeFX() ? `FX ${fx.updatedAt || dateTime(fx.fetchedAt)}` : 'FX sin datos recientes';
     const manual = [validPositive(settings.usdClpManual) ? 'USD manual' : '', validPositive(settings.eurClpManual) ? 'EUR manual' : ''].filter(Boolean).join(' · ');
-    stateLabel.textContent = `${usd ? `USD ${formatCLP(usd)}` : 'USD —'} · ${euro ? `EUR ${formatCLP(euro)}` : 'EUR —'} · ${fxStatus}${manual ? ` · ${manual}` : ''}`;
+    stateLabel.textContent = `${activeFX() ? 'Divisas al día' : 'Divisas sin actualizar'} · ${activeCrypto() ? 'Cripto al día' : 'Cripto pendiente'}${manual ? ' · cambio manual' : ''}`;
+    if (stateLabel.previousElementSibling?.classList?.contains('mv-dot')) stateLabel.previousElementSibling.classList.toggle('mv-stale',!activeFX() || !activeCrypto());
     if (activeCrypto()) {
       const items = CRYPTOS.map(c => `1 ${c} ≈ ${toCLP(1,c) == null ? '—' : formatCLP(toCLP(1,c))}`);
       coinsLabel.textContent = items.join(' · ') + ` · ${crypto.source} ${dateTime(crypto.fetchedAt)}${validPositive(crypto.usdtUsd)?` · 1 USDT = ${formatDecimal(crypto.usdtUsd,5)} USD`:''}`;
@@ -521,7 +601,7 @@
         currentSelection=price;renderCalc();renderCompact();updateSourceLabel();
       }
       flashPrice(event.target);
-      if (pickBtn) pickBtn.textContent='Elegir precio en pantalla';
+      if (pickBtn) pickBtn.textContent='Seleccionar en web';
       panel.hidden=false; tab='calculator'; activateTab('calculator');
       return;
     }
@@ -561,7 +641,7 @@
     if (!settings.visualPick) return;
     pickerActive=true; panel.hidden=true;
     document.body.classList.add('clplens-picking');
-    if (pickBtn) pickBtn.textContent='Cancelar selección visual';
+    if (pickBtn) pickBtn.textContent='Cancelar selección';
   }
   function stopPicker() {
     pickerActive=false;
@@ -597,47 +677,74 @@
   }
   function computePayment() {
     if (!transferOutput) return;
+    const openCoins=new Set([...transferOutput.querySelectorAll('details[data-mv-coin][open]')].map(x=>x.dataset.mvCoin));
     transferOutput.replaceChildren();
     const exact=!!settings.exactPayEnabled;
-    const coins=exact ? [settings.exactPayCurrency] : CRYPTOS;
+    const coins=exact?[settings.exactPayCurrency]:CRYPTOS;
+    let allReady=true;
     for (const coin of coins) {
       const v=getPaymentInfo(coin);
-      if (!v) { transferOutput.append(node('div','clplens-warning',`${coin}: falta Binance Spot / USDT-USD vigente, o la cantidad tiene más de 8 decimales. No se estima retiro.`)); continue; }
-      const block=node('div','clplens-payment');
-      block.append(node('strong','',`${coin} · Red: ${v.network}`));
-      block.append(node('div','',`Debe recibir: ${formatCoin(v.payable,coin)} ${coin}`));
-      block.append(node('div','',`Retiro Binance: ${v.feeKnown?formatCoin(v.withdrawFee,coin)+' '+coin:'pendiente de verificar'}`));
-      block.append(node('div','',`Saldo de cripto necesario: ${formatCoin(v.acquire,coin)} ${coin}${!v.feeKnown || !v.spotKnown?' (mínimo teórico, incompleto)':''}`));
-      block.append(node('div','',`Compra Spot indicativa: ${formatDecimal(v.estimateUsdt)} USDT · mejor ask ${formatDecimal(v.ask,6)} USDT/${coin} (sin profundidad garantizada)`));
-      if (!v.spotKnown) block.append(node('div','clplens-warning','Comisión Spot no verificada; configura el porcentaje real.'));
-      if (!v.feeKnown) block.append(node('div','clplens-warning','Comisión/red de retiro no verificada; NO envíes esta cifra sin revisar Binance.'));
-      if (v.fundKnown && v.clp!=null) block.append(node('div','',`Fondeo estimado: ${formatCLP(v.clp)} (USDT/USD ${formatDecimal(crypto.usdtUsd,5)}; sin cotización P2P real)`));
-      else block.append(node('div','',`CLP del fondeo: no verificado (precio de compra USDT pendiente).`));
-      transferOutput.append(block);
+      if (!v) {
+        allReady=false;
+        const item=disclosure(transferOutput,`${coin} · sin cotización verificable`,false,'mv-payment-card');
+        item.details.dataset.mvCoin=coin;
+        item.content.append(node('p','clplens-warning','Falta Binance Spot o USDT/USD vigente, o el importe excede ocho decimales.'));
+        continue;
+      }
+      const complete=v.feeKnown&&v.spotKnown&&v.fundKnown&&v.clp!=null;
+      if (!complete) allReady=false;
+      const item=disclosure(transferOutput,'',openCoins.has(coin),'mv-payment-card');
+      item.details.dataset.mvCoin=coin;
+      const label=node('div','mv-payment-summary');
+      label.append(node('strong','',coin+' · '+v.network));
+      label.append(node('small','',`Recibe ${formatCoin(v.payable,coin)} ${coin} · ${formatDecimal(v.estimateUsdt)} USDT aprox.`));
+      const status=node('span','mv-payment-status'+(complete?' ready':''),complete?'Datos marcados como verificados':'Faltan datos de costos');
+      item.details.querySelector('summary').append(label,status);
+      const body=node('div','mv-payment-details');
+      body.append(node('div','',`Importe al comercio: ${formatCoin(v.payable,coin)} ${coin}`));
+      body.append(node('div','',`Comisión de retiro: ${v.feeKnown?formatCoin(v.withdrawFee,coin)+' '+coin:'pendiente de verificar'}`));
+      body.append(node('div','',`Cantidad necesaria: ${formatCoin(v.acquire,coin)} ${coin} ${complete?'(estimación)':'(mínimo teórico incompleto)'}`));
+      body.append(node('div','',`Compra Spot: ${formatDecimal(v.estimateUsdt)} USDT · ask ${formatDecimal(v.ask,6)} USDT/${coin}`));
+      body.append(node('div','',`Fondeo CLP: ${v.fundKnown&&v.clp!=null?formatCLP(v.clp)+' (estimado)':'sin costo de compra de USDT verificado'}`));
+      if (!v.feeKnown || !v.spotKnown || !v.fundKnown) {
+        const missing=[];if(!v.feeKnown)missing.push('comisión y red de retiro');
+        if(!v.spotKnown)missing.push('comisión de compra Spot');
+        if(!v.fundKnown)missing.push('costo de adquirir USDT');
+        body.append(node('div','clplens-warning','Pendiente: '+missing.join(' · ')));
+      }
+      const go=node('button','mv-linklike','Configurar comisiones');go.type='button';go.addEventListener('click',()=>{
+        activateTab('settings');if(settingsBankGroup)settingsBankGroup.open=true;
+      });body.append(go);
+      item.content.append(body);
     }
-    transferOutput.append(node('p','','Nunca transfieras usando solo esta simulación. Verifica importe recibido, red compatible, comisión final, disponibilidad y posible deslizamiento (slippage) en Binance.'));
+    const notice=node('div','mv-fee-notice', allReady?
+      'Estimación, no importe definitivo. Revisa la red y el monto recibido en Binance antes de confirmar.':
+      'Estimación incompleta. Comprueba la comisión, la red y el importe exacto en Binance antes de enviar.');
+    transferOutput.prepend(notice);
   }
   function renderCompare() {
     if (!compareOutput) return;
     compareOutput.replaceChildren();
-    const amount=Number(settings.calcAmount),code=settings.calcCurrency;
-    const clp=toCLP(amount,code);
-    if (!validPositive(clp)) {compareOutput.append(node('div','','Sin cambio válido para comparar.'));return;}
-    const direct=[['Prex',withExtra(clp,'prex')],['Santander',withExtra(clp,'santander')]];
-    for (const [name,value] of direct) compareOutput.append(node('div','',`${name}: ${formatCLP(value)} · margen configurado, no cargo real`));
-    const verified=[];
-    for (const [name,value] of direct) if (settings[name.toLowerCase()+'Known']) verified.push({name,cost:value});
-    for (const coin of CRYPTOS) {
-      const p=getPaymentInfo(coin);
-      if (!p) continue;
-      if (p.clp && p.feeKnown && p.spotKnown && p.fundKnown) verified.push({name:'Binance '+coin,cost:p.clp});
-      compareOutput.append(node('div','',`Binance ${coin}: ${formatDecimal(p.estimateUsdt)} USDT ${p.feeKnown&&p.spotKnown?'estimados':'(faltan comisiones)'}${p.clp?' · '+formatCLP(p.clp):''}`));
+    const amount=Number(settings.calcAmount),code=settings.calcCurrency,clp=toCLP(amount,code);
+    if (!validPositive(clp)) {compareOutput.append(node('p','','Sin cotización válida para comparar.'));return;}
+    const grid=node('div','mv-grid');const valid=[];
+    for (const name of ['Prex','Santander']) {
+      const key=name.toLowerCase(), value=withExtra(clp,key), verified=!!settings[key+'Known'];
+      grid.append(cardRow(name,`${formatCLP(value)}${verified?' · ✓':' · aprox.'}`,true));
+      if(verified)valid.push({name,cost:value});
     }
-    if (verified.length>=2) {
-      verified.sort((a,b)=>a.cost-b.cost);
-      compareOutput.append(node('div','clplens-strong',`Menor estimación entre métodos marcados como verificados: ${verified[0].name} · ${formatCLP(verified[0].cost)}`));
-    } else compareOutput.append(node('div','clplens-warning','Sin suficientes métodos verificados para identificar el menor costo estimado.'));
-    compareOutput.append(node('p','clplens-warning','Compara solo importes cuyo costo real verificaste; se excluyen métodos incompletos. Nunca supone una cotización bancaria, P2P ni un retiro garantizado.'));
+    for(const coin of CRYPTOS){
+      const v=getPaymentInfo(coin);if(!v)continue;
+      const complete=v.clp&&v.feeKnown&&v.spotKnown&&v.fundKnown;
+      grid.append(cardRow('Binance '+coin,complete?formatCLP(v.clp):`${formatDecimal(v.estimateUsdt)} USDT*`,true));
+      if(complete)valid.push({name:'Binance '+coin,cost:v.clp});
+    }
+    compareOutput.append(grid);
+    if(valid.length>=2){valid.sort((a,b)=>a.cost-b.cost);
+      compareOutput.append(node('div','mv-fee-notice',`Menor estimación entre métodos configurados: ${valid[0].name} · ${formatCLP(valid[0].cost)}`));
+    }else compareOutput.append(node('div','mv-fee-notice','Sin suficientes métodos con costos marcados como verificados para elegir el más económico.'));
+    const info=disclosure(compareOutput,'Cómo interpretar la comparación');
+    info.content.append(node('p','','* USDT indica costo Spot preliminar, sin fondeo final verificado. Las tarjetas usan porcentajes configurados; no son cotizaciones del banco. Los precios Spot no garantizan profundidad ni ejecución.'));
   }
   function renderCompact() {
     if (!compactCard) return;
@@ -693,35 +800,23 @@
   function renderCalc() {
     if (!calcOutput) return;
     calcOutput.replaceChildren();
-    const amount = Number(settings.calcAmount), code=settings.calcCurrency;
-    if (!(Number.isFinite(amount) && amount > 0 && amount < 1e12)) {
-      calcOutput.append(node('div','','Introduce un importe positivo.')); return;
+    const amount=Number(settings.calcAmount),code=settings.calcCurrency;
+    if (!(Number.isFinite(amount) && amount>0 && amount<1e12)) {
+      calcOutput.append(node('div','mv-fee-notice','Introduce un importe positivo.'));
+      computePayment();renderCompare();renderCompact();return;
     }
-    const clp = toCLP(amount,code);
-    if (clp != null) {
-      calcOutput.append(node('div','',`CLP: ${formatCLP(clp)} (referencia)`));
-      if (!CRYPTOS.includes(code)) {
-        calcOutput.append(node('div','',`Prex: ${formatCLP(withExtra(clp,'prex'))} (estimación)`));
-        calcOutput.append(node('div','',`Santander: ${formatCLP(withExtra(clp,'santander'))} (estimación)`));
-      }
-    } else calcOutput.append(node('div','','CLP: esperando cotización válida'));
-    for (const coin of CRYPTOS) {
-      const units = toUnits(amount,code,coin);
-      if (units == null) { calcOutput.append(node('div','',`${coin}: sin cotización reciente`)); continue; }
-      // Fee opcional en unidades de cripto. El comerciante puede imponer su propia tasa.
-      const fee = Math.max(0,Math.min(1000,Number(settings['fee'+coin]) || 0));
-      const total = units + fee;
-      calcOutput.append(node('div','',`${coin}: ${formatCoin(units,coin)}${fee > 0 ? ` + red ${formatCoin(fee,coin)} = ${formatCoin(total,coin)}` : ''}`));
-    }
-    if (CRYPTOS.includes(code)) {
-      const fee = Math.max(0,Number(settings['fee'+code]) || 0);
-      if (clp != null && fee) calcOutput.append(node('div','',`Total ${code} + comisión configurada: ${formatCLP(toCLP(amount+fee,code))} CLP`));
-    }
-    if (clp != null) {
-      const usd=toUnits(amount,code,'USD'), eur=toUnits(amount,code,'EUR');
-      if (usd != null) calcOutput.append(node('div','',`USD: ${formatDecimal(usd)}`));
-      if (eur != null) calcOutput.append(node('div','',`EUR: ${formatDecimal(eur)}`));
-    }
+    const clp=toCLP(amount,code);
+    const hero=node('section','mv-hero');
+    hero.append(node('div','mv-kicker','Equivalencia en pesos chilenos'));
+    hero.append(node('div','mv-big',clp!=null?formatCLP(clp):'Sin tasa disponible'));
+    hero.append(node('div','mv-sub','Valor de referencia · no es el cobro final de tu banco'));
+    calcOutput.append(hero);
+    const grid=node('div','mv-grid');
+    for (const c of CRYPTOS) grid.append(cardRow(c,formatCoin(toUnits(amount,code,c),c)));
+    const usd=toUnits(amount,code,'USD'),eur=toUnits(amount,code,'EUR');
+    grid.append(cardRow('USD',usd!=null?formatDecimal(usd):'—'));
+    grid.append(cardRow('EUR',eur!=null?formatDecimal(eur):'—'));
+    calcOutput.append(grid);
     computePayment();renderCompare();renderCompact();
   }
   function createUI() {
@@ -730,41 +825,65 @@
     fab=node('button','','CLP · ₿'); fab.type='button'; fab.id='clplens-fab';
     fab.setAttribute('aria-label','Abrir Moncevia');
     panel=node('section'); panel.id='clplens-panel'; panel.hidden=true;
-    panel.append(node('h2','','Moncevia · v3.2.0')); panel.setAttribute('aria-label','Calculadora de Moncevia');
-    line(panel,'Conversiones orientativas, sin compras ni operaciones automáticas.');
-    stateLabel=line(panel,'Consultando cambio…','clplens-strong');
-    coinsLabel=line(panel,'Consultando criptomonedas…','clplens-strong');
-    const sources=line(panel,'Fuentes: ');
+    panel.setAttribute('aria-label','Moncevia — conversión y pagos');
+    const header=node('div','mv-header');
+    const titlebar=node('div','mv-titlebar');
+    titlebar.append(node('h2','','Moncevia'),node('span','mv-version','v3.3.0'));
+    header.append(titlebar);
+    const status=node('div','mv-status');status.append(node('span','mv-dot'));
+    stateLabel=node('span','','Consultando tasas…');status.append(stateLabel);header.append(status);
+    panel.append(header);
+    // Fuentes y cotizaciones completas siguen accesibles bajo demanda.
+    const ratesInfo=disclosure(header,'Tasas y fuentes','');
+    ratesInfo.details.classList.add('mv-rates-disclosure');
+    coinsLabel=line(ratesInfo.content,'Consultando criptomonedas…','clplens-strong');
+    const sources=line(ratesInfo.content,'Fuentes: ');
     sources.append(makeLink('https://www.exchangerate-api.com','ExchangeRate-API'));
-    sources.append(' · ');
-    sources.append(makeLink('https://developers.binance.com/en/docs/binance-spot-api-docs/rest-api/market-data-endpoints','Binance Spot'));
-    sources.append(' / ');
-    sources.append(makeLink('https://www.coingecko.com/en/api','CoinGecko'));
-    sources.append(' / ');
-    sources.append(makeLink('https://www.coinbase.com','Coinbase'));
+    sources.append(' · ',makeLink('https://developers.binance.com/en/docs/binance-spot-api-docs/rest-api/market-data-endpoints','Binance Spot'));
+    sources.append(' / ',makeLink('https://www.coingecko.com/en/api','CoinGecko'));
+    sources.append(' / ',makeLink('https://www.coinbase.com','Coinbase'));
 
-    const tabs=node('div','clplens-tabs');
-    const buttonCalc=node('button','','Calculadora');
-    const buttonSettings=node('button','','Ajustes');
-    const buttonHistory=node('button','','Historial');
-    buttonCalc.type=buttonSettings.type=buttonHistory.type='button';
-    tabs.append(buttonCalc,buttonSettings,buttonHistory); panel.append(tabs);
-    const pageCalc=node('div'),pageSettings=node('div'),pageHistory=node('div');
+    const nav=node('nav','mv-nav');nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Secciones de Moncevia');
+    const pages={};
+    const navItems=[['calculator','Convertir','⇄'],['crypto','Pagar','₿'],['compare','Comparar','≋'],['history','Historial','◷'],['settings','Ajustes','⚙']];
+    const navButtons={};
+    const pageCalc=node('div','mv-page');const pageCrypto=node('div','mv-page');
+    const pageCompare=node('div','mv-page');const pageHistory=node('div','mv-page');
+    const pageSettingsRoot=node('div','mv-page');let pageSettings=pageSettingsRoot;
+    Object.assign(pages,{calculator:pageCalc,crypto:pageCrypto,compare:pageCompare,history:pageHistory,settings:pageSettingsRoot});
     const setTab = name => {
+      if (!Object.hasOwn(pages,name)) return;
       tab=name;
-      pageCalc.classList.toggle('clplens-hidden',name!=='calculator');
-      pageSettings.classList.toggle('clplens-hidden',name!=='settings');
-      pageHistory.classList.toggle('clplens-hidden',name!=='history');
-      buttonCalc.setAttribute('aria-selected',String(name==='calculator'));
-      buttonSettings.setAttribute('aria-selected',String(name==='settings'));
-      buttonHistory.setAttribute('aria-selected',String(name==='history'));
+      for(const key of Object.keys(pages)) {
+        pages[key].classList.toggle('clplens-hidden',key!==name);
+        navButtons[key].setAttribute('aria-selected',String(key===name));
+        navButtons[key].tabIndex=key===name?0:-1;
+      }
       renderHistory();
+      panel.scrollTop=0;
     };
-    buttonCalc.addEventListener('click',()=>setTab('calculator'));
-    buttonSettings.addEventListener('click',()=>setTab('settings'));
-    buttonHistory.addEventListener('click',()=>setTab('history'));
-    window.clplensSelectTab=setTab;
-
+    for(const [key,label,symbol] of navItems){
+      const button=node('button');button.type='button';button.setAttribute('role','tab');
+      button.append(node('span','mv-nav-icon',symbol),node('span','',label));
+      button.setAttribute('aria-label',label);button.id='mv-tab-'+key;button.setAttribute('aria-controls','mv-page-'+key);
+      pages[key].id='mv-page-'+key;pages[key].setAttribute('role','tabpanel');pages[key].setAttribute('aria-labelledby',button.id);
+      navButtons[key]=button;nav.append(button);
+      button.addEventListener('click',()=>setTab(key));
+    }
+    nav.addEventListener('keydown',event=>{
+      const current=navItems.findIndex(item=>item[0]===tab);
+      const next=event.key==='ArrowRight'?(current+1)%navItems.length:
+        event.key==='ArrowLeft'?(current-1+navItems.length)%navItems.length:
+        event.key==='Home'?0:event.key==='End'?navItems.length-1:-1;
+      if(next>=0){event.preventDefault();setTab(navItems[next][0]);navButtons[navItems[next][0]].focus();}
+    });
+    panel.append(nav);window.clplensSelectTab=setTab;
+    pageCrypto.append(node('h2','','Pago con criptomonedas'));
+    line(pageCrypto,'Calcula lo que necesitarías comprar para cubrir un importe solicitado por un comercio.','mv-section-note');
+    pageCompare.append(node('h2','','Comparar métodos de pago'));
+    line(pageCompare,'Costos orientativos configurados, no cargos confirmados.','mv-section-note');
+    pageHistory.append(node('h2','','Historial local'));
+    pageSettingsRoot.append(node('h2','','Configuración'));
     const field=node('label','clplens-field'); field.append(node('span','','Importe y moneda de origen'));
     const inputRow=node('div','clplens-inputrow');
     const amountInput=node('input'); calcInput=amountInput; amountInput.type='number'; amountInput.inputMode='decimal'; amountInput.step='any'; amountInput.min='0'; amountInput.value=String(settings.calcAmount);
@@ -779,23 +898,25 @@
     inputRow.append(amountInput,select); field.append(inputRow); pageCalc.append(field);
     calcSource=line(pageCalc,'','clplens-strong');
     updateSourceLabel();
-    const reselect=node('button','','Usar precio seleccionado'); reselect.type='button';
+    const reselect=node('button','','Precio elegido');reselect.classList.add('mv-action-primary'); reselect.type='button';
     reselect.addEventListener('click',()=>{
       manualOverride=false; pendingSelection=null;
       syncSelectedPrice(); updateSourceLabel();
     });
     const toolsRow=node('div','clplens-action-row');
     toolsRow.append(reselect);
-    pickBtn=node('button','','Elegir precio en pantalla');pickBtn.type='button';
+    pickBtn=node('button','','Seleccionar en web');pickBtn.type='button';
     pickBtn.addEventListener('click',()=>pickerActive?stopPicker():startPicker());toolsRow.append(pickBtn);
-    const save=node('button','','Guardar consulta');save.type='button';save.addEventListener('click',snapshotHistory);toolsRow.append(save);
-    const compactButton=node('button','','Modo compacto');compactButton.type='button';
+    const save=node('button','','Guardar');save.type='button';save.addEventListener('click',snapshotHistory);toolsRow.append(save);
+    const compactButton=node('button','','Vista compacta');compactButton.type='button';
     compactButton.addEventListener('click',()=>{settings.compactMode=!settings.compactMode;persist();panel.hidden=true;renderCompact();});
-    toolsRow.append(compactButton);pageCalc.append(toolsRow);
-    calcOutput=node('div','clplens-results'); calcOutput.setAttribute('aria-live','polite'); pageCalc.append(calcOutput);
-    line(pageCalc,'Para un pago en criptomonedas: usa la cifra exacta exigida por el comercio si existe. Las tasas del sitio, spreads de compra, comisiones y redes pueden modificar el importe real.','clplens-warning');
-    pageCalc.append(node('h2','','Simulador de pago con Binance'));
-    exactToggle=checkbox(pageCalc,'Usar importe exacto solicitado en cripto',()=>settings.exactPayEnabled,v=>settings.exactPayEnabled=v);
+    toolsRow.append(compactButton);
+    calcOutput=node('div');calcOutput.setAttribute('aria-live','polite');pageCalc.append(calcOutput,toolsRow);
+    const toPayment=node('button','mv-linklike','Calcular pago con cripto →');toPayment.type='button';
+    toPayment.addEventListener('click',()=>activateTab('crypto'));pageCalc.append(toPayment);
+    exactToggle=checkbox(pageCrypto,'Usar importe exacto solicitado en cripto',()=>settings.exactPayEnabled,v=>{
+      settings.exactPayEnabled=v;exactField.classList.toggle('clplens-hidden',!v);
+    });
     const exactField=node('label','clplens-field');exactField.append(node('span','','Cantidad que debe recibir el comercio'));
     const exactRow=node('div','clplens-inputrow');
     exactAmountInput=node('input');exactAmountInput.placeholder='Cantidad exacta del comercio';exactAmountInput.type='number';exactAmountInput.step='0.00000001';exactAmountInput.min='0';exactAmountInput.inputMode='decimal';exactAmountInput.value=String(settings.exactPayAmount);
@@ -804,12 +925,15 @@
     exactAmountInput.addEventListener('input',()=>{settings.exactPayAmount=exactAmountInput.value;computePayment();renderCompare();});
     exactAmountInput.addEventListener('change',persist);
     exactCurrencySelect.addEventListener('change',()=>{settings.exactPayCurrency=exactCurrencySelect.value;persist();computePayment();renderCompare();});
-    exactRow.append(exactAmountInput,exactCurrencySelect);exactField.append(exactRow);pageCalc.append(exactField);
-    transferOutput=node('div','clplens-results');pageCalc.append(transferOutput);
-    pageCalc.append(node('h2','','Comparación de pago'));
-    compareOutput=node('div','clplens-results');pageCalc.append(compareOutput);
-    line(pageCalc,'Las cifras con datos incompletos no son un monto seguro de transferencia. Binance solicita confirmar red, comisión y saldo recibido antes de autorizar un retiro.','clplens-warning');
+    exactRow.append(exactAmountInput,exactCurrencySelect);exactField.append(exactRow);pageCrypto.append(exactField);
+    exactField.classList.toggle('clplens-hidden',!settings.exactPayEnabled);
+    transferOutput=node('div');pageCrypto.append(transferOutput);
+    const payHint=disclosure(pageCrypto,'Antes de enviar fondos');
+    payHint.content.append(node('p','','Comprueba importe exacto, red compatible, mínimo y comisión en tu cuenta Binance. Moncevia no realiza transferencias ni obtiene tarifas privadas.'));
+    compareOutput=node('div');pageCompare.append(compareOutput);
 
+    const generalSection=disclosure(pageSettingsRoot,'General y sitio actual',false,'mv-settings-group');
+    pageSettings=generalSection.content;
     checkbox(pageSettings,'Conversión activada',()=>settings.enabled,v=>settings.enabled=v);
     checkbox(pageSettings,'Modo compacto al cerrar panel',()=>settings.compactMode,v=>settings.compactMode=v);
     checkbox(pageSettings,'Permitir selección visual de precios',()=>settings.visualPick,v=>settings.visualPick=v);
@@ -827,6 +951,8 @@
     });
     checkbox(pageSettings,'Mostrar BTC / ETH / LTC junto a precios',()=>settings.showCryptoInline,v=>settings.showCryptoInline=v);
     checkbox(pageSettings,'Comparar Prex / Santander en precios',()=>settings.compareInline,v=>settings.compareInline=v);
+    const bankSection=disclosure(pageSettingsRoot,'Divisas y tarjetas',false,'mv-settings-group');
+    pageSettings=bankSection.content;
     verifyBoxes.prexKnown = checkbox(pageSettings,'Ajuste Prex verificado por ti',()=>settings.prexKnown,v=>settings.prexKnown=v);
     verifyBoxes.santanderKnown = checkbox(pageSettings,'Ajuste Santander verificado por ti',()=>settings.santanderKnown,v=>settings.santanderKnown=v);
     numberSetting(pageSettings,'1 USD en CLP (0 = automático)','usdClpManual',10000);
@@ -834,6 +960,8 @@
     numberSetting(pageSettings,'Ajuste Prex (%)','prexExtra',30);
     numberSetting(pageSettings,'Ajuste Santander (%)','santanderExtra',30);
     numberSetting(pageSettings,'Impuestos adicionales (%)','taxExtra',30);
+    const cryptoSection=disclosure(pageSettingsRoot,'Binance y redes de retiro',false,'mv-settings-group');
+    settingsBankGroup=cryptoSection.details;pageSettings=cryptoSection.content;
     line(pageSettings,'Comisiones de retiro opcionales (cantidad de moneda, NO porcentaje). El valor depende de la red seleccionada y del exchange.');
     numberSetting(pageSettings,'Retiro BTC (BTC)','feeBTC',10,'0.00000001');
     numberSetting(pageSettings,'Retiro ETH (ETH)','feeETH',100,'0.00000001');
@@ -858,6 +986,8 @@
     numberSetting(pageSettings,'Recargo / coste de adquirir USDT (%)','usdtFundPct',30,'0.01');
     verifyBoxes.usdtFundKnown = checkbox(pageSettings,'Costo de fondeo USDT verificado',()=>settings.usdtFundKnown,v=>settings.usdtFundKnown=v);
     numberSetting(pageSettings,'Margen adicional de fluctuación (%)','bufferPct',20,'0.01');
+    const helpSection=disclosure(pageSettingsRoot,'Ayuda, límites y privacidad',false,'mv-settings-group');
+    pageSettings=helpSection.content;
     line(pageSettings,'Al cambiar una comisión, un margen bancario o una red se desmarca su verificación anterior. Confirma el dato nuevo directamente antes de marcarlo otra vez.');
     line(pageSettings,'El simulador NO puede obtener comisiones privadas de retiro de tu cuenta Binance sin autenticación. Nunca introduzcas API keys en este script. Comprueba red, comisión, mínimo, habilitación y monto recibido en Binance.');
     line(pageSettings,'La comparación de tarjetas aplica un porcentaje configurado sobre CLP. No constituye una cotización oficial de Prex o Santander. Las comisiones de retiro no se aplican automáticamente al texto de los precios.');
@@ -909,7 +1039,7 @@
     });
     pageHistory.append(exportHistory);
     line(pageHistory,'Los datos se conservan localmente en Userscripts. No se envían tus consultas ni direcciones a servidores. Las tasas futuras se comparan solo al abrir el historial.');
-    panel.append(pageCalc,pageSettings,pageHistory);
+    panel.append(pageCalc,pageCrypto,pageCompare,pageHistory,pageSettingsRoot);
     setTab(tab);
     const actions=node('div','clplens-actions');
     const refreshBtn=node('button','','Actualizar tasas');
