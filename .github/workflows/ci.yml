@@ -21,4 +21,6 @@ jobs:
           python -m pip install -r requirements-dev.txt
           python -m playwright install --with-deps chromium
       - name: Browser regression tests
-        run: python tests/test_browser.py
+        run: |
+          python tests/test_browser.py
+          python tests/test_ui_mobile.py
