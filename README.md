@@ -1,10 +1,22 @@
 # Moncevia
 
-**Currency & Crypto Companion — Safari userscript**
+**Currency & Crypto Companion — universal browser userscript**
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.4.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.5.0 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+
+## Soporte multiplataforma / Cross-platform v3.5.0
+
+Un **único script** funciona mediante Userscripts en Safari iOS, Violentmonkey/Tampermonkey en Firefox Android, y estos gestores en Firefox, Chrome, Edge, Opera, Brave y otros navegadores de escritorio compatibles. El núcleo financiero se conserva: la v3.5.0 incorpora un adaptador para las API modernas `GM.*` y clásicas `GM_*`, además de un panel más amplio en PC/laptop.
+
+**Cómo instalar:** abre el [script oficial](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js) desde el navegador que tenga el gestor instalado. En Android se recomienda Firefox con [Violentmonkey](https://addons.mozilla.org/en-US/android/addon/violentmonkey/) o [Tampermonkey](https://addons.mozilla.org/en-US/android/addon/tampermonkey/). En Windows/macOS/Linux, instala uno de esos gestores desde la tienda oficial de extensiones del navegador. En Safari iOS continúa la instalación en la carpeta de Userscripts.
+
+**Límites:** Chrome oficial para Android no admite extensiones convencionales. La compatibilidad no se garantiza en navegadores sin gestores ni en cada sitio web. Las preferencias son independientes en cada navegador. Las pruebas realizadas son de Chromium simulado; se requiere validación física de Android Firefox, Safari y escritorio Firefox.
+
+Consulta [la matriz de compatibilidad y solución de problemas](docs/COMPATIBILITY.md).
+
+**English:** One script works through compatible userscript managers on iOS Safari, Android Firefox and Chromium/Firefox desktop browsers. Official Android Chrome does not support traditional extensions. Real-device tests are still needed.
 
 ## Compartir e instalar / Share & install
 
@@ -74,6 +86,8 @@ python -m playwright install chromium
 node --check moncevia.user.js
 python tests/test_browser.py
 python tests/test_ui_mobile.py
+python tests/test_i18n.py
+python tests/test_cross_platform.py
 ```
 
 Las pruebas usan respuestas de mercado **simuladas** y una página local, y comprueban conversión USDT/USD, selección de planes, cantidad, retiro LTC, privacidad básica y exclusión de checkout. **No sustituyen pruebas físicas en Safari y Userscripts iOS**.
