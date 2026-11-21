@@ -933,6 +933,56 @@
     }
     return null;
   }
+
+  // Prefer a unique current price in a product summary over stale values in variant cards.
+  function currentProductPrice() {
+    const selectors=[
+      '[data-testid="product-price"]','[data-testid="current-price"]',
+      '[data-price-current]','[data-price-role="current"]',
+      '.product__price','.product-price','.price--current','[itemprop="price"]'
+    ];
+    const results=new Map();
+    let scanned=0;
+    for (const selector of selectors) {
+      for (const el of document.querySelectorAll(selector)) {
+        if (++scanned>90) break;
+        if (!el.isConnected || el.closest(
+          '#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"],'+
+          'del,s,strike,.price--old,.price--compare,.compare-at-price,'+
+          '[class*="variant"],[id*="variant"],[role="option"],[role="listbox"],'+
+          'form[action*="checkout"]')) continue;
+        if (!el.getClientRects().length || getComputedStyle(el).visibility==='hidden') continue;
+        const live=el.querySelector('.price--current,ins,[data-price-current]') || el;
+        const chosen=bestVisiblePrice(live);
+        if (!chosen) continue;
+        const key=chosen.code+':'+chosen.amount;
+        results.set(key,{...chosen,label:'Precio actual del producto',source:'precio principal'});
+      }
+      if(scanned>90) break;
+    }
+    return results.size===1 ? [...results.values()][0] : null;
+  }
+  function sameMonetaryPrice(a,b) {
+    return !!a && !!b && a.code===b.code && Math.abs(a.amount-b.amount)<1e-8;
+  }
+  function variantControl(target) {
+    if (!target || target.nodeType!==1 || target.closest(
+      '#clplens-widget,#moncevia-dollar-dialog,.clplens-badge,'+
+      'input,textarea,[contenteditable],a[href*="checkout"],form[action*="checkout"]')) return null;
+    const control=target.closest(
+      '[data-variant],[data-product-option],[role="option"],[role="radio"],'+
+      '[aria-pressed],[aria-selected],button,label'
+    );
+    if (!control || control.matches('[disabled],[aria-disabled="true"]') ||
+        control.closest('header,nav,footer,[role="navigation"]')) return null;
+    const name=(originalText(control)||control.getAttribute('aria-label')||'').trim();
+    if (/^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(name)) return null;
+    const hint=control.closest(
+      '[data-variant],[data-product-option],[class*="variant"],[id*="variant"],'+
+      '[class*="product-option"],[role="listbox"]'
+    );
+    return hint || (/\b(?:days?|weeks?|months?|years?|lifetime|license|licen[cs]e|tier|plan|size|color|colour|medium|large|small|basic|standard|premium)\b/i.test(name) ? control : null);
+  }
   // A bare $ is ambiguous. Detect candidate *amounts* without assuming their currency.
   // Read the smallest visible card containing one price; never inspect forms, checkouts or links.
   function unlabeledDollarPrice(target) {
