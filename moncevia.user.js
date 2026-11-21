@@ -987,7 +987,10 @@
   // Read the smallest visible card containing one price; never inspect forms, checkouts or links.
   function unlabeledDollarPrice(target) {
     if (dollarCurrencyForSite() || !target || target.nodeType!==1 ||
-        target.closest('#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, form, a, button, input, textarea, select, [contenteditable]')) return null;
+        target.closest('#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, input, textarea, select, [contenteditable]')) return null;
+    // A variant button may itself contain a bare $; allow the currency prompt
+    // but never interpret checkout/navigation buttons as product prices.
+    if (target.closest('a,button,form') && !variantControl(target)) return null;
     const rx=new RegExp(String.raw`(?<![\p{L}\d])\$\s*(${figure})(?![\p{L}\d])`, 'gu');
     let el=target;
     for (let depth=0;el && depth<7 && el!==document.body;depth++,el=el.parentElement) {
