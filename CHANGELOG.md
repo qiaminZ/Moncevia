@@ -1,3 +1,14 @@
+## 3.5.5 / Desktop 0.1.5-beta — 2026-11-21
+
+- Corrige la sincronización de variantes cuando el botón no incluye el precio o cuando el importe principal cambia por JavaScript tras el clic.
+- Evita que un precio/resumen antiguo sustituya una selección nueva durante actualizaciones asincrónicas.
+- Detecta precios principales únicos con marcadores de producto habituales; evita escoger un precio arbitrario de un catálogo.
+- Mantiene una elección manual cuando el usuario toca filtros o controles no relacionados.
+- Permite confirmar moneda ambigua `$` también en botones de variante.
+- Pruebas reproducibles de 12 patrones de comercio en tamaños de escritorio/móvil y motores Chromium, Firefox y WebKit (72 ejecuciones, según resultados de CI).
+- Mantiene el modelo de autorización por sitio y las mismas fuentes de tasas y fórmulas financieras.
+- Sigue pendiente la verificación física en Opera GX/Firefox/Safari de las tiendas reales.
+
 ## 3.5.4 / Desktop 0.1.4-beta — 2026-11-21
 
 - Botón flotante arrastrable por dedo o mouse; también responde a flechas del teclado cuando tiene el foco.

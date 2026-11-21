@@ -1,3 +1,15 @@
+## Moncevia v3.5.5 — Sincronización universal de precios / Dynamic product prices
+
+**Problema corregido:** en algunas tiendas, tocar un botón o una variante no actualizaba la calculadora porque el precio se mostraba en otra sección del producto. Se identifica un precio principal explícito y único, se espera su actualización asincrónica y se evita que un resumen anterior sobrescriba la variante reciente.
+
+- Variantes: tarjetas con precio, botones sin precio, selecciones en formularios y cantidades.
+- Seguridad: un catálogo con varios precios no se considera un solo producto; se excluyen enlaces de compra, navegación y controles sin relación.
+- Monedas: los símbolos ambiguos como `$` requieren confirmar la moneda por sitio.
+- **Uso:** autoriza el sitio, selecciona un plan/talla/opción y verifica que Moncevia muestre el importe y la divisa correctos. Si el precio del comercio no se actualiza, Moncevia puede conservar el último dato verificado. Nunca sustituye el total final del checkout.
+- **Pruebas:** escenarios DOM representativos de tiendas, escritorio y móvil; no implica certificación física de cada navegador ni prueba de compra real.
+
+**English:** Variant clicks now follow a uniquely identifiable live product price even when the clicked button has no price of its own. Stale summaries cannot overwrite newer selections; ambiguous currencies still require site-specific confirmation.
+
 ## Moncevia v3.5.4 — Botón flotante móvil / Draggable floating launcher
 
 El botón **«CLP · ₿»** se puede mover con el dedo (iPhone/Android), con el mouse (PC/laptop) y mediante las flechas del teclado cuando tiene el foco (**Mayús + flecha** avanza más). **Tócalo para abrir** Moncevia. Arrastrarlo no abre el panel ni altera la página.
@@ -40,7 +52,7 @@ La edición **0.1.2 beta** reutiliza el motor del userscript y ofrece una instal
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.5.4 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.5.5 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
 
 ## Soporte multiplataforma / Cross-platform v3.5.0
 
