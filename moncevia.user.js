@@ -1190,29 +1190,39 @@
     if (!settings.autoSyncSelection || !isActive()) return;
     const price=tappedPrice(event.target);
     if (!price) {
-      // A static price can be tapped even if the page has no selection mechanics.
-      // Only open the currency chooser when the touched element actually shows one
-      // unambiguous $ amount; the site itself is not modified.
+      // Bare $ is ambiguous: choose a per-site currency before any calculations.
       const unknown=unlabeledDollarPrice(event.target);
       if (unknown) {showDollarCurrencyChooser(unknown);return;}
-      // Botones +/- de cantidad y selectores sin precio pueden alterar el total;
-      // el resumen seleccionado se vuelve a leer al mutar la pagina.
+      if (variantControl(event.target)) {
+        const before=selectedSummaryPrice() || currentProductPrice();
+        manualOverride=false;pendingSelection=null;
+        pendingVariantChange={before,at:Date.now(),seq:++clickSequence};
+        updateSourceLabel();
+        scheduleSelectionSync(100);
+        for(const delay of [380,800,1500,2600]) setTimeout(syncSelectedPrice,delay);
+        return;
+      }
+      // Quantity updates may mutate the current product amount without clicking a price.
       if (currentSelection) scheduleSelectionSync(240);
       return;
     }
+    const before=selectedSummaryPrice() || currentProductPrice();
     manualOverride=false;
-    pendingSelection={price,at:Date.now(),seq:++clickSequence};
+    pendingVariantChange=null;
+    pendingSelection={price,before,at:Date.now(),seq:++clickSequence};
     applySelectedPrice(price);
     scheduleSelectionSync(130);
-    setTimeout(()=>syncSelectedPrice(),450);
-    setTimeout(()=>syncSelectedPrice(),1200);
+    for(const delay of [450,1200,2600]) setTimeout(syncSelectedPrice,delay);
   }
   function pageChangeCapture(event) {
     if (!settings.autoSyncSelection || !isActive() || event.target.closest?.('#clplens-widget')) return;
+    if(!event.target.matches('select,[role="combobox"],input[type="radio"],input[type="checkbox"]') &&
+       !variantControl(event.target)) return;
     manualOverride=false;
     pendingSelection=null;
+    pendingVariantChange=null;
     scheduleSelectionSync(180);
-    setTimeout(()=>syncSelectedPrice(),500);
+    setTimeout(syncSelectedPrice,500);
   }
 
   function flashPrice(target) {
