@@ -557,6 +557,109 @@
     const snapshot = JSON.parse(JSON.stringify(settings));
     storePromise = storePromise.then(() => storage.setValue(SETTINGS_KEY,snapshot)).catch(() => {});
   }
+  // The floating launcher moves independently from the panel, which stays docked.
+  // Store relative coordinates so rotation and desktop resizing keep it on screen.
+  function fabBounds() {
+    const rect=fab.getBoundingClientRect();
+    const width=window.innerWidth || document.documentElement.clientWidth || 375;
+    const height=window.innerHeight || document.documentElement.clientHeight || 667;
+    const minX=8,minY=12;
+    return {minX,minY,maxX:Math.max(minX,width-rect.width-8),
+      maxY:Math.max(minY,height-rect.height-16)};
+  }
+  const clampFab=(value,min,max)=>Math.max(min,Math.min(max,value));
+  function placeFab(x,y) {
+    if (!fab) return;
+    const b=fabBounds();
+    fab.classList.add('mv-fab-moved');
+    fab.style.setProperty('--mv-fab-left',clampFab(x,b.minX,b.maxX)+'px');
+    fab.style.setProperty('--mv-fab-top',clampFab(y,b.minY,b.maxY)+'px');
+  }
+  function saveFabPosition() {
+    const b=fabBounds(),r=fab.getBoundingClientRect();
+    settings.fabPosition={
+      x:(clampFab(r.left,b.minX,b.maxX)-b.minX)/Math.max(1,b.maxX-b.minX),
+      y:(clampFab(r.top,b.minY,b.maxY)-b.minY)/Math.max(1,b.maxY-b.minY)
+    };
+    persist();
+  }
+  function restoreFabPosition() {
+    const p=settings.fabPosition;
+    if (!fab || !p) return;
+    const b=fabBounds();
+    placeFab(b.minX+p.x*(b.maxX-b.minX),b.minY+p.y*(b.maxY-b.minY));
+  }
+  function resetFabPosition(save=true) {
+    settings.fabPosition=null;
+    if(fab) {
+      fab.classList.remove('mv-fab-moved','mv-fab-dragging');
+      fab.style.removeProperty('--mv-fab-left');
+      fab.style.removeProperty('--mv-fab-top');
+    }
+    if(save) persist();
+  }
+  function enableFabDragging() {
+    let drag=null, suppressClick=false;
+    fab.addEventListener('pointerdown',event=>{
+      if(!event.isPrimary || (event.pointerType==='mouse' && event.button!==0)) return;
+      suppressClick=false;
+      const rect=fab.getBoundingClientRect();
+      drag={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,
+        left:rect.left,top:rect.top,moved:false};
+      try{fab.setPointerCapture(event.pointerId);}catch(_error){}
+    });
+    fab.addEventListener('pointermove',event=>{
+      if(!drag || event.pointerId!==drag.pointerId) return;
+      const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
+      if(!drag.moved && Math.hypot(dx,dy)<8) return;
+      drag.moved=true;
+      fab.classList.add('mv-fab-dragging');
+      placeFab(drag.left+dx,drag.top+dy);
+      if(event.cancelable) event.preventDefault();
+    });
+    function finish(event,cancelled=false) {
+      if(!drag || event.pointerId!==drag.pointerId) return;
+      if(drag.moved) {
+        suppressClick=true;
+        if(cancelled) {
+          if(settings.fabPosition) restoreFabPosition();
+          else resetFabPosition(false);
+        } else saveFabPosition();
+      }
+      fab.classList.remove('mv-fab-dragging');
+      drag=null;
+    }
+    fab.addEventListener('pointerup',event=>finish(event));
+    fab.addEventListener('pointercancel',event=>finish(event,true));
+    // After a drag, browsers may synthesize a click; it must not open the panel.
+    // A new pointerdown clears the guard even if Safari emitted no synthetic click.
+    fab.addEventListener('click',event=>{
+      if(!suppressClick) return;
+      suppressClick=false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    },true);
+    // Arrow keys move the focused launcher, including for keyboard-only users.
+    fab.addEventListener('keydown',event=>{
+      const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[event.key];
+      if(!delta || event.altKey || event.ctrlKey || event.metaKey) return;
+      event.preventDefault();
+      const rect=fab.getBoundingClientRect(),step=event.shiftKey?40:16;
+      placeFab(rect.left+delta[0]*step,rect.top+delta[1]*step);
+      saveFabPosition();
+    });
+    let resizeQueued=false;
+    const onResize=()=>{
+      if(resizeQueued) return;
+      resizeQueued=true;
+      requestAnimationFrame(()=>{
+        resizeQueued=false;
+        if(!drag) restoreFabPosition();
+      });
+    };
+    window.addEventListener('resize',onResize,{passive:true});
+    window.visualViewport?.addEventListener('resize',onResize,{passive:true});
+  }
   function stylesheet() {
     const style = node('style');
     style.dataset.clplens = '2';
@@ -1534,6 +1637,8 @@
     compactCard=node('div');compactCard.id='clplens-compact';compactCard.hidden=true;
     compactCard.addEventListener('click',()=>openPanelFast());
     widget.append(panel,compactCard,fab); document.body.append(widget);
+    restoreFabPosition();
+    enableFabDragging();
     refresh();
     watchLocalization();
   }
