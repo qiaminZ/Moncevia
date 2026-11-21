@@ -1,3 +1,13 @@
+## Si un botón de variante no actualiza el importe / Dynamic storefront synchronization
+
+1. Instala la última versión de Moncevia y recarga la página; evita duplicados del userscript y la extensión nativa.
+2. Autoriza el dominio compatible. Cuando `$` no identifica la moneda, confírmala una vez por sitio.
+3. Selecciona el plan/talla/producto directamente en la página. Moncevia intenta leer el precio vigente del producto, aun si el botón no contiene un número.
+4. Tras los cambios del sitio, comprueba que importe y moneda coincidan con el precio visible. Si muestra `Sincronizando precio seleccionado…`, la tienda puede estar actualizando su contenido.
+5. Si no hay información suficientemente clara, utiliza `Seleccionar en web` o introduce el importe manual. No asumas que el precio detectado sustituye el total final del comercio.
+
+**English:** Select the actual variant and check Moncevia against the storefront's displayed total. Dynamic page updates may take a moment; ambiguous symbols require explicit currency confirmation. The checkout amount always takes precedence.
+
 ## Uso del botón flotante en cualquier dispositivo / Moving the floating launcher
 
 **Móvil:** mantén el dedo sobre **CLP · ₿** y arrástralo hasta el lugar deseado; al soltarlo se guarda la ubicación. Un toque normal abre el panel.
@@ -10,7 +20,7 @@ La posición se guarda en cada navegador por separado, y se reajusta cuando la p
 
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.1.4 beta (motor de cálculo compartido con Moncevia Userscript 3.5.4). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.1.5 beta (motor de cálculo compartido con Moncevia Userscript 3.5.5). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 
