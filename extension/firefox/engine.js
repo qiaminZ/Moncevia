@@ -1575,7 +1575,12 @@
       const option=node('option','',code); option.value=code; select.append(option);
     }
     select.value=settings.calcCurrency;
-    amountInput.addEventListener('input',()=>{ manualOverride=true; pendingSelection=null; settings.calcAmount=amountInput.value; updateSourceLabel(); renderCalc(); });
+    // Lock manual editing as soon as the user focuses this field, before an
+    // asynchronous price sync can write into the input while they are typing.
+    amountInput.addEventListener('focus',()=>{
+      manualOverride=true;pendingSelection=null;pendingVariantChange=null;updateSourceLabel();
+    });
+    amountInput.addEventListener('input',()=>{ manualOverride=true; pendingSelection=null;pendingVariantChange=null; settings.calcAmount=amountInput.value; updateSourceLabel(); renderCalc(); });
     amountInput.addEventListener('change',()=>persist());
     select.addEventListener('change',()=>{
       manualOverride=true; pendingSelection=null;settings.calcCurrency=select.value;
