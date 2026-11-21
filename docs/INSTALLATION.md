@@ -1,6 +1,16 @@
+## Uso del botón flotante en cualquier dispositivo / Moving the floating launcher
+
+**Móvil:** mantén el dedo sobre **CLP · ₿** y arrástralo hasta el lugar deseado; al soltarlo se guarda la ubicación. Un toque normal abre el panel.
+
+**PC/laptop:** arrástralo con el mouse o usa las flechas del teclado cuando tenga el foco. Mayús + flecha lo mueve más rápido.
+
+**Restablecer:** abre Moncevia → Ajustes / Settings → General y sitio actual / General & current site → Restablecer posición del botón / Reset floating button position. El panel principal mantiene su diseño y ubicación normales.
+
+La posición se guarda en cada navegador por separado, y se reajusta cuando la pantalla cambia de tamaño.
+
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.1.3 beta (motor de cálculo compartido con Moncevia Userscript 3.5.3). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.1.4 beta (motor de cálculo compartido con Moncevia Userscript 3.5.4). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 

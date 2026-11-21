@@ -1,3 +1,11 @@
+## Moncevia v3.5.4 — Botón flotante móvil / Draggable floating launcher
+
+El botón **«CLP · ₿»** se puede mover con el dedo (iPhone/Android), con el mouse (PC/laptop) y mediante las flechas del teclado cuando tiene el foco (**Mayús + flecha** avanza más). **Tócalo para abrir** Moncevia. Arrastrarlo no abre el panel ni altera la página.
+
+La posición se guarda **localmente por navegador o gestor**, se ajusta al cambiar el tamaño de la pantalla y no mueve el panel principal. Para volver a la esquina inferior derecha utiliza **Ajustes → General y sitio actual → Restablecer posición del botón**.
+
+**English:** Drag the CLP · ₿ button with touch or mouse; press arrow keys while focused (Shift for larger steps). A tap opens Moncevia. Its viewport-relative position is saved locally. Reset from Settings → General & current site → Reset floating button position.
+
 ## v3.5.3 — Apertura ágil / Faster panel opening
 
 Moncevia muestra primero el panel y actualiza los cálculos después del primer dibujo de la interfaz. El historial solo se reconstruye cuando abres su pestaña, y la localización agrupa cambios para reducir trabajo repetido. **No cambia conversiones, API, permisos ni la selección de precios de Kumori/RIFT.** La comprobación de rendimiento es automatizada en Chromium, no una medición física de Safari.
@@ -32,7 +40,7 @@ La edición **0.1.2 beta** reutiliza el motor del userscript y ofrece una instal
 
 Moncevia helps estimate the Chilean peso (CLP) equivalent of displayed prices and compare selected cryptocurrency payment paths. It is a **read-only, informational** browser userscript; it neither trades nor transfers funds and is **not affiliated with Binance**.
 
-**Version:** 3.5.3 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
+**Version:** 3.5.4 · [Install script](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js)
 
 ## Soporte multiplataforma / Cross-platform v3.5.0
 
