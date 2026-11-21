@@ -1,6 +1,6 @@
 # Moncevia native desktop extension — beta
 
-- **Native extension:** 0.1.3-beta, separate from the shared userscript 3.5.3.
+- **Native extension:** 0.1.4-beta, separate from the shared userscript 3.5.4.
 - **Scope:** desktop browsers with Manifest V3 extension support. The source is published so users can inspect it; no private account credentials or unpublished algorithms are included.
 - **Bundling:** `extension/chromium` and `extension/firefox` each contain the same unchanged `engine.js` copied from `moncevia.user.js`, with platform-specific Manifest V3 background declarations.
 - **Security:** no wallet permissions, trading APIs, remote executable code or private Binance endpoints. Requests are limited to a fixed set of public quotation paths; credentials are not sent.
