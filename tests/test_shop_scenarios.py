@@ -5,7 +5,7 @@ Fixtures model patterns seen in Kumori and RIFT and ordinary e-commerce structur
 One failure must not prevent the other scenarios from running.
 """
 from pathlib import Path
-import json, traceback
+import json, os, traceback
 from playwright.sync_api import sync_playwright
 from test_static_prices import init
 
@@ -21,7 +21,7 @@ AMOUNT="#clplens-panel .clplens-inputrow input"
 
 def setup(browser,html,*,width=1366,height=768,mobile=False,config=None):
     page=browser.new_page(viewport={'width':width,'height':height},
-        has_touch=mobile,is_mobile=mobile,locale='en-US')
+        has_touch=mobile,is_mobile=(mobile and browser.browser_type.name!='firefox'),locale='en-US')
     page.set_content(HTML_HEAD+html+HTML_TAIL)
     page.evaluate(init)
     page.evaluate('window._persist.clplens_v1='+json.dumps(config or CONFIG))
@@ -224,8 +224,12 @@ SCENARIOS=[
 def run():
     failures=[]
     with sync_playwright() as playwright:
-        browser=playwright.chromium.launch(headless=True,
-            executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        kind=os.environ.get('MONCEVIA_TEST_BROWSER','chromium').lower()
+        if kind not in ('chromium','firefox','webkit'):
+            raise ValueError('Unknown browser '+kind)
+        options={'headless':True}
+        if kind=='chromium': options.update(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        browser=getattr(playwright,kind).launch(**options)
         for mobile in [False,True]:
             for scenario in SCENARIOS:
                 label=('Mobile' if mobile else 'Desktop')+'/'+scenario.__name__
