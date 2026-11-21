@@ -960,7 +960,33 @@
       }
       if(scanned>90) break;
     }
-    return results.size===1 ? [...results.values()][0] : null;
+    if (results.size===1) return [...results.values()][0];
+    if (results.size>1) return null;
+    return productHeroPrice();
+  }
+  // Generic product-detail fallback: locate a single main price between the
+  // product heading and the variant controls. Do not inspect catalogue grids.
+  function productHeroPrice() {
+    const headings=[...document.querySelectorAll('main h1,article h1,[itemtype*="Product"] h1')]
+      .filter(el=>el.isConnected && el.getClientRects().length);
+    if(headings.length!==1) return null;
+    let root=headings[0].parentElement;
+    for(let depth=0;root && root!==document.body && depth<5;depth++,root=root.parentElement) {
+      if(!root.querySelector('[class*="variant"],[id*="variant"],[role="option"],[data-variant]'))
+        continue;
+      const raw=originalText(root);
+      if(!raw) continue;
+      const lines=raw.split('\n').map(x=>x.trim());
+      const at=lines.findIndex(x=>/^(?:variant|variants|option|options|choose variant|select variant)$/i.test(x));
+      if(at<1) continue;
+      const matches=matchesInText(lines.slice(0,at).join('\n'))
+        .filter(m=>!m.former && !m.perUnit);
+      const unique=new Map(matches.map(m=>[m.code+':'+m.amount,m]));
+      if(unique.size!==1) continue;
+      const price=[...unique.values()][0];
+      return {amount:price.amount,code:price.code,label:'Precio actual del producto',source:'precio principal'};
+    }
+    return null;
   }
   function sameMonetaryPrice(a,b) {
     return !!a && !!b && a.code===b.code && Math.abs(a.amount-b.amount)<1e-8;
