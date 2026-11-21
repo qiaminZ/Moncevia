@@ -5,7 +5,7 @@
 - Detecta precios principales únicos con marcadores de producto habituales; evita escoger un precio arbitrario de un catálogo.
 - Mantiene una elección manual cuando el usuario toca filtros o controles no relacionados.
 - Permite confirmar moneda ambigua `$` también en botones de variante.
-- Pruebas reproducibles de 10 tipos de comercio en tamaños de escritorio/móvil y motores Chromium, Firefox y WebKit (según resultados de CI).
+- Pruebas reproducibles de 12 patrones de comercio en tamaños de escritorio/móvil y motores Chromium, Firefox y WebKit (72 ejecuciones, según resultados de CI).
 - Mantiene el modelo de autorización por sitio y las mismas fuentes de tasas y fórmulas financieras.
 - Sigue pendiente la verificación física en Opera GX/Firefox/Safari de las tiendas reales.
 
