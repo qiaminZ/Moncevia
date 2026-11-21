@@ -971,7 +971,8 @@
       'input,textarea,[contenteditable],a[href*="checkout"],form[action*="checkout"]')) return null;
     const control=target.closest(
       '[data-variant],[data-product-option],[role="option"],[role="radio"],'+
-      '[aria-pressed],[aria-selected],button,label'
+      '[aria-pressed],[aria-selected],[data-option-value],'+
+      '[class*="variant-card"],[class*="variant-option"],[class*="option-card"],button,label'
     );
     if (!control || control.matches('[disabled],[aria-disabled="true"]') ||
         control.closest('header,nav,footer,[role="navigation"]')) return null;
@@ -1244,8 +1245,16 @@
   }
   function pageChangeCapture(event) {
     if (!settings.autoSyncSelection || !isActive() || event.target.closest?.('#clplens-widget')) return;
-    if(!event.target.matches('select,[role="combobox"],input[type="radio"],input[type="checkbox"]') &&
-       !variantControl(event.target)) return;
+    // Changing a newsletter/filters checkbox must not cancel a manually entered price.
+    const target=event.target;
+    const hint=[target.id,target.getAttribute('name'),target.getAttribute('aria-label'),
+      target.className,target.parentElement?.className].join(' ');
+    const productInput=target.matches('select,[role="combobox"],input[type="radio"]') &&
+      /variant|option|size|colou?r|plan|tier|license|product|duration|sku/i.test(hint);
+    if(!productInput && !variantControl(target)) {
+      if(currentSelection && target.matches('select,input[type="number"]')) scheduleSelectionSync(240);
+      return;
+    }
     manualOverride=false;
     pendingSelection=null;
     pendingVariantChange=null;
