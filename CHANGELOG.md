@@ -1,3 +1,12 @@
+## 3.5.4 / Desktop 0.1.4-beta — 2026-11-21
+
+- Botón flotante arrastrable por dedo o mouse; también responde a flechas del teclado cuando tiene el foco.
+- Se evita que el gesto de arrastre active un clic accidental.
+- La posición relativa se guarda localmente, se conserva al recargar y se limita al área visible al cambiar tamaño u orientación.
+- Nuevo botón en Ajustes > General para restablecer su ubicación predeterminada.
+- El panel conserva su posición; no se modifican fórmulas financieras, fuentes de datos ni permisos.
+- Prueba automatizada para móvil y PC con persistencia, redimensionamiento y acceso habitual por toque.
+
 ## 3.5.3 / Desktop 0.1.3-beta — 2026-11-20
 
 - El botón flotante muestra el panel antes de reconstruir cálculos, evitando bloquear el primer dibujo con operaciones de DOM.
