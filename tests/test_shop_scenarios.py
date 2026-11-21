@@ -136,6 +136,7 @@ def scenario_quantity(browser,mobile):
      };</script></main>"""
     p=setup(browser,html,mobile=mobile,width=390 if mobile else 1366)
     try:
+        expect_amount(p,10)
         p.locator('#plus').click()
         expect_amount(p,20)
         p.locator('#plus').click()
