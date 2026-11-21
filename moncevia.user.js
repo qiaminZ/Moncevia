@@ -1153,9 +1153,12 @@
       if (selected && (!transition.before || !sameMonetaryPrice(selected,transition.before))) {
         pendingVariantChange=null;
         applySelectedPrice(selected);
-      } else if (Date.now()-transition.at>2500) {
+      } else if (Date.now()-transition.at>1600) {
+        // A selection may leave the displayed price unchanged (e.g. a default
+        // variant). Reuse only an unambiguous live product price after settling.
         pendingVariantChange=null;
-        updateSourceLabel();
+        if(selected) applySelectedPrice(selected);
+        else updateSourceLabel();
       }
       return;
     }
