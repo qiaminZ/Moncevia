@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.5.4
+// @version      3.5.5
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -117,7 +117,7 @@
   let settingsBankGroup = null;
   const verifyBoxes = Object.create(null);
   let fxRequest = null, cryptoRequest = null;
-  let manualOverride = false, pendingSelection = null, currentSelection = null;
+  let manualOverride = false, pendingSelection = null, pendingVariantChange = null, currentSelection = null;
   let lastAppliedSelection = '', clickSequence = 0;
   // UI language is kept separately from price parsing, which remains locale-independent.
   // 'auto' follows Safari's preferred language, defaulting to English outside Spanish locales.
@@ -132,6 +132,7 @@
     'Abrir Moncevia':'Open Moncevia',
     'Arrastra para mover · toca para abrir':'Drag to move · tap to open',
     'Restablecer posición del botón':'Reset floating button position',
+    'Sincronizando precio seleccionado…':'Syncing selected price…',
     'Secciones de Moncevia':'Moncevia sections',
     'Consultando tasas…':'Checking rates…',
     'Consultando criptomonedas…':'Checking crypto prices…',
@@ -1360,7 +1361,7 @@
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.5.4'));
+    headerActions.append(languageButton,node('span','mv-version','v3.5.5'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
