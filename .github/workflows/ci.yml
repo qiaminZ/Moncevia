@@ -29,6 +29,7 @@ jobs:
           python tests/test_currency_pairs.py
           python tests/test_static_prices.py
           python tests/test_panel_responsiveness.py
+          python tests/test_draggable_fab.py
       - name: Native extension manifest and broker tests
         run: |
           python scripts/build_native.py
