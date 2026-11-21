@@ -1062,9 +1062,20 @@
   function tappedPrice(target) {
     if (!target || target.nodeType!==1 || target.closest('#clplens-widget,.clplens-badge,[data-clplens-ignore],input,textarea,select,[contenteditable],form')) return null;
     const control=variantControl(target);
+    const actionable=target.closest('button,a,[role="button"]');
+    const actionLabel=(actionable && originalText(actionable).trim()) || '';
+    // Never treat a checkout/help action as a price just because its parent
+    // product page has a visible price somewhere else.
+    if (actionable && /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(actionLabel))
+      return null;
+    const boundedCard=actionable && !control ?
+      actionable.closest('article,li,[data-product-id],[class*="product-card"],[class*="item-card"]') : null;
+    if (actionable && !control && !boundedCard && !matchesInText(originalText(actionable)).length)
+      return null;
     let el=target;
     for (let depth=0;el && depth<8;depth++,el=el.parentElement) {
       if (el===document.body) break;
+      if (boundedCard && !boundedCard.contains(el)) break;
       // A variant button with no price must never inherit the OLD main price
       // merely because both are descendants of the same product container.
       if (control && el!==control && el.contains(control)) {
