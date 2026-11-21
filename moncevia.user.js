@@ -1257,8 +1257,17 @@
         for(const delay of [380,800,1500,2600]) setTimeout(syncSelectedPrice,delay);
         return;
       }
-      // Quantity updates may mutate the current product amount without clicking a price.
-      if (currentSelection) scheduleSelectionSync(240);
+      // Quantity steppers may update the product total asynchronously; monitor
+      // them even if the initial automatic price has not yet been discovered.
+      const action=event.target.closest('button,[role="button"]');
+      const quantityAction=action &&
+        (action.closest('.quantity,[data-quantity],[class*="quantity"]') ||
+         /^(?:plus|minus|increase|decrease|increment|decrement|qty)/i.test(action.id||'') ||
+         /^(?:\+|−|-)$/u.test((action.textContent||'').trim()));
+      if (currentSelection || quantityAction) {
+        scheduleSelectionSync(140);
+        setTimeout(syncSelectedPrice,460);
+      }
       return;
     }
     const before=selectedSummaryPrice() || currentProductPrice();
