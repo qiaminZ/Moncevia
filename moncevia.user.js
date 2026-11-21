@@ -1061,15 +1061,26 @@
   }
   function tappedPrice(target) {
     if (!target || target.nodeType!==1 || target.closest('#clplens-widget,.clplens-badge,[data-clplens-ignore],input,textarea,select,[contenteditable],form')) return null;
-    // Buscar la tarjeta mas pequena que contenga el elemento tocado y un precio.
-    // Así se puede pulsar el nombre del plan, no solo el numero en EUR.
+    const control=variantControl(target);
     let el=target;
     for (let depth=0;el && depth<8;depth++,el=el.parentElement) {
       if (el===document.body) break;
+      // A variant button with no price must never inherit the OLD main price
+      // merely because both are descendants of the same product container.
+      if (control && el!==control && el.contains(control)) {
+        const otherOptions=el.querySelectorAll('[data-variant],[role="option"],[role="radio"]');
+        if (otherOptions.length>1 || (el!==control.parentElement &&
+            !/\b(?:variant|option|tier|plan|card)\b/i.test(String(el.className)))) continue;
+      }
+      const matches=matchesInText(originalText(el))
+        .filter(m=>!m.perUnit && !m.former);
+      const distinct=new Set(matches.map(m=>m.code+':'+m.amount));
+      // Clicking an unrelated part of a product grid must not pick its last item.
+      if (distinct.size>1 && !control) continue;
       const price=bestVisiblePrice(el);
       if (price) {
         const parts=originalText(el).split(/\n/).map(s=>s.trim()).filter(Boolean);
-        const label=parts.find(s=>/\b(?:key|plan|days?|weeks?|months?|lifetime|access)\b/i.test(s) && !matchesInText(s).length);
+        const label=parts.find(t=>/\b(?:key|plan|days?|weeks?|months?|lifetime|access)\b/i.test(t) && !matchesInText(t).length);
         return {...price,label:label||'Precio tocado',source:'toque'};
       }
     }
