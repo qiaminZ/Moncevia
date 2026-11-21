@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.5.3
+// @version      3.5.4
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -106,7 +106,7 @@
     spotFeePct:0,spotFeeKnown:false,usdtFundPct:0,usdtFundKnown:false,bufferPct:0,
     compactMode:false,visualPick:true,prexKnown:false,santanderKnown:false,
     exactPayEnabled:false,exactPayAmount:'',exactPayCurrency:'LTC',
-    calcAmount:'24.99', calcCurrency:'EUR', targetCurrency:'CLP', language:'auto'
+    calcAmount:'24.99', calcCurrency:'EUR', targetCurrency:'CLP', language:'auto', fabPosition:null
   };
   let settings = { ...DEFAULTS }, fx = null, crypto = null;
   let widget, fab, panel, stateLabel, sampleLabel, coinsLabel, calcOutput, calcInput, calcSelect, targetSelect, calcSource;
@@ -130,6 +130,8 @@
   const EN = {
     'Moncevia — conversión y pagos':'Moncevia — currency and payments',
     'Abrir Moncevia':'Open Moncevia',
+    'Arrastra para mover · toca para abrir':'Drag to move · tap to open',
+    'Restablecer posición del botón':'Reset floating button position',
     'Secciones de Moncevia':'Moncevia sections',
     'Consultando tasas…':'Checking rates…',
     'Consultando criptomonedas…':'Checking crypto prices…',
@@ -325,8 +327,8 @@
       originalUIStrings.set(n,{raw,translated});
       if(n.nodeValue!==translated) n.nodeValue=translated;
     }
-    widget.querySelectorAll('[placeholder],[aria-label]').forEach(el=>{
-      for(const attr of ['placeholder','aria-label']) {
+    widget.querySelectorAll('[placeholder],[aria-label],[title]').forEach(el=>{
+      for(const attr of ['placeholder','aria-label','title']) {
         if(!el.hasAttribute(attr)) continue;
         const records=originalUIAttrs.get(el) || {};
         const previous=records[attr];
@@ -555,6 +557,109 @@
     const snapshot = JSON.parse(JSON.stringify(settings));
     storePromise = storePromise.then(() => storage.setValue(SETTINGS_KEY,snapshot)).catch(() => {});
   }
+  // The floating launcher moves independently from the panel, which stays docked.
+  // Store relative coordinates so rotation and desktop resizing keep it on screen.
+  function fabBounds() {
+    const rect=fab.getBoundingClientRect();
+    const width=window.innerWidth || document.documentElement.clientWidth || 375;
+    const height=window.innerHeight || document.documentElement.clientHeight || 667;
+    const minX=8,minY=12;
+    return {minX,minY,maxX:Math.max(minX,width-rect.width-8),
+      maxY:Math.max(minY,height-rect.height-16)};
+  }
+  const clampFab=(value,min,max)=>Math.max(min,Math.min(max,value));
+  function placeFab(x,y) {
+    if (!fab) return;
+    const b=fabBounds();
+    fab.classList.add('mv-fab-moved');
+    fab.style.setProperty('--mv-fab-left',clampFab(x,b.minX,b.maxX)+'px');
+    fab.style.setProperty('--mv-fab-top',clampFab(y,b.minY,b.maxY)+'px');
+  }
+  function saveFabPosition() {
+    const b=fabBounds(),r=fab.getBoundingClientRect();
+    settings.fabPosition={
+      x:(clampFab(r.left,b.minX,b.maxX)-b.minX)/Math.max(1,b.maxX-b.minX),
+      y:(clampFab(r.top,b.minY,b.maxY)-b.minY)/Math.max(1,b.maxY-b.minY)
+    };
+    persist();
+  }
+  function restoreFabPosition() {
+    const p=settings.fabPosition;
+    if (!fab || !p) return;
+    const b=fabBounds();
+    placeFab(b.minX+p.x*(b.maxX-b.minX),b.minY+p.y*(b.maxY-b.minY));
+  }
+  function resetFabPosition(save=true) {
+    settings.fabPosition=null;
+    if(fab) {
+      fab.classList.remove('mv-fab-moved','mv-fab-dragging');
+      fab.style.removeProperty('--mv-fab-left');
+      fab.style.removeProperty('--mv-fab-top');
+    }
+    if(save) persist();
+  }
+  function enableFabDragging() {
+    let drag=null, suppressClick=false;
+    fab.addEventListener('pointerdown',event=>{
+      if(!event.isPrimary || (event.pointerType==='mouse' && event.button!==0)) return;
+      suppressClick=false;
+      const rect=fab.getBoundingClientRect();
+      drag={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,
+        left:rect.left,top:rect.top,moved:false};
+      try{fab.setPointerCapture(event.pointerId);}catch(_error){}
+    });
+    fab.addEventListener('pointermove',event=>{
+      if(!drag || event.pointerId!==drag.pointerId) return;
+      const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
+      if(!drag.moved && Math.hypot(dx,dy)<8) return;
+      drag.moved=true;
+      fab.classList.add('mv-fab-dragging');
+      placeFab(drag.left+dx,drag.top+dy);
+      if(event.cancelable) event.preventDefault();
+    });
+    function finish(event,cancelled=false) {
+      if(!drag || event.pointerId!==drag.pointerId) return;
+      if(drag.moved) {
+        suppressClick=true;
+        if(cancelled) {
+          if(settings.fabPosition) restoreFabPosition();
+          else resetFabPosition(false);
+        } else saveFabPosition();
+      }
+      fab.classList.remove('mv-fab-dragging');
+      drag=null;
+    }
+    fab.addEventListener('pointerup',event=>finish(event));
+    fab.addEventListener('pointercancel',event=>finish(event,true));
+    // After a drag, browsers may synthesize a click; it must not open the panel.
+    // A new pointerdown clears the guard even if Safari emitted no synthetic click.
+    fab.addEventListener('click',event=>{
+      if(!suppressClick) return;
+      suppressClick=false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    },true);
+    // Arrow keys move the focused launcher, including for keyboard-only users.
+    fab.addEventListener('keydown',event=>{
+      const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[event.key];
+      if(!delta || event.altKey || event.ctrlKey || event.metaKey) return;
+      event.preventDefault();
+      const rect=fab.getBoundingClientRect(),step=event.shiftKey?40:16;
+      placeFab(rect.left+delta[0]*step,rect.top+delta[1]*step);
+      saveFabPosition();
+    });
+    let resizeQueued=false;
+    const onResize=()=>{
+      if(resizeQueued) return;
+      resizeQueued=true;
+      requestAnimationFrame(()=>{
+        resizeQueued=false;
+        if(!drag) restoreFabPosition();
+      });
+    };
+    window.addEventListener('resize',onResize,{passive:true});
+    window.visualViewport?.addEventListener('resize',onResize,{passive:true});
+  }
   function stylesheet() {
     const style = node('style');
     style.dataset.clplens = '2';
@@ -564,7 +669,10 @@
       #clplens-widget { all:initial!important; position:fixed!important; bottom:max(12px,env(safe-area-inset-bottom))!important; right:10px!important; z-index:2147483646!important; font:14px/1.4 -apple-system,BlinkMacSystemFont,Arial,sans-serif!important; color:#f8fafc!important; direction:ltr!important; }
       #clplens-widget, #clplens-widget * { box-sizing:border-box!important; }
       #clplens-widget * { font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif!important; }
-      #clplens-fab { display:flex!important; align-items:center!important; justify-content:center!important; min-height:42px!important; min-width:86px!important; padding:8px 13px!important; border:1px solid #475569!important; border-radius:26px!important; background:#0f172a!important; color:#fff!important; font-size:13px!important; font-weight:700!important; box-shadow:0 5px 20px #0007!important; }
+      #clplens-fab { display:flex!important; align-items:center!important; justify-content:center!important; min-height:42px!important; min-width:86px!important; padding:8px 13px!important; border:1px solid #475569!important; border-radius:26px!important; background:#0f172a!important; color:#fff!important; font-size:13px!important; font-weight:700!important; box-shadow:0 5px 20px #0007!important; cursor:grab!important; touch-action:none!important; user-select:none!important; -webkit-user-select:none!important; }
+      #clplens-fab.mv-fab-moved { position:fixed!important; left:var(--mv-fab-left)!important; top:var(--mv-fab-top)!important; right:auto!important; bottom:auto!important; }
+      #clplens-fab.mv-fab-dragging { cursor:grabbing!important; opacity:.88!important; }
+      #clplens-panel {z-index:2!important;}
       #clplens-panel { position:absolute!important; bottom:50px!important; right:0!important; width:min(375px,calc(100vw - 20px))!important; max-height:min(74dvh,640px)!important; overflow-y:auto!important; overflow-x:hidden!important; border:1px solid #475569!important; border-radius:15px!important; background:#0f172a!important; box-shadow:0 15px 40px #0009!important; padding:13px!important; color:#f8fafc!important; }
       #clplens-panel[hidden], #clplens-panel .clplens-hidden { display:none!important; }
       #clplens-panel h2 { margin:0 0 5px!important; color:#fff!important; font-size:19px!important; font-weight:750!important; }
@@ -1242,6 +1350,7 @@
     widget=node('div'); widget.id='clplens-widget';
     fab=node('button','','CLP · ₿'); fab.type='button'; fab.id='clplens-fab';
     fab.setAttribute('aria-label','Abrir Moncevia');
+    fab.setAttribute('title','Arrastra para mover · toca para abrir');
     panel=node('section'); panel.id='clplens-panel'; panel.hidden=true;
     panel.setAttribute('aria-label','Moncevia — conversión y pagos');
     const header=node('div','mv-header');
@@ -1251,7 +1360,7 @@
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.5.3'));
+    headerActions.append(languageButton,node('span','mv-version','v3.5.4'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
@@ -1389,6 +1498,8 @@
     langRow.append(languageSelect);pageSettings.append(langRow);
     checkbox(pageSettings,'Conversión activada',()=>settings.enabled,v=>settings.enabled=v);
     checkbox(pageSettings,'Modo compacto al cerrar panel',()=>settings.compactMode,v=>settings.compactMode=v);
+    const resetFabButton=node('button','','Restablecer posición del botón');resetFabButton.type='button';
+    resetFabButton.addEventListener('click',()=>resetFabPosition());pageSettings.append(resetFabButton);
     checkbox(pageSettings,'Permitir selección visual de precios',()=>settings.visualPick,v=>settings.visualPick=v);
     checkbox(pageSettings,'Sincronizar importe con la opcion tocada',()=>settings.autoSyncSelection,v=>{
       settings.autoSyncSelection=v;
@@ -1526,6 +1637,8 @@
     compactCard=node('div');compactCard.id='clplens-compact';compactCard.hidden=true;
     compactCard.addEventListener('click',()=>openPanelFast());
     widget.append(panel,compactCard,fab); document.body.append(widget);
+    restoreFabPosition();
+    enableFabDragging();
     refresh();
     watchLocalization();
   }
@@ -1685,6 +1798,8 @@
       if (!SUPPORTED_CURRENCIES.includes(settings.targetCurrency)) settings.targetCurrency='CLP';
       if (settings.targetCurrency === settings.calcCurrency) settings.targetCurrency=targetFallback(settings.calcCurrency);
       if(!['auto','es','en'].includes(settings.language)) settings.language='auto';
+      if (!settings.fabPosition || !Number.isFinite(settings.fabPosition.x) || !Number.isFinite(settings.fabPosition.y) ||
+          settings.fabPosition.x < 0 || settings.fabPosition.x > 1 || settings.fabPosition.y < 0 || settings.fabPosition.y > 1) settings.fabPosition=null;
       for (const key of ['bareDollarSites','disabledSites','allowedSites']) if (!Array.isArray(settings[key])) settings[key]=[];
       if(!settings.dollarCurrencySites || typeof settings.dollarCurrencySites!=='object' || Array.isArray(settings.dollarCurrencySites)) settings.dollarCurrencySites={};
       settings.dollarCurrencySites=Object.fromEntries(Object.entries(settings.dollarCurrencySites)
