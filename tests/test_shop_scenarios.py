@@ -81,9 +81,9 @@ def scenario_text_only_variant(browser,mobile):
     p=setup(browser,html,mobile=mobile,width=390 if mobile else 1366)
     try:
         set_manual(p,24.99)
-        p.locator('[data-variant=3day]').click()
+        p.locator('[data-variant="3day"]').click()
         expect_amount(p,25)
-        p.locator('[data-variant=2weeks]').click()
+        p.locator('[data-variant="2weeks"]').click()
         expect_amount(p,55)
     finally:p.close()
 
