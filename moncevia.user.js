@@ -1088,6 +1088,10 @@
       calcSource.textContent='Importe manual · toca otra opcion de la pagina para retomar la sincronizacion';
       return;
     }
+    if (pendingVariantChange) {
+      calcSource.textContent='Sincronizando precio seleccionado…';
+      return;
+    }
     if (currentSelection) {
       calcSource.textContent=`Automatico · ${currentSelection.label||'seleccion de la pagina'}`;
       return;
@@ -1116,18 +1120,31 @@
   }
   function syncSelectedPrice() {
     if (!settings.autoSyncSelection || !isActive() || manualOverride) return;
-    const selected=selectedSummaryPrice();
+    const selected=selectedSummaryPrice() || currentProductPrice();
+    if (pendingVariantChange) {
+      const transition=pendingVariantChange;
+      // A click often precedes the React/Shopify price update.
+      // Never overwrite the current user choice with the pre-click amount.
+      if (selected && (!transition.before || !sameMonetaryPrice(selected,transition.before))) {
+        pendingVariantChange=null;
+        applySelectedPrice(selected);
+      } else if (Date.now()-transition.at>2500) {
+        pendingVariantChange=null;
+        updateSourceLabel();
+      }
+      return;
+    }
     if (pendingSelection) {
       const pending=pendingSelection;
-      // Al pulsar la tarjeta, React puede tardar en actualizar el total.
-      // Se conserva la seleccion tocada mientras cambia el resumen inferior.
-      const same=Math.abs((selected?.amount||0)-pending.price.amount)<1e-9 && selected?.code===pending.price.code;
-      const sameLabel=selected && pending.price.label!=='Precio tocado' && selected.label!=='Precio seleccionado' &&
-        selected.label.toLowerCase().includes(pending.price.label.toLowerCase());
-      if (same || sameLabel || Date.now()-pending.at>1100) {
+      const matchesClick=sameMonetaryPrice(selected,pending.price);
+      const changedAfterClick=selected && pending.before &&
+        !sameMonetaryPrice(selected,pending.before);
+      if (matchesClick || changedAfterClick) {
         pendingSelection=null;
-        applySelectedPrice(selected||pending.price);
+        applySelectedPrice(selected);
       } else {
+        // Hold the freshly touched card instead of reverting to a stale summary.
+        if (Date.now()-pending.at>2500) pendingSelection=null;
         applySelectedPrice(pending.price);
       }
       return;
