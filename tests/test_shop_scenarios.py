@@ -36,7 +36,9 @@ def expect_amount(page,amount,timeout=3500):
           '#clplens-panel .clplens-inputrow input')?.value === expected
         """,arg=str(amount),timeout=timeout)
     except Exception:
-        raise AssertionError(f"Expected amount={amount}; got={page.locator(AMOUNT).first.input_value()}")
+        live=page.locator('#price-display').inner_text() if page.locator('#price-display').count() else '(none)'
+        source=page.locator('.mv-source').all_inner_texts() if page.locator('.mv-source').count() else []
+        raise AssertionError(f"Expected amount={amount}; got={page.locator(AMOUNT).first.input_value()}; livePrice={live}; source={source}")
 
 def set_manual(page,value):
     page.locator('#clplens-fab').click()
