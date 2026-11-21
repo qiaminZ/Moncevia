@@ -36,11 +36,11 @@ def expect_amount(page,amount,timeout=3500):
           '#clplens-panel .clplens-inputrow input')?.value === expected
         """,arg=str(amount),timeout=timeout)
     except Exception:
-        raise AssertionError(f"Expected amount={amount}; got={page.locator(AMOUNT).input_value()}")
+        raise AssertionError(f"Expected amount={amount}; got={page.locator(AMOUNT).first.input_value()}")
 
 def set_manual(page,value):
     page.locator('#clplens-fab').click()
-    page.locator(AMOUNT).fill(str(value))
+    page.locator(AMOUNT).first.fill(str(value))
     page.locator('#clplens-fab').click()
     expect_amount(page,value)
 
@@ -192,8 +192,8 @@ def scenario_unlabeled_symbol(browser,mobile):
     p=setup(browser,html,mobile=mobile,width=390 if mobile else 1366,config=cfg)
     try:
         p.locator('#price span').click()
-        p.wait_for_selector('#moncevia-dollar-dialog')
-        assert p.locator(AMOUNT).input_value()!='165'
+        p.wait_for_selector('#moncevia-dollar-dialog',timeout=3500)
+        assert p.locator(AMOUNT).first.input_value()!='165'
         p.locator('#moncevia-dollar-dialog select').select_option('CAD')
         p.get_by_role('button',name='Confirm currency').click()
         expect_amount(p,165)
