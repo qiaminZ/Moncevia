@@ -34,7 +34,7 @@ def expect_amount(page,amount,timeout=3500):
     try:
         page.wait_for_function("""expected => document.querySelector(
           '#clplens-panel .clplens-inputrow input')?.value === expected
-        """,str(amount),timeout=timeout)
+        """,arg=str(amount),timeout=timeout)
     except Exception:
         raise AssertionError(f"Expected amount={amount}; got={page.locator(AMOUNT).input_value()}")
 
