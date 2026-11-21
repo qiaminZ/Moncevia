@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.5.4
+// @version      3.5.5
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -117,7 +117,7 @@
   let settingsBankGroup = null;
   const verifyBoxes = Object.create(null);
   let fxRequest = null, cryptoRequest = null;
-  let manualOverride = false, pendingSelection = null, currentSelection = null;
+  let manualOverride = false, pendingSelection = null, pendingVariantChange = null, currentSelection = null;
   let lastAppliedSelection = '', clickSequence = 0;
   // UI language is kept separately from price parsing, which remains locale-independent.
   // 'auto' follows Safari's preferred language, defaulting to English outside Spanish locales.
@@ -132,6 +132,7 @@
     'Abrir Moncevia':'Open Moncevia',
     'Arrastra para mover · toca para abrir':'Drag to move · tap to open',
     'Restablecer posición del botón':'Reset floating button position',
+    'Sincronizando precio seleccionado…':'Syncing selected price…',
     'Secciones de Moncevia':'Moncevia sections',
     'Consultando tasas…':'Checking rates…',
     'Consultando criptomonedas…':'Checking crypto prices…',
@@ -932,11 +933,65 @@
     }
     return null;
   }
+
+  // Prefer a unique current price in a product summary over stale values in variant cards.
+  function currentProductPrice() {
+    const selectors=[
+      '[data-testid="product-price"]','[data-testid="current-price"]',
+      '[data-price-current]','[data-price-role="current"]',
+      '.product__price','.product-price','.price--current','[itemprop="price"]'
+    ];
+    const results=new Map();
+    let scanned=0;
+    for (const selector of selectors) {
+      for (const el of document.querySelectorAll(selector)) {
+        if (++scanned>90) break;
+        if (!el.isConnected || el.closest(
+          '#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"],'+
+          'del,s,strike,.price--old,.price--compare,.compare-at-price,'+
+          '[class*="variant"],[id*="variant"],[role="option"],[role="listbox"],'+
+          'form[action*="checkout"]')) continue;
+        if (!el.getClientRects().length || getComputedStyle(el).visibility==='hidden') continue;
+        const live=el.querySelector('.price--current,ins,[data-price-current]') || el;
+        const chosen=bestVisiblePrice(live);
+        if (!chosen) continue;
+        const key=chosen.code+':'+chosen.amount;
+        results.set(key,{...chosen,label:'Precio actual del producto',source:'precio principal'});
+      }
+      if(scanned>90) break;
+    }
+    return results.size===1 ? [...results.values()][0] : null;
+  }
+  function sameMonetaryPrice(a,b) {
+    return !!a && !!b && a.code===b.code && Math.abs(a.amount-b.amount)<1e-8;
+  }
+  function variantControl(target) {
+    if (!target || target.nodeType!==1 || target.closest(
+      '#clplens-widget,#moncevia-dollar-dialog,.clplens-badge,'+
+      'input,textarea,[contenteditable],a[href*="checkout"],form[action*="checkout"]')) return null;
+    const control=target.closest(
+      '[data-variant],[data-product-option],[role="option"],[role="radio"],'+
+      '[aria-pressed],[aria-selected],[data-option-value],'+
+      '[class*="variant-card"],[class*="variant-option"],[class*="option-card"],button,label'
+    );
+    if (!control || control.matches('[disabled],[aria-disabled="true"]') ||
+        control.closest('header,nav,footer,[role="navigation"]')) return null;
+    const name=(originalText(control)||control.getAttribute('aria-label')||'').trim();
+    if (/^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(name)) return null;
+    const hint=control.closest(
+      '[data-variant],[data-product-option],[class*="variant"],[id*="variant"],'+
+      '[class*="product-option"],[role="listbox"]'
+    );
+    return hint || (/\b(?:days?|weeks?|months?|years?|lifetime|license|licen[cs]e|tier|plan|size|color|colour|medium|large|small|basic|standard|premium)\b/i.test(name) ? control : null);
+  }
   // A bare $ is ambiguous. Detect candidate *amounts* without assuming their currency.
   // Read the smallest visible card containing one price; never inspect forms, checkouts or links.
   function unlabeledDollarPrice(target) {
     if (dollarCurrencyForSite() || !target || target.nodeType!==1 ||
-        target.closest('#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, form, a, button, input, textarea, select, [contenteditable]')) return null;
+        target.closest('#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, input, textarea, select, [contenteditable]')) return null;
+    // A variant button may itself contain a bare $; allow the currency prompt
+    // but never interpret checkout/navigation buttons as product prices.
+    if (target.closest('a,button,form') && !variantControl(target)) return null;
     const rx=new RegExp(String.raw`(?<![\p{L}\d])\$\s*(${figure})(?![\p{L}\d])`, 'gu');
     let el=target;
     for (let depth=0;el && depth<7 && el!==document.body;depth++,el=el.parentElement) {
@@ -1010,15 +1065,37 @@
   }
   function tappedPrice(target) {
     if (!target || target.nodeType!==1 || target.closest('#clplens-widget,.clplens-badge,[data-clplens-ignore],input,textarea,select,[contenteditable],form')) return null;
-    // Buscar la tarjeta mas pequena que contenga el elemento tocado y un precio.
-    // Así se puede pulsar el nombre del plan, no solo el numero en EUR.
+    const control=variantControl(target);
+    const actionable=target.closest('button,a,[role="button"]');
+    const actionLabel=(actionable && originalText(actionable).trim()) || '';
+    // Never treat a checkout/help action as a price just because its parent
+    // product page has a visible price somewhere else.
+    if (actionable && /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(actionLabel))
+      return null;
+    const boundedCard=actionable && !control ?
+      actionable.closest('article,li,[data-product-id],[class*="product-card"],[class*="item-card"]') : null;
+    if (actionable && !control && !boundedCard && !matchesInText(originalText(actionable)).length)
+      return null;
     let el=target;
     for (let depth=0;el && depth<8;depth++,el=el.parentElement) {
       if (el===document.body) break;
+      if (boundedCard && !boundedCard.contains(el)) break;
+      // A variant button with no price must never inherit the OLD main price
+      // merely because both are descendants of the same product container.
+      if (control && el!==control && el.contains(control)) {
+        const otherOptions=el.querySelectorAll('[data-variant],[role="option"],[role="radio"]');
+        if (otherOptions.length>1 || (el!==control.parentElement &&
+            !/\b(?:variant|option|tier|plan|card)\b/i.test(String(el.className)))) continue;
+      }
+      const matches=matchesInText(originalText(el))
+        .filter(m=>!m.perUnit && !m.former);
+      const distinct=new Set(matches.map(m=>m.code+':'+m.amount));
+      // Clicking an unrelated part of a product grid must not pick its last item.
+      if (distinct.size>1 && !control) continue;
       const price=bestVisiblePrice(el);
       if (price) {
         const parts=originalText(el).split(/\n/).map(s=>s.trim()).filter(Boolean);
-        const label=parts.find(s=>/\b(?:key|plan|days?|weeks?|months?|lifetime|access)\b/i.test(s) && !matchesInText(s).length);
+        const label=parts.find(t=>/\b(?:key|plan|days?|weeks?|months?|lifetime|access)\b/i.test(t) && !matchesInText(t).length);
         return {...price,label:label||'Precio tocado',source:'toque'};
       }
     }
@@ -1035,6 +1112,10 @@
     }
     if (manualOverride) {
       calcSource.textContent='Importe manual · toca otra opcion de la pagina para retomar la sincronizacion';
+      return;
+    }
+    if (pendingVariantChange) {
+      calcSource.textContent='Sincronizando precio seleccionado…';
       return;
     }
     if (currentSelection) {
@@ -1065,18 +1146,34 @@
   }
   function syncSelectedPrice() {
     if (!settings.autoSyncSelection || !isActive() || manualOverride) return;
-    const selected=selectedSummaryPrice();
+    const selected=selectedSummaryPrice() || currentProductPrice();
+    if (pendingVariantChange) {
+      const transition=pendingVariantChange;
+      // A click often precedes the React/Shopify price update.
+      // Never overwrite the current user choice with the pre-click amount.
+      if (selected && (!transition.before || !sameMonetaryPrice(selected,transition.before))) {
+        pendingVariantChange=null;
+        applySelectedPrice(selected);
+      } else if (Date.now()-transition.at>1600) {
+        // A selection may leave the displayed price unchanged (e.g. a default
+        // variant). Reuse only an unambiguous live product price after settling.
+        pendingVariantChange=null;
+        if(selected) applySelectedPrice(selected);
+        else updateSourceLabel();
+      }
+      return;
+    }
     if (pendingSelection) {
       const pending=pendingSelection;
-      // Al pulsar la tarjeta, React puede tardar en actualizar el total.
-      // Se conserva la seleccion tocada mientras cambia el resumen inferior.
-      const same=Math.abs((selected?.amount||0)-pending.price.amount)<1e-9 && selected?.code===pending.price.code;
-      const sameLabel=selected && pending.price.label!=='Precio tocado' && selected.label!=='Precio seleccionado' &&
-        selected.label.toLowerCase().includes(pending.price.label.toLowerCase());
-      if (same || sameLabel || Date.now()-pending.at>1100) {
+      const matchesClick=sameMonetaryPrice(selected,pending.price);
+      const changedAfterClick=selected && pending.before &&
+        !sameMonetaryPrice(selected,pending.before);
+      if (matchesClick || changedAfterClick) {
         pendingSelection=null;
-        applySelectedPrice(selected||pending.price);
+        applySelectedPrice(selected);
       } else {
+        // Hold the freshly touched card instead of reverting to a stale summary.
+        if (Date.now()-pending.at>2500) pendingSelection=null;
         applySelectedPrice(pending.price);
       }
       return;
@@ -1122,29 +1219,47 @@
     if (!settings.autoSyncSelection || !isActive()) return;
     const price=tappedPrice(event.target);
     if (!price) {
-      // A static price can be tapped even if the page has no selection mechanics.
-      // Only open the currency chooser when the touched element actually shows one
-      // unambiguous $ amount; the site itself is not modified.
+      // Bare $ is ambiguous: choose a per-site currency before any calculations.
       const unknown=unlabeledDollarPrice(event.target);
       if (unknown) {showDollarCurrencyChooser(unknown);return;}
-      // Botones +/- de cantidad y selectores sin precio pueden alterar el total;
-      // el resumen seleccionado se vuelve a leer al mutar la pagina.
+      if (variantControl(event.target)) {
+        const before=selectedSummaryPrice() || currentProductPrice();
+        manualOverride=false;pendingSelection=null;
+        pendingVariantChange={before,at:Date.now(),seq:++clickSequence};
+        updateSourceLabel();
+        scheduleSelectionSync(100);
+        for(const delay of [380,800,1500,2600]) setTimeout(syncSelectedPrice,delay);
+        return;
+      }
+      // Quantity updates may mutate the current product amount without clicking a price.
       if (currentSelection) scheduleSelectionSync(240);
       return;
     }
+    const before=selectedSummaryPrice() || currentProductPrice();
     manualOverride=false;
-    pendingSelection={price,at:Date.now(),seq:++clickSequence};
+    pendingVariantChange=null;
+    pendingSelection={price,before,at:Date.now(),seq:++clickSequence};
     applySelectedPrice(price);
     scheduleSelectionSync(130);
-    setTimeout(()=>syncSelectedPrice(),450);
-    setTimeout(()=>syncSelectedPrice(),1200);
+    for(const delay of [450,1200,2600]) setTimeout(syncSelectedPrice,delay);
   }
   function pageChangeCapture(event) {
     if (!settings.autoSyncSelection || !isActive() || event.target.closest?.('#clplens-widget')) return;
+    // Changing a newsletter/filters checkbox must not cancel a manually entered price.
+    const target=event.target;
+    const hint=[target.id,target.getAttribute('name'),target.getAttribute('aria-label'),
+      target.className,target.parentElement?.className].join(' ');
+    const productInput=target.matches('select,[role="combobox"],input[type="radio"]') &&
+      /variant|option|size|colou?r|plan|tier|license|product|duration|sku/i.test(hint);
+    if(!productInput && !variantControl(target)) {
+      if(currentSelection && target.matches('select,input[type="number"]')) scheduleSelectionSync(240);
+      return;
+    }
     manualOverride=false;
     pendingSelection=null;
+    pendingVariantChange=null;
     scheduleSelectionSync(180);
-    setTimeout(()=>syncSelectedPrice(),500);
+    setTimeout(syncSelectedPrice,500);
   }
 
   function flashPrice(target) {
@@ -1360,7 +1475,7 @@
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.5.4'));
+    headerActions.append(languageButton,node('span','mv-version','v3.5.5'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
