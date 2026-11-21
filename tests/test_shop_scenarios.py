@@ -219,56 +219,33 @@ def scenario_untouched_checkout(browser,mobile):
 
 
 def scenario_headline_price_without_css_hook(browser,mobile):
-    """Hero price near h1, separated from variant rows."""
+    """Main price next to product heading; variants are text-only clickable cards."""
     html="""<main><div class="detail"><h1>Sample Product</h1><p>In stock</p>
     <div id="price-display">$10.00</div><h2>Variant</h2>
     <div class="variant-list">
-      <div role="option" class="variant-card" id="choice25" onclick="updatePrice(25)">3 Day License</div>
-      <div role="option" class="variant-card" id="choice55" onclick="updatePrice(55)">2 Week License</div>
-    </div></div>
-    <script>function updatePrice(n){setTimeout(()=>document.querySelector('#price-display').textContent='
-  scenario_nested_card,scenario_text_only_variant,scenario_async_race,
-  scenario_shopify_select,scenario_quantity,scenario_discounts,
-  scenario_multiple_products,scenario_currency_and_format,
-  scenario_unlabeled_symbol,scenario_untouched_checkout,
-  scenario_headline_price_without_css_hook,scenario_catalog_checkbox_safety
-]
-
-def run():
-    failures=[]
-    with sync_playwright() as playwright:
-        kind=os.environ.get('MONCEVIA_TEST_BROWSER','chromium').lower()
-        if kind not in ('chromium','firefox','webkit'):
-            raise ValueError('Unknown browser '+kind)
-        options={'headless':True}
-        if kind=='chromium': options.update(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
-        browser=getattr(playwright,kind).launch(**options)
-        for mobile in [False,True]:
-            for scenario in SCENARIOS:
-                label=('Mobile' if mobile else 'Desktop')+'/'+scenario.__name__
-                try:
-                    scenario(browser,mobile)
-                    print('PASS',label,flush=True)
-                except Exception as exc:
-                    failures.append((label,str(exc)))
-                    print('FAIL',label,repr(exc),flush=True)
-        browser.close()
-    if failures:
-        print('FAILURES:',json.dumps(failures,indent=2))
-        raise AssertionError(str(len(failures))+' dynamic-price scenarios failed')
-    print('PASS ALL',len(SCENARIOS)*2,'dynamic e-commerce scenarios')
-
-if __name__=='__main__':
-    run()
-+n+'.00',100);}</script></main>"""
+      <div role="option" class="variant-card" id="choice25">3 Day License</div>
+      <div role="option" class="variant-card" id="choice55">2 Week License</div>
+    </div></div></main>"""
     p=setup(browser,html,mobile=mobile,width=390 if mobile else 1366)
     try:
+        p.evaluate("""() => {
+          for (const [id,value] of [['choice25',25],['choice55',55]]) {
+            document.getElementById(id).addEventListener('click',()=>{
+              setTimeout(()=>{
+                document.getElementById('price-display').firstChild.textContent='$'+value+'.00';
+              },100);
+            });
+          }
+        }""")
         set_manual(p,24.99)
         p.locator('#choice25').click()
+        p.wait_for_function("document.getElementById('price-display').firstChild.textContent==='$25.00'",timeout=1500)
         expect_amount(p,25)
         p.locator('#choice55').click()
+        p.wait_for_function("document.getElementById('price-display').firstChild.textContent==='$55.00'",timeout=1500)
         expect_amount(p,55)
-    finally:p.close()
+    finally:
+        p.close()
 
 def scenario_catalog_checkbox_safety(browser,mobile):
     """An unrelated filter does not reset a manually entered amount."""
