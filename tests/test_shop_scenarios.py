@@ -286,7 +286,8 @@ SCENARIOS=[
   scenario_nested_card,scenario_text_only_variant,scenario_async_race,
   scenario_shopify_select,scenario_quantity,scenario_discounts,
   scenario_multiple_products,scenario_currency_and_format,
-  scenario_unlabeled_symbol,scenario_untouched_checkout
+  scenario_unlabeled_symbol,scenario_untouched_checkout,
+  scenario_headline_price_without_css_hook,scenario_catalog_checkbox_safety
 ]
 
 def run():
