@@ -131,7 +131,7 @@ export function createFabController(options: FabControllerOptions) {
       };
       try {
         button.setPointerCapture(event.pointerId);
-      } catch (_error) {
+      } catch {
         // Some touch engines do not implement capture on synthetic pointers.
       }
     });
