@@ -1,3 +1,11 @@
+## 3.14.0 / Desktop 0.10.0-beta — Phase 11: typed panel shell and UI components
+
+- Extracted DOM helpers (disclosures, rows, links, text and CSS attachment) to strict `src/ui/dom-factory.ts`.
+- Extracted the owned floating launcher, status header, language control, rate sources, and accessibility attributes to `src/ui/panel-shell.ts`.
+- Preserved the merchant isolation boundary, navigation, HTML classes, public rate links, stored preferences, financial logic and permissions.
+- Added cross-browser desktop/mobile panel regression checks; full prior suites remain mandatory.
+- Complex UI forms and finance rendering remain in `src/legacy/runtime.js`. Real Safari iOS and Opera GX certification remains outstanding.
+
 ## 3.13.0 / Desktop 0.9.0-beta — Phase 10: typed persistence and consent lifecycle
 
 - Extracted startup restoration and ordered settings/history writes to `src/platform/persistence-controller.ts`; preserved `clplens_v1`, `clplens_usd_rates_v1`, `clplens_crypto_rates_v2` and `clplens_history_v3`.

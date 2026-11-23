@@ -1,4 +1,4 @@
-# Moncevia — Arquitectura de ingeniería (v3.13.0)
+# Moncevia — Arquitectura de ingeniería (v3.14.0)
 
 ## Objetivo
 
@@ -19,6 +19,8 @@ Mantener un **único código fuente** para el userscript iOS/Android y las exten
 - `src/detector/scan-controller.ts`: recorrido DOM, anotaciones de precios, filtrado de mutaciones propias y reescaneo programado; no modifica precios originales.
 - `src/detector/variant-detector.ts`: reconocimiento conservador de tarjetas, variantes, precios principales y símbolos ambiguos; no modifica el comercio.
 - `src/detector/selection-scheduler.ts`: programación y cancelación de comprobaciones posteriores a cambios asincrónicos de producto.
+- `src/ui/dom-factory.ts`: construcción tipada de elementos propios, enlaces externos seguros, filas y controles plegables.
+- `src/ui/panel-shell.ts`: cabecera, botón flotante y estructura visual inicial sin modificar tiendas.
 - `src/ui/tab-controller.ts`: navegación por pestañas, atributos ARIA y teclado.
 - `src/ui/fab-controller.ts`: geometría, arrastre, teclado y persistencia de posición del botón flotante, sin alterar componentes de tiendas.
 - `src/platform/gm-bridge.ts`: interfaz tipada para almacenamiento y peticiones públicas de userscript managers modernos y heredados, sin credenciales ni acceso a las tiendas.
@@ -65,6 +67,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 9. **Fase 9 (v3.12.0):** extracción del adaptador GM de almacenamiento y red a TypeScript estricto, con compatibilidad asincrónica y callbacks antiguos, pruebas unitarias y regresión multi-motor. Aún quedan lógica de persistencia y componentes visuales heredados.
 
 10. **Fase 10 (v3.13.0):** separación del arranque de datos y la persistencia de ajustes/historial, recuperación parcial ante fallos, autorización efectiva solo tras guardado confirmado y pruebas con gestores de almacenamiento simulados. Aún permanecen renderizado, controles del panel y parte del ciclo de vida DOM en JavaScript heredado.
+
+11. **Fase 11 (v3.14.0):** extracción del encabezado y componentes DOM visuales a TypeScript, conservando clases, atributos ARIA y comportamiento en tres motores. Las secciones financieras y formularios complejos permanecen parcialmente heredados.
 
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 

@@ -9,6 +9,8 @@ import { createUILocalizer } from '../i18n/localizer';
 import { createPriceScanner } from '../detector/scan-controller';
 import { createTabController } from '../ui/tab-controller';
 import { createFabController } from '../ui/fab-controller';
+import { createNode, createExternalLink, appendLine, appendDisclosure, createCardRow, appendEmbeddedStyles } from '../ui/dom-factory';
+import { createPanelShell } from '../ui/panel-shell';
 import { createGMBridge } from '../platform/gm-bridge';
 import { createPersistenceController, MONCEVIA_STORAGE_KEYS } from '../platform/persistence-controller';
 import { createVariantDetector } from '../detector/variant-detector';
@@ -198,17 +200,11 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     return lines;
   }
 
-  const node = (tag, className = '', text = '') => {
-    const n = document.createElement(tag);
-    if (className) n.className = className;
-    if (text) n.textContent = text;
-    return n;
-  };
-  const makeLink = (href, text) => {
-    const a = node('a','',text);
-    a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    return a;
-  };
+  // UI DOM primitives now live in independently typed, browser-scoped components.
+  const node=createNode;
+  const line=appendLine;
+  const disclosure=appendDisclosure;
+  const cardRow=createCardRow;
   // Durable preferences and history are serialized by the typed persistence controller.
   const persistence=createPersistenceController({
     storage,defaults:DEFAULTS,
@@ -225,12 +221,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   const restoreFabPosition=()=>fabController.restore();
   const resetFabPosition=(save=true)=>fabController.reset(save);
   const enableFabDragging=()=>fabController.enable();
-  function stylesheet() {
-    const style = node('style');
-    style.dataset.clplens = '2';
-    style.textContent = MONCEVIA_CSS;
-    document.head.appendChild(style);
-  }
+  function stylesheet() { appendEmbeddedStyles(MONCEVIA_CSS); }
   function checkbox(parent,label, getter, setter) {
     const row = node('label'); row.append(node('span','',label));
     const box = node('input'); box.type='checkbox'; box.checked = getter();
@@ -259,18 +250,6 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     });
     row.append(input); parent.append(row);
     return input;
-  }
-  function line(parent,text,cls='') { const p=node('p',cls,text); parent.append(p); return p; }
-  function disclosure(parent, title, expanded=false, extra='') {
-    const details=node('details','mv-disclosure'+(extra?' '+extra:''));details.open=expanded;
-    const summary=node('summary','',title);
-    const content=node('div','mv-details-content');
-    details.append(summary,content);parent.append(details);
-    return {details,content};
-  }
-  function cardRow(key,value, full=false) {
-    const row=node('div','mv-unit'+(full?' mv-full':''));
-    row.append(node('span','',key),node('strong','',value));return row;
   }
   function refresh() {
     if (!widget) return;
@@ -729,37 +708,12 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   }
   function createUI() {
     stylesheet();
-    widget=node('div'); widget.id='clplens-widget';
-    fab=node('button','','CLP · ₿'); fab.type='button'; fab.id='clplens-fab';
-    fab.setAttribute('aria-label','Abrir Moncevia');
-    fab.setAttribute('aria-controls','clplens-panel');
-    fab.setAttribute('aria-expanded','false');
-    fab.setAttribute('title','Arrastra para mover · toca para abrir');
-    panel=node('section'); panel.id='clplens-panel'; panel.hidden=true;
-    panel.setAttribute('aria-label','Moncevia — conversión y pagos');
-    const header=node('div','mv-header');
-    const titlebar=node('div','mv-titlebar');
-    titlebar.append(node('h2','','Moncevia'));
-    const headerActions=node('div','mv-header-actions');
-    headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
-    languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
-    languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.13.0'));
-    titlebar.append(headerActions);
-    header.append(titlebar);
-    const status=node('div','mv-status');status.append(node('span','mv-dot'));
-    stateLabel=node('span','','Consultando tasas…');status.append(stateLabel);header.append(status);
-    panel.append(header);
-    // Fuentes y cotizaciones completas siguen accesibles bajo demanda.
-    const ratesInfo=disclosure(header,'Tasas y fuentes','');
-    ratesInfo.details.classList.add('mv-rates-disclosure');
-    coinsLabel=line(ratesInfo.content,'Consultando criptomonedas…','clplens-strong');
-    const sources=line(ratesInfo.content,'Fuentes: ');
-    sources.append(makeLink('https://www.exchangerate-api.com','ExchangeRate-API'));
-    sources.append(' · ',makeLink('https://developers.binance.com/en/docs/binance-spot-api-docs/rest-api/market-data-endpoints','Binance Spot'));
-    sources.append(' / ',makeLink('https://www.coingecko.com/en/api','CoinGecko'));
-    sources.append(' / ',makeLink('https://www.coinbase.com','Coinbase'));
-
+    const shell=createPanelShell({
+      version:'3.14.0',
+      onLanguageToggle:()=>switchLanguage(uiLanguage()==='es'?'en':'es')
+    });
+    widget=shell.widget;fab=shell.fab;panel=shell.panel;
+    stateLabel=shell.stateLabel;coinsLabel=shell.coinsLabel;languageButton=shell.languageButton;
     const nav=node('nav','mv-nav');nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Secciones de Moncevia');
     const pages={};
     const navItems=[['calculator','Convertir','⇄'],['crypto','Pagar','₿'],['compare','Comparar','≋'],['history','Historial','◷'],['settings','Ajustes','⚙']];
