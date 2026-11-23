@@ -42,6 +42,9 @@ jobs:
           python tests/test_i18n_phase6.py
           MONCEVIA_TEST_BROWSER=firefox python tests/test_i18n_phase6.py
           MONCEVIA_TEST_BROWSER=webkit python tests/test_i18n_phase6.py
+          python tests/test_phase7_user_journey.py
+          MONCEVIA_TEST_BROWSER=firefox python tests/test_phase7_user_journey.py
+          MONCEVIA_TEST_BROWSER=webkit python tests/test_phase7_user_journey.py
           python tests/test_cross_platform.py
           python tests/test_currency_pairs.py
           python tests/test_static_prices.py
