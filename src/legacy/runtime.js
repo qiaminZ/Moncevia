@@ -1,5 +1,8 @@
 import MONCEVIA_CSS from '../styles/moncevia.css';
 import { parseAmount } from '../core/parse-amount';
+import { createConversionEngine } from '../core/conversion';
+import { coinMinor, ceil8, roundUp2 } from '../core/crypto-units';
+import { validateFXResponse } from '../core/fx-validation';
 (() => {
   'use strict';
   // No accede a cookies, formularios, credenciales, wallets ni API privadas.
@@ -362,10 +365,10 @@ import { parseAmount } from '../core/parse-amount';
   const isAuthorized = () => settings.allowedSites.includes(HOST);
   const isActive = () => isAuthorized() && settings.enabled && !settings.disabledSites.includes(HOST);
   const inDate = (obj, time) => obj && Number.isFinite(obj.fetchedAt) && Date.now() - obj.fetchedAt >= 0 && Date.now() - obj.fetchedAt < time;
-  const activeCrypto = () => inDate(crypto, CRYPTO_STALE) &&
-    (!crypto.quotedAt || (Date.now() - crypto.quotedAt >= -300_000 && Date.now() - crypto.quotedAt < CRYPTO_STALE)) &&
-    CRYPTOS.every(c => validPositive(crypto.usd?.[c])) && (!crypto.source?.startsWith('Binance') || validPositive(crypto.usdtUsd));
-  const activeFX = () => inDate(fx, FX_STALE) && validPositive(fx.rates?.EUR) && validPositive(fx.rates?.CLP);
+  // Rate calculations are pure, typed and receive a fresh immutable state snapshot.
+  const conversion = () => createConversionEngine({ settings, fx, crypto, now: Date.now() });
+  const activeCrypto = () => conversion().activeCrypto();
+  const activeFX = () => conversion().activeFX();
 
   // Evita confundir 1.234,56 con 1,234.56 y conserva 8 decimales en criptomonedas.
   // Currency parser lives in src/core/parse-amount.ts (strictly typed).
@@ -405,72 +408,18 @@ import { parseAmount } from '../core/parse-amount';
     return null;
   }
 
-  function fiatUsd(amount, code) {
-    if (code === 'USD') return amount;
-    if (code === 'EUR' && validPositive(settings.eurClpManual) && usdClp()) return amount * Number(settings.eurClpManual) / usdClp();
-    if (CRYPTOS.includes(code)) return activeCrypto() ? amount * spotBid(code) : null;
-    if (!activeFX() || !validPositive(fx.rates[code])) return null;
-    return amount / fx.rates[code];
-  }
-  function usdClp() {
-    if (validPositive(settings.usdClpManual)) return Number(settings.usdClpManual);
-    return activeFX() ? fx.rates.CLP : null;
-  }
-  function eurClp() {
-    if (validPositive(settings.eurClpManual)) return Number(settings.eurClpManual);
-    if (!activeFX() || !usdClp()) return null;
-    return usdClp() / fx.rates.EUR;
-  }
-  function toCLP(amount, code) {
-    if (code === 'CLP') return amount;
-    if (code === 'EUR' && validPositive(settings.eurClpManual)) return amount * Number(settings.eurClpManual);
-    const usd = fiatUsd(amount, code), price = usdClp();
-    return usd != null && price ? usd * price : null;
-  }
-  function toUnits(amount, fromCode, toCode) {
-    if (fromCode === toCode) return amount;
-    if (toCode === 'CLP') return toCLP(amount,fromCode);
-    if (fromCode === 'CLP') {
-      const rate = usdClp();
-      if (!rate) return null;
-      return toUnits(amount / rate, 'USD', toCode);
-    }
-    const usd = fiatUsd(amount,fromCode);
-    if (usd == null) return null;
-    if (toCode === 'USD') return usd;
-    if (toCode === 'EUR' && validPositive(settings.eurClpManual) && usdClp()) return usd * usdClp() / Number(settings.eurClpManual);
-    if (FIAT.includes(toCode) && activeFX() && validPositive(fx.rates[toCode])) return usd * fx.rates[toCode];
-    if (CRYPTOS.includes(toCode) && activeCrypto()) return usd / spotAsk(toCode);
-    return null;
-  }
-  function spotAsk(coin) {
-    return activeCrypto() && validPositive(crypto?.askUSDT?.[coin]) ? Number(crypto.askUSDT[coin]) * crypto.usdtUsd :
-      (activeCrypto() ? Number(crypto.usd[coin]) : null);
-  }
-  function spotBid(coin) {
-    return activeCrypto() && validPositive(crypto?.bidUSDT?.[coin]) ? Number(crypto.bidUSDT[coin]) * crypto.usdtUsd :
-      (activeCrypto() ? Number(crypto.usd[coin]) : null);
-  }
+  // Legacy UI/API integration delegates to the same typed conversion engine.
+  const fiatUsd = (amount, code) => conversion().fiatUsd(amount, code);
+  const usdClp = () => conversion().usdClp();
+  const eurClp = () => conversion().eurClp();
+  const toCLP = (amount, code) => conversion().toCLP(amount, code);
+  const toUnits = (amount, fromCode, toCode) => conversion().toUnits(amount, fromCode, toCode);
+  const spotAsk = coin => conversion().spotAsk(coin);
+  const spotBid = coin => conversion().spotBid(coin);
+
   // Valores ingresados para retiro se suman como unidades enteras de 10^-8:
   // evita la suma flotante de cantidad exacta y comisión indicada por el usuario.
-  function coinMinor(raw) {
-    const initial=String(raw).trim().replace(',', '.');
-    const s=/e/i.test(initial) && Number.isFinite(Number(initial)) ? Number(initial).toFixed(8) : initial;
-    if (!/^\d+(?:\.\d+)?$/.test(s)) return null;
-    const [integer,frac='']=s.split('.');
-    if (integer.length>10 || frac.length>8) return null;
-    return BigInt(integer)*100000000n+BigInt((frac+'00000000').slice(0,8));
-  }
-  function ceil8(v) {
-    if (!Number.isFinite(v) || v<0 || v>1e10) return null;
-    // String toFixed permite redondear hacia arriba cualquier residuo visible.
-    const s=v.toFixed(12);
-    const [integer,frac='']=s.split('.');
-    let units=BigInt(integer)*100000000n+BigInt((frac+'00000000').slice(0,8));
-    if (/[1-9]/.test(frac.slice(8))) units+=1n;
-    return Number(units)/1e8;
-  }
-  const roundUp2 = v => Number.isFinite(v) ? Math.ceil((v-1e-10)*100)/100 : null;
+  // Crypto unit arithmetic and 2-decimal estimates are typed in core/crypto-units.ts.
   const safeLabel = s => String(s||'').replace(/[<>\r\n]/g,' ').slice(0,45);
 
   function formatCoin(value, code) {
@@ -1338,7 +1287,7 @@ import { parseAmount } from '../core/parse-amount';
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.6.0'));
+    headerActions.append(languageButton,node('span','mv-version','v3.6.1'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
@@ -1690,13 +1639,9 @@ import { parseAmount } from '../core/parse-amount';
     if (!force && inDate(fx,FX_TTL)) return;
     try {
       const data=await requestJSON('https://open.er-api.com/v6/latest/USD');
-      const providerTime = Number(data.time_last_update_unix) * 1000;
-      if (data.result!=='success' || data.base_code!=='USD' || !validPositive(data.rates?.CLP) || !validPositive(data.rates?.EUR) ||
-          !Number.isFinite(providerTime) || providerTime > Date.now()+3600_000 || Date.now()-providerTime > 7*86400_000)
-        throw Error('FX invalida u obsoleta');
-      const rates={};
-      for (const c of [...FIAT,'CLP']) if (validPositive(data.rates[c])) rates[c]=Number(data.rates[c]);
-      fx={ fetchedAt:Date.now(),updatedAt:dateTime(Number(data.time_last_update_unix)*1000 || Date.now()),rates };
+      const validated=validateFXResponse(data,Date.now());
+      if (!validated) throw Error('FX invalida u obsoleta');
+      fx={ fetchedAt:validated.fetchedAt,updatedAt:dateTime(validated.providerTime),rates:validated.rates };
       await storage.setValue(FX_KEY,fx);
     } catch(e) { console.info('[Moncevia] FX no disponible:',e?.message || e); }
     refresh(); reScan(true);
