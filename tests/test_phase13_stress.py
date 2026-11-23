@@ -62,9 +62,22 @@ def stress(browser, engine, mobile):
             item.firstChild.nodeValue='€'+(80+n/10).toFixed(2);
           }
         }""")
+        # Assert the new *financial annotation*, not merely a text difference
+        # that could be caused by a delayed crypto-rate fetch.
         page.wait_for_function(
-            """previous => document.querySelector('#price0 .clplens-badge')?.textContent !== previous""",
-            arg=before, timeout=14000,
+            """() => window._persist.clplens_usd_rates_v1?.rates?.EUR > 0""",
+            timeout=12000,
+        )
+        expected_clp = page.evaluate("""() => {
+          const rates = window._persist.clplens_usd_rates_v1.rates;
+          const value = Math.round(92 / rates.EUR * rates.CLP);
+          return new Intl.NumberFormat('es-CL', {
+            style:'currency', currency:'CLP', maximumFractionDigits:0
+          }).format(value);
+        }""")
+        page.wait_for_function(
+            """expected => document.querySelector('#price0 .clplens-badge')?.textContent.includes(expected)""",
+            arg=expected_clp, timeout=14000,
         )
         assert page.locator("#price0 .clplens-badge").count() == 1
         assert page.locator("#price0 .clplens-badge").text_content() != before
