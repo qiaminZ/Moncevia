@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.8.0
+// @version      3.9.0
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -227,6 +227,201 @@
       ...Object.keys(askUSDT).length ? { askUSDT } : {},
       ...Object.keys(bidUSDT).length ? { bidUSDT } : {}
     };
+  }
+
+  // src/core/settings-validation.ts
+  var rec = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+  var hostRE = /^[a-z0-9.-]{1,255}$/;
+  var boolKeys = [
+    "enabled",
+    "historySite",
+    "compareInline",
+    "showCryptoInline",
+    "autoSyncSelection",
+    "feeKnownBTC",
+    "feeKnownETH",
+    "feeKnownLTC",
+    "spotFeeKnown",
+    "usdtFundKnown",
+    "compactMode",
+    "visualPick",
+    "prexKnown",
+    "santanderKnown",
+    "exactPayEnabled"
+  ];
+  var numberKeys = [
+    "usdClpManual",
+    "eurClpManual",
+    "prexExtra",
+    "santanderExtra",
+    "taxExtra",
+    "feeBTC",
+    "feeETH",
+    "feeLTC",
+    "spotFeePct",
+    "usdtFundPct",
+    "bufferPct"
+  ];
+  var dollarCodes = ["USD", "CLP", "CAD", "AUD"];
+  var currencies = ["CLP", ...FIAT_CODES, ...CRYPTO_LIST];
+  function hosts(input) {
+    if (!Array.isArray(input)) return [];
+    return [
+      ...new Set(
+        input.filter((host) => typeof host === "string" && hostRE.test(host))
+      )
+    ].slice(0, 100);
+  }
+  function safeNumber(input, fallback) {
+    if (typeof input !== "number" && typeof input !== "string" || String(input).trim() === "")
+      return fallback;
+    const n = Number(input);
+    return Number.isFinite(n) && n >= 0 && n <= 1e10 ? n : fallback;
+  }
+  function safeText(input, fallback, max = 80) {
+    return typeof input === "string" && input.length <= max ? input : fallback;
+  }
+  function normalizeSettings(input, defaults) {
+    if (!rec(input))
+      return {
+        ...defaults,
+        allowedSites: [...defaults.allowedSites],
+        disabledSites: [...defaults.disabledSites],
+        bareDollarSites: [...defaults.bareDollarSites],
+        dollarCurrencySites: { ...defaults.dollarCurrencySites },
+        fabPosition: defaults.fabPosition && { ...defaults.fabPosition }
+      };
+    const result = {
+      ...defaults,
+      allowedSites: [...defaults.allowedSites],
+      disabledSites: [...defaults.disabledSites],
+      bareDollarSites: [...defaults.bareDollarSites],
+      dollarCurrencySites: { ...defaults.dollarCurrencySites }
+    };
+    for (const key of boolKeys) if (typeof input[key] === "boolean") result[key] = input[key];
+    for (const key of numberKeys) result[key] = safeNumber(input[key], defaults[key]);
+    for (const key of ["allowedSites", "disabledSites", "bareDollarSites"]) {
+      if (Object.prototype.hasOwnProperty.call(input, key)) result[key] = hosts(input[key]);
+    }
+    if (Object.prototype.hasOwnProperty.call(input, "dollarCurrencySites")) {
+      const overrides = /* @__PURE__ */ Object.create(null);
+      if (rec(input.dollarCurrencySites)) {
+        for (const [host, code] of Object.entries(input.dollarCurrencySites).slice(0, 200)) {
+          if (hostRE.test(host) && typeof code === "string" && dollarCodes.includes(code)) {
+            overrides[host] = code;
+          }
+          if (Object.keys(overrides).length >= 100) break;
+        }
+      }
+      result.dollarCurrencySites = overrides;
+    }
+    const source = input.calcCurrency;
+    if (typeof source === "string" && currencies.includes(source))
+      result.calcCurrency = source;
+    const target = input.targetCurrency;
+    if (typeof target === "string" && currencies.includes(target))
+      result.targetCurrency = target;
+    if (result.calcCurrency === result.targetCurrency) {
+      result.targetCurrency = result.calcCurrency === "CLP" ? "USD" : "CLP";
+    }
+    if (input.language === "auto" || input.language === "es" || input.language === "en")
+      result.language = input.language;
+    if (typeof input.exactPayCurrency === "string" && CRYPTO_LIST.some((code) => code === input.exactPayCurrency)) {
+      result.exactPayCurrency = input.exactPayCurrency;
+    }
+    result.calcAmount = safeText(input.calcAmount, defaults.calcAmount, 80);
+    result.exactPayAmount = safeText(input.exactPayAmount, defaults.exactPayAmount, 80);
+    for (const key of ["networkBTC", "networkETH", "networkLTC"]) {
+      result[key] = safeText(input[key], defaults[key], 80);
+    }
+    if (input.fabPosition === null) result.fabPosition = null;
+    else if (rec(input.fabPosition)) {
+      const { x, y } = input.fabPosition;
+      result.fabPosition = typeof x === "number" && typeof y === "number" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= 1 && y >= 0 && y <= 1 ? { x, y } : null;
+    }
+    return result;
+  }
+
+  // src/core/provider-validation.ts
+  var record2 = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+  var positive2 = (v) => {
+    if (typeof v !== "number" && typeof v !== "string") return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  var fresh = (unixSeconds, now) => {
+    const time = positive2(unixSeconds);
+    if (time === null || !Number.isFinite(now)) return null;
+    const timeMs = time * 1e3;
+    return Math.abs(now - timeMs) <= CRYPTO_STALE_MS ? timeMs : null;
+  };
+  function validateUSDTParity(input, now) {
+    if (!record2(input) || !record2(input.tether)) return null;
+    const parity = positive2(input.tether.usd);
+    const timestamp = fresh(input.tether.last_updated_at, now);
+    return parity !== null && parity >= 0.8 && parity <= 1.2 && timestamp !== null ? parity : null;
+  }
+  function validateBinanceSnapshot(tickers, usdtUsd, now) {
+    if (!Array.isArray(tickers) || tickers.length !== CRYPTO_LIST.length || !Number.isFinite(now) || !Number.isFinite(usdtUsd) || usdtUsd < 0.8 || usdtUsd > 1.2)
+      return null;
+    const usd = {};
+    const askUSDT = {};
+    const bidUSDT = {};
+    for (let index = 0; index < CRYPTO_LIST.length; index++) {
+      const coin = CRYPTO_LIST[index];
+      const entry = tickers[index];
+      if (!coin || !record2(entry) || entry.symbol !== coin + "USDT") return null;
+      const ask = positive2(entry.askPrice), bid = positive2(entry.bidPrice);
+      if (ask === null || bid === null || ask < bid || ask / bid > 1.15) return null;
+      const mid = (ask + bid) / 2 * usdtUsd;
+      if (!Number.isFinite(mid) || mid <= 0) return null;
+      askUSDT[coin] = ask;
+      bidUSDT[coin] = bid;
+      usd[coin] = mid;
+    }
+    return {
+      fetchedAt: now,
+      quotedAt: now,
+      source: "Binance Spot + CoinGecko USDT/USD",
+      usdtUsd,
+      usd,
+      askUSDT,
+      bidUSDT
+    };
+  }
+  function validateCoinGeckoSnapshot(input, now) {
+    if (!record2(input) || !Number.isFinite(now)) return null;
+    const ids = {
+      BTC: "bitcoin",
+      ETH: "ethereum",
+      LTC: "litecoin"
+    };
+    const usd = {};
+    let quotedAt = Infinity;
+    for (const coin of CRYPTO_LIST) {
+      const item = input[ids[coin]];
+      if (!record2(item)) return null;
+      const value = positive2(item.usd);
+      const timestamp = fresh(item.last_updated_at, now);
+      if (value === null || timestamp === null) return null;
+      usd[coin] = value;
+      quotedAt = Math.min(quotedAt, timestamp);
+    }
+    return { fetchedAt: now, quotedAt, source: "CoinGecko (USD, respaldo)", usd };
+  }
+  function validateCoinbaseSnapshot(input, now) {
+    if (!Array.isArray(input) || input.length !== CRYPTO_LIST.length || !Number.isFinite(now))
+      return null;
+    const usd = {};
+    for (let index = 0; index < CRYPTO_LIST.length; index++) {
+      const coin = CRYPTO_LIST[index], response = input[index];
+      if (!coin || !record2(response) || !record2(response.data) || response.data.base !== coin || response.data.currency !== "USD")
+        return null;
+      const amount = positive2(response.data.amount);
+      if (amount === null) return null;
+      usd[coin] = amount;
+    }
+    return { fetchedAt: now, source: "Coinbase (USD, respaldo)", usd };
   }
 
   // src/detector/scan-controller.ts
@@ -766,7 +961,6 @@
     const SCAN_LIMIT = 3500, BADGE_LIMIT = 100;
     const FIAT = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "KRW", "BRL", "CNY"];
     const CRYPTOS = ["BTC", "ETH", "LTC"];
-    const COIN_ID = { BTC: "bitcoin", ETH: "ethereum", LTC: "litecoin" };
     const DEFAULTS = {
       enabled: true,
       disabledSites: [],
@@ -1845,16 +2039,16 @@
         historyOutput.append(node("p", "", "Sin consultas guardadas. Solo se registra cuando pulsas Guardar; no se almacenan direcciones ni datos bancarios."));
         return;
       }
-      for (const record2 of history) {
+      for (const record3 of history) {
         const row = node("div", "clplens-record");
-        const old = Number(record2.clp), now = toCLP(Number(record2.amount), record2.code);
+        const old = Number(record3.clp), now = toCLP(Number(record3.amount), record3.code);
         const delta = old > 0 && validPositive(now) ? (now / old - 1) * 100 : null;
-        row.append(node("strong", "", `${dateTime(record2.at)} · ${safeLabel(record2.site)} · ${record2.amount} ${record2.code}`));
+        row.append(node("strong", "", `${dateTime(record3.at)} · ${safeLabel(record3.site)} · ${record3.amount} ${record3.code}`));
         row.append(node("div", "", `Entonces ${formatCLP(old)} · Ahora ${now != null ? formatCLP(now) : "sin tasa"}`));
-        row.append(node("div", "", `Variación CLP ${delta != null ? (delta >= 0 ? "+" : "") + formatDecimal(delta, 2) + " %" : "no disponible"} · ${safeLabel(record2.cryptoSource)}`));
-        if (record2.units && typeof record2.units === "object") {
+        row.append(node("div", "", `Variación CLP ${delta != null ? (delta >= 0 ? "+" : "") + formatDecimal(delta, 2) + " %" : "no disponible"} · ${safeLabel(record3.cryptoSource)}`));
+        if (record3.units && typeof record3.units === "object") {
           const deltas = CRYPTOS.map((c) => {
-            const oldUnits = Number(record2.units[c]), current = toUnits(Number(record2.amount), record2.code, c);
+            const oldUnits = Number(record3.units[c]), current = toUnits(Number(record3.amount), record3.code, c);
             if (!validPositive(oldUnits) || !validPositive(current)) return `${c}: sin comparación`;
             const diff = 100 * (current / oldUnits - 1);
             return `${c}: ${(diff >= 0 ? "+" : "") + formatDecimal(diff, 2)} %`;
@@ -1866,12 +2060,12 @@
         load.addEventListener("click", () => {
           manualOverride = true;
           pendingSelection = null;
-          settings.calcAmount = String(record2.amount);
-          settings.calcCurrency = record2.code;
-          if (SUPPORTED_CURRENCIES.includes(record2.targetCurrency)) settings.targetCurrency = record2.targetCurrency;
-          else settings.targetCurrency = targetFallback(record2.code);
+          settings.calcAmount = String(record3.amount);
+          settings.calcCurrency = record3.code;
+          if (SUPPORTED_CURRENCIES.includes(record3.targetCurrency)) settings.targetCurrency = record3.targetCurrency;
+          else settings.targetCurrency = targetFallback(record3.code);
           calcInput.value = settings.calcAmount;
-          calcSelect.value = record2.code;
+          calcSelect.value = record3.code;
           if (targetSelect) targetSelect.value = settings.targetCurrency;
           persist();
           activateTab("calculator");
@@ -1938,7 +2132,7 @@
       languageButton.type = "button";
       languageButton.className = "mv-lang-toggle";
       languageButton.addEventListener("click", () => switchLanguage(uiLanguage() === "es" ? "en" : "es"));
-      headerActions.append(languageButton, node("span", "mv-version", "v3.8.0"));
+      headerActions.append(languageButton, node("span", "mv-version", "v3.9.0"));
       titlebar.append(headerActions);
       header.append(titlebar);
       const status = node("div", "mv-status");
@@ -2423,48 +2617,27 @@
         }
         if (!data || data.length !== 3) throw Error("Binance no disponible");
         const tether = await requestJSON("https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_last_updated_at=true");
-        const usdtUsd = Number(tether?.tether?.usd), tetherTime = Number(tether?.tether?.last_updated_at) * 1e3;
-        if (!validPositive(usdtUsd) || usdtUsd < 0.8 || usdtUsd > 1.2 || !Number.isFinite(tetherTime) || Math.abs(Date.now() - tetherTime) > CRYPTO_STALE)
-          throw Error("USDT/USD sin cotizacion verificable");
-        const usd = {}, askUSDT = {}, bidUSDT = {};
-        CRYPTOS.forEach((coin, index) => {
-          const r = data[index];
-          if (r.symbol !== `${coin}USDT` || !validPositive(r.askPrice) || !validPositive(r.bidPrice) || Number(r.askPrice) < Number(r.bidPrice)) throw Error("Binance ticker no válido " + coin);
-          const ask = Number(r.askPrice), bid = Number(r.bidPrice);
-          if (ask / bid > 1.15) throw Error("Spread extremo " + coin);
-          askUSDT[coin] = ask;
-          bidUSDT[coin] = bid;
-          usd[coin] = (ask + bid) * 0.5 * usdtUsd;
-        });
-        crypto = { fetchedAt: Date.now(), quotedAt: Date.now(), source: "Binance Spot + CoinGecko USDT/USD", usdtUsd, usd, askUSDT, bidUSDT };
+        const usdtUsd = validateUSDTParity(tether, Date.now());
+        if (usdtUsd === null) throw Error("USDT/USD sin cotizacion verificable");
+        const validated = validateBinanceSnapshot(data, usdtUsd, Date.now());
+        if (!validated) throw Error("Binance ticker no válido");
+        crypto = validated;
         await storage.setValue(CRYPTO_KEY, crypto);
       } catch (err) {
         console.info("[Moncevia] Binance no disponible, intentando CoinGecko:", err?.message || err);
         try {
           const data = await requestJSON("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cethereum%2Clitecoin&vs_currencies=usd&include_last_updated_at=true");
-          const usd = {};
-          let quotedAt = Infinity;
-          for (const coin of CRYPTOS) {
-            const item = data[COIN_ID[coin]];
-            if (!validPositive(item?.usd)) throw Error("Falta " + coin);
-            const at = Number(item.last_updated_at) * 1e3;
-            if (Math.abs(Date.now() - at) > CRYPTO_STALE) throw Error("Cotización obsoleta " + coin);
-            usd[coin] = Number(item.usd);
-            quotedAt = Math.min(quotedAt, at);
-          }
-          crypto = { fetchedAt: Date.now(), quotedAt, source: "CoinGecko (USD, respaldo)", usd };
+          const validated = validateCoinGeckoSnapshot(data, Date.now());
+          if (!validated) throw Error("CoinGecko sin cotizacion completa o reciente");
+          crypto = validated;
           await storage.setValue(CRYPTO_KEY, crypto);
         } catch (e) {
           console.info("[Moncevia] CoinGecko no disponible; intentando Coinbase:", e?.message || e);
           try {
             const result = await Promise.all(CRYPTOS.map((c) => requestJSON(`https://api.coinbase.com/v2/prices/${c}-USD/spot`)));
-            const usd = {};
-            result.forEach((b, i) => {
-              const c = CRYPTOS[i];
-              if (b?.data?.base !== c || b?.data?.currency !== "USD" || !validPositive(b.data.amount)) throw Error("Coinbase no válido " + c);
-              usd[c] = Number(b.data.amount);
-            });
-            crypto = { fetchedAt: Date.now(), source: "Coinbase (USD, respaldo)", usd };
+            const validated = validateCoinbaseSnapshot(result, Date.now());
+            if (!validated) throw Error("Coinbase no válido");
+            crypto = validated;
             await storage.setValue(CRYPTO_KEY, crypto);
           } catch (error) {
             console.info("[Moncevia] Cotización cripto no disponible:", error?.message || error);
@@ -2497,16 +2670,7 @@
     async function boot() {
       try {
         const previous = await storage.getValue(SETTINGS_KEY, null);
-        if (previous && typeof previous === "object" && !Array.isArray(previous)) settings = { ...DEFAULTS, ...previous };
-        if (!SUPPORTED_CURRENCIES.includes(settings.calcCurrency)) settings.calcCurrency = "EUR";
-        if (!SUPPORTED_CURRENCIES.includes(settings.targetCurrency)) settings.targetCurrency = "CLP";
-        if (settings.targetCurrency === settings.calcCurrency) settings.targetCurrency = targetFallback(settings.calcCurrency);
-        if (!["auto", "es", "en"].includes(settings.language)) settings.language = "auto";
-        if (!settings.fabPosition || !Number.isFinite(settings.fabPosition.x) || !Number.isFinite(settings.fabPosition.y) || settings.fabPosition.x < 0 || settings.fabPosition.x > 1 || settings.fabPosition.y < 0 || settings.fabPosition.y > 1) settings.fabPosition = null;
-        for (const key of ["bareDollarSites", "disabledSites", "allowedSites"]) if (!Array.isArray(settings[key])) settings[key] = [];
-        if (!settings.dollarCurrencySites || typeof settings.dollarCurrencySites !== "object" || Array.isArray(settings.dollarCurrencySites)) settings.dollarCurrencySites = {};
-        settings.dollarCurrencySites = Object.fromEntries(Object.entries(settings.dollarCurrencySites).filter(([host, currency]) => /^[a-z0-9.-]{1,255}$/.test(host) && ["USD", "CLP", "CAD", "AUD"].includes(currency)).slice(0, 100));
-        settings.allowedSites = settings.allowedSites.filter((host) => typeof host === "string" && /^[a-z0-9.-]{1,255}$/.test(host)).slice(0, 100);
+        settings = normalizeSettings(previous, DEFAULTS);
         const oldFX = await storage.getValue(FX_KEY, null);
         fx = readCachedFX(oldFX);
         const hist = await storage.getValue(HISTORY_KEY, []);

@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def test():
     script=(ROOT/'moncevia.user.js').read_bytes()
     assert script.startswith(b'// ==UserScript=='), 'Userscript metadata must be first'
-    assert b'// @version      3.8.0' in script[:900]
+    assert b'// @version      3.9.0' in script[:900]
     assert b'const HOST = location.hostname.toLowerCase()' in script
     assert b'.clplens-badge' in script, 'CSS must be embedded without external fetch'
     assert b'clplens-fab' in script
@@ -23,9 +23,12 @@ def test():
     assert b'createSelectionScheduler' in script, 'Compiled retry scheduler missing'
     assert b'createPriceScanner' in script, 'Bundled scanner missing'
     assert b'createTabController' in script, 'Bundled accessible navigation missing'
-    for module in ('parse-amount.ts','conversion.ts','crypto-units.ts','fx-validation.ts','cache-validation.ts'):
+    for module in ('parse-amount.ts','conversion.ts','crypto-units.ts','fx-validation.ts','cache-validation.ts','settings-validation.ts','provider-validation.ts'):
         assert (ROOT/'src/core'/module).exists(), 'Missing typed core: '+module
     assert b'createConversionEngine' in script, 'Typed conversion engine must run in the installed artifact'
+    assert b'normalizeSettings' in script, 'Typed settings validation must run in installed code'
+    assert b'validateBinanceSnapshot' in script, 'Typed Binance payload validation must run in installed code'
+    assert b'validateCoinbaseSnapshot' in script, 'Typed fallback validation must run in installed code'
     assert b'validateFXResponse' in script, 'Typed FX validation must run in the installed artifact'
     assert (ROOT/'src/core/parse-amount.ts').exists()
     assert (ROOT/'src/types/currency.ts').exists()

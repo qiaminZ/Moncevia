@@ -1,3 +1,12 @@
+## 3.9.0 / Desktop 0.5.0-beta — Phase 5: typed settings and provider boundaries
+
+- Migrated persisted preference normalization into strict TypeScript, retaining known valid site consents and rejecting malformed options, unknown keys and invalid position/currency values.
+- Migrated public Binance bookTicker, CoinGecko USDT/USD parity, CoinGecko USD fallback and Coinbase spot response validation to typed providers.
+- Added unit tests covering ticker symbol ordering, bid/ask spread, stale/future timestamps, invalid responses, currency precedence and site-authorization integrity.
+- Kept the same storage keys, public API endpoints, opt-in site model, fee formulas, checkout exclusions and browser UI.
+- Binance and Coinbase spot responses do not provide source quote timestamps; local fetch time governs their indicative cache age.
+- Source refactor only; no new financial capabilities, wallets or permissions.
+
 ## 3.8.0 / Desktop 0.4.0-beta — Phase 4: typed variant detector & event lifecycle
 
 - Migrated variant-card, selected-summary, main-product-price, text extraction and ambiguous `$` selection logic from legacy JavaScript into a typed read-only DOM detector.
