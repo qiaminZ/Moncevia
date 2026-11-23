@@ -1,3 +1,7 @@
+## Fase 11 — Actualización de interfaz
+
+**Versión actual:** userscript **3.14.0**; extensiones Chromium/Firefox **0.10.0-beta**. Actualiza desde `main` y recarga el complemento o la página; desactiva copias duplicadas.
+
 ## Fase 10 — Recuperación y permisos persistidos
 
 **Versión actual:** userscript **3.13.0** y extensiones de escritorio **0.9.0-beta**. Las preferencias e historial local anteriores se conservan sin intervención. Si el navegador bloquea el almacenamiento, Moncevia no activará un dominio nuevo hasta confirmar que su autorización quedó guardada. Comprueba que el botón de activación desaparezca antes de usar el panel; si aparece un error, revisa los permisos de almacenamiento de Userscripts o del navegador.
@@ -56,7 +60,7 @@ La posición se guarda en cada navegador por separado, y se reajusta cuando la p
 
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.9.0-beta (motor compartido con Moncevia Userscript 3.13.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.10.0-beta (motor compartido con Moncevia Userscript 3.14.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 
