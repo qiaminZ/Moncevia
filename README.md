@@ -1,3 +1,12 @@
+## Moncevia v3.6.0 — Motor compilado y CSS modular (migración por etapas)
+
+El desarrollo ahora parte de `src/`, con **TypeScript estricto para los módulos migrados**, CSS separado y compilación reproducible hacia el userscript y ambas extensiones nativas. La lógica heredada todavía reside en JavaScript y seguirá migrándose gradualmente: **no se afirma una conversión completa a TypeScript**.
+
+- La instalación del usuario no cambia: `moncevia.user.js` o la extensión de su navegador.
+- El código generado no se edita manualmente; los tres engines se construyen desde una única fuente.
+- Consultar [arquitectura y comandos de desarrollo](docs/ARCHITECTURE.md).
+- Sin cambios de permisos, fuentes de cotización ni fórmulas financieras en esta etapa.
+
 ## Moncevia v3.5.5 — Sincronización universal de precios / Dynamic product prices
 
 **Problema corregido:** en algunas tiendas, tocar un botón o una variante no actualizaba la calculadora porque el precio se mostraba en otra sección del producto. Se identifica un precio principal explícito y único, se espera su actualización asincrónica y se evita que un resumen anterior sobrescriba la variante reciente.
