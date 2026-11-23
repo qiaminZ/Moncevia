@@ -130,6 +130,62 @@ def isolated_cache_failure(browser, mobile):
         page.close()
 
 
+def history_clear_save_race(browser):
+    page = setup(browser, False)
+    page.on("dialog", lambda d: d.accept())
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    try:
+        page.evaluate("""() => {
+          window._persist.clplens_v1 = {allowedSites:['other.example']};
+          window._persist.clplens_history_v3 = [{
+            at:1720000000000,code:'EUR',amount:12,clp:12000,
+            site:'old.example'
+          }];
+          const original=GM.setValue;
+          window._releaseClear=null;
+          GM.setValue=(key,value)=>{
+            if(key==='clplens_history_v3' &&
+               Array.isArray(value) && value.length===0) {
+              return new Promise(resolve=>{
+                window._releaseClear=()=>{
+                  window._persist[key]=value;
+                  resolve(true);
+                };
+              });
+            }
+            return original(key,value);
+          };
+        }""")
+        page.add_script_tag(content=SCRIPT)
+        page.locator("#clplens-fab").wait_for(timeout=12000)
+        page.locator("#clplens-fab").click()
+        page.locator("#mv-tab-history").click()
+        assert page.get_by_role("button", name="Reutilizar").count() == 1
+        page.get_by_role("button", name="Borrar historial local").click()
+        page.wait_for_function("() => typeof window._releaseClear === 'function'")
+        assert page.get_by_role("button", name="Reutilizar").count() == 0
+
+        # The user can save a new query while the clear write is pending.
+        page.locator("#mv-tab-calculator").click()
+        page.get_by_role("button", name="Guardar", exact=True).click()
+        page.locator("#mv-tab-history").click()
+        assert page.get_by_role("button", name="Reutilizar").count() == 1
+        assert "old.example" not in page.locator("#mv-page-history").inner_text()
+
+        page.evaluate("window._releaseClear()")
+        page.wait_for_function(
+            """() => window._persist.clplens_history_v3?.length === 1 &&
+            window._persist.clplens_history_v3[0].site === 'no guardado'""",
+            timeout=12000,
+        )
+        assert "old.example" not in page.locator("#mv-page-history").inner_text()
+        assert page.get_by_role("button", name="Reutilizar").count() == 1
+        assert not errors, errors
+    finally:
+        page.close()
+
+
 def run():
     engine = os.environ.get("MONCEVIA_TEST_BROWSER", "chromium").lower()
     assert engine in ("chromium", "firefox", "webkit")
@@ -143,6 +199,7 @@ def run():
                 denied_consent(browser, mobile)
                 delayed_consent(browser, mobile)
                 isolated_cache_failure(browser, mobile)
+            history_clear_save_race(browser)
         finally:
             browser.close()
     print("PASS", engine, "phase 10: durable site consent and independent cache recovery", flush=True)
