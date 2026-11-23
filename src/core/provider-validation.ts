@@ -21,17 +21,24 @@ export function validateUSDTParity(input: unknown, now: number): number | null {
   if (!record(input) || !record(input.tether)) return null;
   const parity = positive(input.tether.usd);
   const timestamp = fresh(input.tether.last_updated_at, now);
-  return parity !== null && parity >= 0.8 && parity <= 1.2 && timestamp !== null
-    ? parity : null;
+  return parity !== null && parity >= 0.8 && parity <= 1.2 && timestamp !== null ? parity : null;
 }
 
 /** Binance bookTicker entries have no source timestamp: fetchedAt is a local receipt time. */
 export function validateBinanceSnapshot(
-  tickers: unknown, usdtUsd: number, now: number,
+  tickers: unknown,
+  usdtUsd: number,
+  now: number,
 ): CryptoRates | null {
-  if (!Array.isArray(tickers) || tickers.length !== CRYPTO_LIST.length ||
-      !Number.isFinite(now) || !Number.isFinite(usdtUsd) ||
-      usdtUsd < 0.8 || usdtUsd > 1.2) return null;
+  if (
+    !Array.isArray(tickers) ||
+    tickers.length !== CRYPTO_LIST.length ||
+    !Number.isFinite(now) ||
+    !Number.isFinite(usdtUsd) ||
+    usdtUsd < 0.8 ||
+    usdtUsd > 1.2
+  )
+    return null;
   const usd: Partial<Record<CryptoCurrency, number>> = {};
   const askUSDT: Partial<Record<CryptoCurrency, number>> = {};
   const bidUSDT: Partial<Record<CryptoCurrency, number>> = {};
@@ -39,7 +46,8 @@ export function validateBinanceSnapshot(
     const coin = CRYPTO_LIST[index];
     const entry: unknown = tickers[index];
     if (!coin || !record(entry) || entry.symbol !== coin + 'USDT') return null;
-    const ask = positive(entry.askPrice), bid = positive(entry.bidPrice);
+    const ask = positive(entry.askPrice),
+      bid = positive(entry.bidPrice);
     if (ask === null || bid === null || ask < bid || ask / bid > 1.15) return null;
     const mid = ((ask + bid) / 2) * usdtUsd;
     if (!Number.isFinite(mid) || mid <= 0) return null;
@@ -51,7 +59,10 @@ export function validateBinanceSnapshot(
     fetchedAt: now,
     quotedAt: now,
     source: 'Binance Spot + CoinGecko USDT/USD',
-    usdtUsd, usd, askUSDT, bidUSDT,
+    usdtUsd,
+    usd,
+    askUSDT,
+    bidUSDT,
   };
 }
 
@@ -59,7 +70,9 @@ export function validateBinanceSnapshot(
 export function validateCoinGeckoSnapshot(input: unknown, now: number): CryptoRates | null {
   if (!record(input) || !Number.isFinite(now)) return null;
   const ids: Record<CryptoCurrency, string> = {
-    BTC: 'bitcoin', ETH: 'ethereum', LTC: 'litecoin',
+    BTC: 'bitcoin',
+    ETH: 'ethereum',
+    LTC: 'litecoin',
   };
   const usd: Partial<Record<CryptoCurrency, number>> = {};
   let quotedAt = Infinity;
@@ -80,12 +93,20 @@ export function validateCoinGeckoSnapshot(input: unknown, now: number): CryptoRa
  * and let existing local receipt-time expiry rules control its lifetime.
  */
 export function validateCoinbaseSnapshot(input: unknown, now: number): CryptoRates | null {
-  if (!Array.isArray(input) || input.length !== CRYPTO_LIST.length || !Number.isFinite(now)) return null;
+  if (!Array.isArray(input) || input.length !== CRYPTO_LIST.length || !Number.isFinite(now))
+    return null;
   const usd: Partial<Record<CryptoCurrency, number>> = {};
   for (let index = 0; index < CRYPTO_LIST.length; index++) {
-    const coin = CRYPTO_LIST[index], response: unknown = input[index];
-    if (!coin || !record(response) || !record(response.data) ||
-        response.data.base !== coin || response.data.currency !== 'USD') return null;
+    const coin = CRYPTO_LIST[index],
+      response: unknown = input[index];
+    if (
+      !coin ||
+      !record(response) ||
+      !record(response.data) ||
+      response.data.base !== coin ||
+      response.data.currency !== 'USD'
+    )
+      return null;
     const amount = positive(response.data.amount);
     if (amount === null) return null;
     usd[coin] = amount;
