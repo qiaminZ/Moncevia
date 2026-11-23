@@ -43,6 +43,9 @@ def audit() -> None:
 
     header = (ROOT / "src/meta/userscript.header.txt").read_text(encoding="utf-8")
     must(directives(header, "version") == [version], "userscript/package version mismatch")
+    must(directives(header, "updateURL") == ["https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.meta.js"], "Safari update metadata URL must end in .meta.js")
+    must(directives(header, "downloadURL") == ["https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js"], "Safari download must point to installable .user.js")
+    must((ROOT / "moncevia.meta.js").read_text(encoding="utf-8") == header.rstrip() + "\n", "Safari metadata file drift")
     must(directives(header, "match") == ["https://*/*"], "unexpected page access scope")
     must(directives(header, "run-at") == ["document-idle"], "unexpected execution timing")
     must("// @noframes" in header, "frame isolation missing")
