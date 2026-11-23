@@ -60,7 +60,7 @@ def exercise(browser, engine, mobile: bool, authorized: bool) -> None:
             consent.click()
             page.locator("#clplens-fab").wait_for(timeout=14000)
             assert page.evaluate(
-                "'new.example' in window._persist.clplens_v1.allowedSites"
+                "window._persist.clplens_v1.allowedSites.includes('new.example')"
             ) is True
             page.wait_for_function("() => window._requests.length > 0", timeout=14000)
         assert not errors, (engine, mobile, authorized, errors)
