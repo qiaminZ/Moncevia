@@ -69,10 +69,10 @@ def run_journey(browser, engine, mobile):
         )
         page.locator("#opt7").click()
         wait_amount(page, "49.99")
-        assert page.locator("#total").inner_text() == "€49.99"
+        assert page.locator("#total").evaluate("el => el.firstChild.nodeValue") == "€49.99"
         page.locator("#plus").click()
         wait_amount(page, "99.98")
-        assert page.locator("#total").inner_text() == "€99.98"
+        assert page.locator("#total").evaluate("el => el.firstChild.nodeValue") == "€99.98"
         fab.click()
         page.wait_for_function(
             """() => document.querySelector('#clplens-fab')?.getAttribute('aria-expanded') === 'true'"""
@@ -91,7 +91,7 @@ def run_journey(browser, engine, mobile):
         page.locator(".mv-lang-toggle").click()
         wait_tab(page, "mv-tab-calculator", "Convert")
         assert page.locator("#add").inner_text() == merchant_button
-        assert page.locator("#total").inner_text() == "€99.98"
+        assert page.locator("#total").evaluate("el => el.firstChild.nodeValue") == "€99.98"
         page.locator(".mv-lang-toggle").click()
         wait_tab(page, "mv-tab-calculator", "Convertir")
         assert page.locator("#add").inner_text() == merchant_button
@@ -108,7 +108,7 @@ def run_journey(browser, engine, mobile):
         page.locator("#opt14").click()
         # Quantity remains 2: the merchant total is 2 × €74.99, not €74.99.
         wait_amount(page, "149.98")
-        assert page.locator("#total").inner_text() == "€149.98"
+        assert page.locator("#total").evaluate("el => el.firstChild.nodeValue") == "€149.98"
 
         # Native commerce handlers are not swallowed by Moncevia's event capture.
         page.locator("#add").click()
