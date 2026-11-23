@@ -73,6 +73,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 
 12. **Fase 12 (v3.15.0):** se trasladan observador principal, eventos y reactivación BFCache a TypeScript, con agrupación de cambios DOM por frame y limpieza al salir. No se cambia el motor financiero ni la política de autorización.
 
+13. **Fase 13 (sin cambio de versión):** pruebas de estrés adicionales con 180 precios, ráfagas de mutaciones, límite de anotaciones, respeto de controles comerciales, formularios ocultos y bloqueo de contextos sensibles en Chromium/Firefox/WebKit. La certificación física no es sustituida por emulación.
+
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 
 ## Distribución
