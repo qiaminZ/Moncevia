@@ -1,3 +1,7 @@
+## Moncevia v3.14.0 — Fase 11: interfaz modular
+
+El encabezado y los componentes elementales del panel se extrajeron a módulos TypeScript específicos (`src/ui/panel-shell.ts` y `src/ui/dom-factory.ts`). Las clases CSS, atributos accesibles, navegación y privacidad del contenido de las tiendas permanecen iguales. No se modifican tasas, pagos, almacenamiento, permisos ni proveedores. Esta versión conserva el carácter beta de las extensiones.
+
 ## Moncevia v3.13.0 — Fase 10: persistencia segura
 
 El controlador TypeScript de preferencias e historial conserva las claves de versiones anteriores y serializa las escrituras. La autorización por sitio no habilita escaneo ni cotizaciones públicas hasta confirmarse su almacenamiento; si falla la operación, Moncevia mantiene el permiso revocado y permite reintentar. Fallos de caché financiera se aíslan para recuperar los demás datos válidos. No se agregan accesos a cuentas, permisos de extensión ni operaciones de compra.
