@@ -1,3 +1,9 @@
+## Moncevia v3.7.0 — Fase 3: interfaz adaptable y detector modular
+
+La **anotación de precios** ahora se ejecuta desde `src/detector/scan-controller.ts`, separada de la interfaz y de los cálculos financieros. La navegación de cinco pestañas utiliza `src/ui/tab-controller.ts`, con selección por teclado y atributos de accesibilidad. El CSS integra ajustes para celulares, tablets y orientación horizontal sin alterar el diseño de las tiendas.
+
+**Alcance:** refactorización progresiva. El reconocimiento detallado de variantes, los componentes del panel y los conectores restantes siguen en `src/legacy/runtime.js`; no se afirma que toda la interfaz esté migrada a TypeScript. Las tasas, permisos y reglas financieras permanecen sin cambios. Se añadieron pruebas de anotaciones y una matriz de tamaños para Chromium, Firefox y WebKit; aún se requieren pruebas físicas para certificar dispositivos concretos.
+
 ## Moncevia v3.6.1 — Fase 2: núcleo financiero tipado
 
 La migración incremental desde JavaScript heredado hacia TypeScript estricto ahora incluye **conversiones monetarias**, **unidades cripto de ocho decimales**, **validación de respuestas FX** y **validación de cotizaciones almacenadas**. La detección de precios, las interfaces y otros adaptadores permanecen en `src/legacy/runtime.js` hasta su propia revisión. La instalación sigue siendo idéntica y el código compilado se genera desde una fuente única.
