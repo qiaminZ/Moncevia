@@ -167,6 +167,11 @@ def history_clear_save_race(browser):
         assert page.get_by_role("button", name="Reutilizar").count() == 0
 
         # The user can save a new query while the clear write is pending.
+        # The mocked FX provider must be ready before saving a CLP estimate.
+        page.wait_for_function(
+            "() => window._persist.clplens_usd_rates_v1?.rates?.CLP > 0",
+            timeout=12000,
+        )
         page.locator("#mv-tab-calculator").click()
         page.get_by_role("button", name="Guardar", exact=True).click()
         page.locator("#mv-tab-history").click()
