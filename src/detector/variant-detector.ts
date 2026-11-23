@@ -35,7 +35,8 @@ export interface VariantDetectorOptions {
   readonly dollarCurrencyForSite: () => string | null;
   readonly cryptoCodes: readonly string[];
 }
-const isElement = (value: unknown): value is Element => value instanceof Element;
+const isElement = (value: unknown): value is Element =>
+  typeof Element !== 'undefined' && value instanceof Element;
 const forbiddenAction = /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i;
 const variantWords = /\b(?:days?|weeks?|months?|years?|lifetime|license|licen[cs]e|tier|plan|size|color|colour|medium|large|small|basic|standard|premium)\b/i;
 
@@ -65,6 +66,9 @@ export function createVariantDetector(options: VariantDetectorOptions) {
       rx.lastIndex = 0;
       let found: RegExpExecArray | null;
       while ((found = rx.exec(text))) {
+        // A price and currency must be on the same visual line; never merge
+        // a previous product's number with the next line's currency code.
+        if (found[0].includes('\n')) continue;
         const rawAmount = found[1];
         if (!rawAmount) continue;
         const currency = isSuffix
