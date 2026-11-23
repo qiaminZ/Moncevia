@@ -68,20 +68,20 @@ describe('Phase 10 durable state lifecycle', () => {
       async getValue<T>(key: string, fallback: T): Promise<T> {
         seen.push(key);
         if (key === MONCEVIA_STORAGE_KEYS.settings)
-          return { language: 'en', allowedSites: ['shop.riftbot.org', 'allowed.example'] } as T;
+          return { language: 'en', allowedSites: ['shop.riftbot.org', 'allowed.example'] } as unknown as T;
         if (key === MONCEVIA_STORAGE_KEYS.fx) throw new Error('FX storage unavailable');
         if (key === MONCEVIA_STORAGE_KEYS.history)
           return [
             null,
             { at: 1720000000000, amount: '12.5', code: 'EUR', clp: 12600, site: 'no guardado' },
             { at: 'invalid', amount: 10, code: 'USD', clp: 10000 },
-          ] as T;
+          ] as unknown as T;
         if (key === MONCEVIA_STORAGE_KEYS.crypto)
           return {
             fetchedAt: Date.now(),
             usd: { BTC: 79000, ETH: 2300, LTC: 60 },
             source: 'CoinGecko',
-          } as T;
+          } as unknown as T;
         return fallback;
       },
       async setValue() {
@@ -96,7 +96,12 @@ describe('Phase 10 durable state lifecycle', () => {
     expect(state.crypto?.usd.LTC).toBe(60);
     expect(state.history).toHaveLength(1);
     expect(state.history[0].site).toBe('no guardado');
-    expect(seen).toEqual(Object.values(MONCEVIA_STORAGE_KEYS));
+    expect(seen).toEqual([
+      MONCEVIA_STORAGE_KEYS.settings,
+      MONCEVIA_STORAGE_KEYS.fx,
+      MONCEVIA_STORAGE_KEYS.history,
+      MONCEVIA_STORAGE_KEYS.crypto,
+    ]);
     expect(onError).toHaveBeenCalledOnce();
     expect(onError).toHaveBeenCalledWith(MONCEVIA_STORAGE_KEYS.fx, expect.any(Error));
   });
@@ -109,7 +114,7 @@ describe('Phase 10 durable state lifecycle', () => {
             allowedSites: 'not an array',
             dollarCurrencySites: { 'invalid host': 'USD' },
             enabled: 'true',
-          } as T;
+          } as unknown as T;
         return fallback;
       },
       async setValue() {
