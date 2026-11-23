@@ -1,3 +1,9 @@
+## QA phase 13 — no user-facing version bump
+
+- Added high-density 180-price storefront scenarios and 160 rapid DOM updates on Chromium, Firefox and WebKit, desktop/mobile emulation.
+- Validates the 100-badge scan ceiling, hidden/form exclusions, native merchant click execution and security exclusion for password forms on unauthorised domains.
+- Retains all existing financial, accessibility, localisation, responsive, storage and native-extension checks. Real Safari iOS and Opera GX remain unverified until physical-device evidence exists.
+
 ## 3.15.0 / Desktop 0.11.0-beta — Phase 12: runtime lifecycle performance
 
 - Extracted document mutation observation, event wiring, refresh cadence and bfcache suspension/resumption into `src/platform/page-lifecycle.ts` (strict TypeScript).
