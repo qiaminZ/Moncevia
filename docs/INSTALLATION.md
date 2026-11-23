@@ -1,6 +1,16 @@
+## Safari iPhone/iPad — si Moncevia no aparece
+
+1. Comprueba en **Ajustes de iOS → Apps → Safari → Extensiones** que **Userscripts** esté habilitada y tenga permiso para el sitio. En Safari, abre el menú de extensiones, entra en **Userscripts** y verifica que `moncevia.user.js` figure activo; al editar o reemplazar archivos, abre de nuevo su panel para actualizar la lista.
+2. Abre la aplicación **Userscripts** y comprueba qué carpeta de Archivos tiene seleccionada. Guarda allí el [archivo completo moncevia.user.js](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js) **v3.15.1**, no `moncevia.meta.js` ni un enlace guardado como texto. Evita archivos duplicados o versiones anteriores.
+3. Recarga una tienda HTTPS compatible. En sitios nuevos, toca **Moncevia · activar aquí** para autorizarla; en sitios aprobados aparece el botón **CLP · ₿**. Los dominios `.cl`, inicios de sesión, checkout y otras páginas sensibles están excluidos intencionalmente.
+4. Si el botón aparece pero no las tasas, comprueba que el gestor permita las solicitudes a los proveedores públicos. No elimines tus datos de Userscripts sin respaldar las preferencias o el historial que quieras conservar.
+5. **Actualizaciones:** desde v3.15.1 se publica `moncevia.meta.js` como destino de `@updateURL`, con `moncevia.user.js` como archivo de descarga. Una versión antigua ya instalada puede necesitar **reemplazo manual** para adoptar esta corrección; no presupongas que se actualizará sola.
+
+**Nota:** las pruebas automatizadas sobre WebKit no equivalen a una instalación física de Userscripts en iOS. Para informar un problema, indica versión iOS, versión de Userscripts, dominio de prueba y si no aparece el botón, no abre o faltan tasas.
+
 ## Fase 12 — Rendimiento y reanudación
 
-**Versión actual:** userscript **3.15.0** y extensiones beta **0.11.0**. Las ráfagas de cambios en la tienda se agrupan para evitar trabajo redundante y los observadores se reanudan al volver desde el historial del navegador (BFCache). Se conservan claves locales, permisos y fuentes. Actualiza la copia instalada desde `main` una vez que la versión esté publicada.
+**Versión previa:** userscript **3.15.0** y extensiones beta **0.11.0**. Las ráfagas de cambios en la tienda se agrupan para evitar trabajo redundante y los observadores se reanudan al volver desde el historial del navegador (BFCache). Se conservan claves locales, permisos y fuentes. Actualiza la copia instalada desde `main` una vez que la versión esté publicada.
 
 ## Fase 11 — Actualización de interfaz
 
