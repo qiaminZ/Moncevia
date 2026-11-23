@@ -1,3 +1,12 @@
+## 3.6.0 / Desktop 0.2.0-beta — Engineering migration (staged)
+
+- Introduced TypeScript strict for the currency parser and currency definitions, while retaining the remaining runtime in JavaScript during migration.
+- Extracted CSS into `src/styles/moncevia.css`; the build embeds styles, requiring no external CSS fetch.
+- Added one esbuild-based compilation path for the userscript and native Chromium/Firefox engines, with generated artifact parity checks.
+- Added npm toolchain, dependency lockfile, ESLint, Prettier and Vitest unit tests.
+- Unchanged: financial conversion formulas, exchange providers, permission scope and checkout safeguards.
+- Existing 72 browser-matrix cases and platform regression tests remain the release gate; physical browser testing is still required.
+
 ## 3.5.5 / Desktop 0.1.5-beta — 2026-11-21
 
 - Corrige la sincronización de variantes cuando el botón no incluye el precio o cuando el importe principal cambia por JavaScript tras el clic.
