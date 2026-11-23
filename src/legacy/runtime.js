@@ -1092,7 +1092,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.7.0'));
+    headerActions.append(languageButton,node('span','mv-version','v3.8.0'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
