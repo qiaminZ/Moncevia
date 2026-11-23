@@ -1,6 +1,12 @@
+## Fase 10 — Recuperación y permisos persistidos
+
+**Versión actual:** userscript **3.13.0** y extensiones de escritorio **0.9.0-beta**. Las preferencias e historial local anteriores se conservan sin intervención. Si el navegador bloquea el almacenamiento, Moncevia no activará un dominio nuevo hasta confirmar que su autorización quedó guardada. Comprueba que el botón de activación desaparezca antes de usar el panel; si aparece un error, revisa los permisos de almacenamiento de Userscripts o del navegador.
+
+**English:** Userscript 3.13.0 and desktop extension 0.9.0-beta retain existing local keys and refuse to activate a new merchant domain when consent cannot be saved. Re-enable the manager's storage permissions and retry.
+
 ## Fase 9 — Compatibilidad de gestores de userscripts
 
-**Versión actual:** userscript **3.12.0** y extensiones nativas **0.8.0-beta**. El adaptador de almacenamiento y solicitudes se modernizó sin modificar los nombres de preferencias locales ni el proceso de autorización. En gestores antiguos con API `GM_*`, conserva la lectura y escritura de preferencias y las peticiones mediante callbacks. Al actualizar el userscript, recarga la página; al actualizar una extensión local, recarga también el complemento en el navegador. No instales simultáneamente la extensión y el userscript en el mismo sitio.
+**Versión de la fase 9:** userscript **3.12.0** y extensiones nativas **0.8.0-beta**. El adaptador de almacenamiento y solicitudes se modernizó sin modificar los nombres de preferencias locales ni el proceso de autorización. En gestores antiguos con API `GM_*`, conserva la lectura y escritura de preferencias y las peticiones mediante callbacks. Al actualizar el userscript, recarga la página; al actualizar una extensión local, recarga también el complemento en el navegador. No instales simultáneamente la extensión y el userscript en el mismo sitio.
 
 **English:** Userscript 3.12.0 and native extensions 0.8.0-beta keep existing stored data and site permissions while supporting modern `GM.*` and older `GM_*` managers. Reload the script or unpacked extension after updating; disable duplicate installations.
 
@@ -50,7 +56,7 @@ La posición se guarda en cada navegador por separado, y se reajusta cuando la p
 
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.8.0-beta (motor compartido con Moncevia Userscript 3.12.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.9.0-beta (motor compartido con Moncevia Userscript 3.13.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 

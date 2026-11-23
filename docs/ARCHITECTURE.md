@@ -1,4 +1,4 @@
-# Moncevia — Arquitectura de ingeniería (v3.12.0)
+# Moncevia — Arquitectura de ingeniería (v3.13.0)
 
 ## Objetivo
 
@@ -22,6 +22,7 @@ Mantener un **único código fuente** para el userscript iOS/Android y las exten
 - `src/ui/tab-controller.ts`: navegación por pestañas, atributos ARIA y teclado.
 - `src/ui/fab-controller.ts`: geometría, arrastre, teclado y persistencia de posición del botón flotante, sin alterar componentes de tiendas.
 - `src/platform/gm-bridge.ts`: interfaz tipada para almacenamiento y peticiones públicas de userscript managers modernos y heredados, sin credenciales ni acceso a las tiendas.
+- `src/platform/persistence-controller.ts`: recuperación independiente de preferencias, cachés e historial, escrituras serializadas, y resultado explícito de consentimientos guardados o rechazados.
 - `src/i18n/catalog.ts`: catálogo ES→EN, fragmentos dinámicos y resolución del idioma Auto.
 - `src/i18n/localizer.ts`: actualización reversible y limitada al widget de textos y atributos de accesibilidad mediante observador de mutaciones.
 - `src/legacy/runtime.js`: integración y lógica restante en JavaScript durante la migración. **Todavía no está tipada**; pasarla a TS sin pruebas incrementaría el riesgo de regresiones.
@@ -62,6 +63,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 8. **Fase 8 (v3.11.0):** extracción tipada del botón flotante y sus límites responsivos, con pruebas unitarias y de regresión. Persisten UI, acceso GM y parte de eventos financieros en el runtime heredado.
 
 9. **Fase 9 (v3.12.0):** extracción del adaptador GM de almacenamiento y red a TypeScript estricto, con compatibilidad asincrónica y callbacks antiguos, pruebas unitarias y regresión multi-motor. Aún quedan lógica de persistencia y componentes visuales heredados.
+
+10. **Fase 10 (v3.13.0):** separación del arranque de datos y la persistencia de ajustes/historial, recuperación parcial ante fallos, autorización efectiva solo tras guardado confirmado y pruebas con gestores de almacenamiento simulados. Aún permanecen renderizado, controles del panel y parte del ciclo de vida DOM en JavaScript heredado.
 
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 

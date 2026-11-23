@@ -1,3 +1,7 @@
+## Moncevia v3.13.0 — Fase 10: persistencia segura
+
+El controlador TypeScript de preferencias e historial conserva las claves de versiones anteriores y serializa las escrituras. La autorización por sitio no habilita escaneo ni cotizaciones públicas hasta confirmarse su almacenamiento; si falla la operación, Moncevia mantiene el permiso revocado y permite reintentar. Fallos de caché financiera se aíslan para recuperar los demás datos válidos. No se agregan accesos a cuentas, permisos de extensión ni operaciones de compra.
+
 ## Moncevia v3.12.0 — Fase 9: transporte GM tipado
 
 El acceso a almacenamiento local y las peticiones a fuentes públicas de cotización pasan por `src/platform/gm-bridge.ts`, compatible con métodos modernos `GM.*` (Promise/callback) y métodos antiguos `GM_*` (síncronos/callback). La selección del adaptador se realiza por operación, sin ampliar permisos ni alterar las claves de preferencias, tasas e historial. Se incorporan pruebas unitarias y regresiones de un gestor heredado en Chromium, Firefox y WebKit, sobre escritorio y móvil emulado. Las instalaciones físicas de Safari/Opera GX requieren comprobación independiente.
