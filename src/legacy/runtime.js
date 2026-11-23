@@ -710,7 +710,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   function createUI() {
     stylesheet();
     const shell=createPanelShell({
-      version:'3.14.0',
+      version:'3.15.0',
       onLanguageToggle:()=>switchLanguage(uiLanguage()==='es'?'en':'es')
     });
     widget=shell.widget;fab=shell.fab;panel=shell.panel;
