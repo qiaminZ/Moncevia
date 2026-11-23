@@ -51,9 +51,9 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 
 ## Etapas y honestidad del estado
 
-1. **Fase 1 (este cambio):** CSS aislado, primer módulo financiero estrictamente tipado, un solo proceso de build, lockfile, pruebas y artefactos nativos.
-2. **Fase 2 (v3.6.1, en ejecución):** conversiones, validación FX y cachés financieras migradas a TypeScript, con pruebas unitarias. Permanecen pendientes la normalización completa de ajustes y los proveedores cripto externos, junto con futuras migraciones del runtime.
-3. **Fase 3 (v3.7.0):** escaneo y anotaciones DOM separados, controlador de pestañas tipado, ajustes responsivos y nuevas regresiones multi-viewport. El reconocedor profundo de variantes, gestión avanzada de eventos y módulos visuales aún se migrarán de forma incremental; no se presupone que todo el runtime sea TypeScript.
+1. **Fase 1:** CSS aislado, primer módulo financiero estrictamente tipado, un solo proceso de build, lockfile, pruebas y artefactos nativos.
+2. **Fase 2 (v3.6.1):** conversiones, validación FX y cachés financieras migradas a TypeScript, con pruebas unitarias. La normalización posterior de ajustes y proveedores externos se completó en fases siguientes; el runtime heredado sigue en migración parcial.
+3. **Fase 3 (v3.7.0):** escaneo y anotaciones DOM separados, controlador de pestañas tipado, ajustes responsivos y nuevas regresiones multi-viewport. El reconocimiento de variantes, la gestión avanzada de eventos y los componentes visuales se abordaron posteriormente; aún existe integración heredada que no se considera completamente TypeScript.
 
 4. **Fase 4 (v3.8.0):** detector de variantes tipado, cancelación de reintentos obsoletos y protección de edición manual. Se amplían las pruebas de eventos y compatibilidad sin cambiar permisos, tasas o pagos.
 
@@ -74,6 +74,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 12. **Fase 12 (v3.15.0):** se trasladan observador principal, eventos y reactivación BFCache a TypeScript, con agrupación de cambios DOM por frame y limpieza al salir. No se cambia el motor financiero ni la política de autorización.
 
 13. **Fase 13 (sin cambio de versión):** pruebas de estrés adicionales con 180 precios, ráfagas de mutaciones, límite de anotaciones, respeto de controles comerciales, formularios ocultos y bloqueo de contextos sensibles en Chromium/Firefox/WebKit. La certificación física no es sustituida por emulación.
+
+14. **Fase 14 (sin versión nueva):** auditoría reproducible de manifests, permisos, claves de red, paridad de motores, documentación de riesgos y matriz física pendiente. La etiqueta de estable queda bloqueada hasta completar las pruebas físicas y, cuando corresponda, firma/publicación en tiendas.
 
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 

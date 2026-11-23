@@ -1,3 +1,7 @@
+## Auditoría y estado de entrega — Fase 14
+
+La auditoría automatizada comprueba versiones, integridad de los tres motores, permisos y proveedores HTTPS, junto a la matriz de pruebas de navegadores. El proyecto continúa en beta mientras falten pruebas físicas en Safari iOS y Opera GX, las firmas de extensiones y una decisión de licencia. Consultar docs/RELEASE_READINESS.md y docs/QA_DEVICE_MATRIX.md; las pruebas WebKit/Chromium emuladas no se presentan como certificación física.
+
 ## Fase 13 — Pruebas de estrés automatizadas
 
 La fase 13 añade una matriz de 180 precios de comercio y mutaciones rápidas para los motores Chromium, Firefox y WebKit, con privacidad, ausencia de anotaciones en formularios y preservación de botones de la tienda. Estas pruebas emuladas no equivalen a una certificación física ni a una publicación en tiendas de extensiones.

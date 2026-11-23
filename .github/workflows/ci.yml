@@ -27,6 +27,7 @@ jobs:
           npm run test:core
           npm run build:check
           python tests/test_architecture.py
+          python scripts/audit_release.py
       - name: Static check
         run: node --check moncevia.user.js
       - name: Install browser tests
