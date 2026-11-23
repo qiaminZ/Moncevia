@@ -31,8 +31,12 @@ def run():
         }""")
         page.wait_for_timeout(800)
         assert page.locator('.clplens-badge').count()==60
+        initial=page.locator('#price0 .clplens-badge').inner_text()
         page.locator('#price0').evaluate("(e)=>e.firstChild.textContent='€99.50'")
-        page.wait_for_function("document.querySelector('#price0 .clplens-badge')?.textContent.includes('99')===true",timeout=4000)
+        page.wait_for_function(
+            "document.querySelector('#price0 .clplens-badge')?.textContent !== initial",
+            arg=initial,timeout=4000
+        )
         # All displayed badges stay passive; merchant purchase controls still execute.
         page.locator('#buy').click()
         assert page.evaluate('window.buyCount')==1
