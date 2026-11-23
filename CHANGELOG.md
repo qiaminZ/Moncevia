@@ -1,3 +1,11 @@
+## 3.11.0 / Desktop 0.7.0-beta — Phase 8: typed floating launcher
+
+- Extracted the floating button's pointer/touch, keyboard, resize, restore, reset and normalized-position logic into strict `src/ui/fab-controller.ts`.
+- Kept original DOM, stored settings key, visual positions, event handlers and drag safeguards.
+- Added unit tests for bounds, clamp logic, normalized coordinates and degenerate viewport geometry. Existing drag/touch and phase 7 cross-engine journeys remain mandatory CI gates.
+- No financial changes, additional permissions, account access or new API requests; remaining UI and adapters still use legacy JavaScript.
+- Physical Opera GX and Safari iOS verification remains independent of automated emulation.
+
 ## 3.10.0 / Desktop 0.6.0-beta — Phase 6: typed internationalization
 
 - Moved the existing Spanish-English phrase catalog and dynamic fragments out of legacy runtime into typed `src/i18n/catalog.ts`.
