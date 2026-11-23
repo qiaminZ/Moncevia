@@ -1,3 +1,7 @@
+## Moncevia v3.11.0 — Fase 8: controlador flotante tipado
+
+El botón flotante conserva el arrastre táctil/ratón, navegación por teclado, límites de pantalla, posición guardada y restablecimiento; su lógica se trasladó a `src/ui/fab-controller.ts` en TypeScript estricto. Nuevas pruebas unitarias comprueban coordenadas y ventanas pequeñas; continúan las regresiones integrales de la fase 7. Sin cambios en conversiones, dominios, APIs, pagos ni claves de almacenamiento. La certificación física de Opera GX y Safari sigue pendiente.
+
 ## Moncevia v3.10.0 — Fase 6: internacionalización modular y accesibilidad
 
 El catálogo bilingüe ES/EN y las reglas de traducción dinámica se trasladaron a `src/i18n/catalog.ts`, mientras que la localización reversible de textos, etiquetas accesibles y mensajes se gestiona desde `src/i18n/localizer.ts`. La interfaz conserva los nombres de pestañas, comportamiento de conversión, ajustes y diseño. El usuario puede alternar español, inglés o idioma automático sin reinstalar Moncevia.
