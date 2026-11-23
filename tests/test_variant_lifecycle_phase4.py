@@ -41,7 +41,7 @@ def run():
                 expect_amount(page, 55)
                 # Focus and manually edit while previously scheduled retries still exist.
                 page.locator('#clplens-fab').click()
-                page.locator(AMOUNT).fill('88')
+                page.locator(AMOUNT).first.fill('88')
                 page.locator('#clplens-fab').click()
                 page.wait_for_timeout(3100)
                 expect_amount(page, 88, timeout=200)
