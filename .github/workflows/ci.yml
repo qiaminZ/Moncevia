@@ -42,6 +42,10 @@ jobs:
           python tests/test_currency_pairs.py
           python tests/test_static_prices.py
           python tests/test_panel_responsiveness.py
+          python tests/test_scanner_phase3.py
+          python tests/test_responsive_phase3.py
+          MONCEVIA_TEST_BROWSER=firefox python tests/test_responsive_phase3.py
+          MONCEVIA_TEST_BROWSER=webkit python tests/test_responsive_phase3.py
           python tests/test_draggable_fab.py
           python tests/test_shop_scenarios.py
           MONCEVIA_TEST_BROWSER=firefox python tests/test_shop_scenarios.py
