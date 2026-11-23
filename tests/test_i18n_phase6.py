@@ -39,7 +39,7 @@ def run():
             expected='Convertir' if locale=='es-CL' else 'Convert'
             page.wait_for_function(
               "expected => document.querySelector('#mv-tab-calculator')?.textContent.includes(expected)",
-              expected, timeout=8000)
+              arg=expected, timeout=8000)
             page.evaluate("""() => {
               const panel=document.getElementById('mv-page-settings');
               const extra=document.createElement('span');
@@ -52,23 +52,23 @@ def run():
             expected_aria='Permitir Moncevia en este dominio' if locale=='es-CL' else 'Allow Moncevia on this domain'
             page.wait_for_function(
               "text => document.querySelector('#test-translation')?.textContent === text",
-              expected_text,timeout=8000)
+              arg=expected_text,timeout=8000)
             page.wait_for_function(
               "label => document.querySelector('#test-translation')?.getAttribute('aria-label')===label",
-              expected_aria,timeout=8000)
+              arg=expected_aria,timeout=8000)
             page.locator('.mv-lang-toggle').click()
             other='Convert' if locale=='es-CL' else 'Convertir'
             page.wait_for_function(
               "text => document.querySelector('#mv-tab-calculator')?.textContent.includes(text)",
-              other,timeout=8000)
+              arg=other,timeout=8000)
             other_text='Clear local history' if locale=='es-CL' else 'Borrar historial local'
             page.wait_for_function(
               "text => document.querySelector('#test-translation')?.textContent === text",
-              other_text,timeout=8000)
+              arg=other_text,timeout=8000)
             page.locator('.mv-lang-toggle').click()
             page.wait_for_function(
               "text => document.querySelector('#mv-tab-calculator')?.textContent.includes(text)",
-              expected,timeout=8000)
+              arg=expected,timeout=8000)
             page.wait_for_function(
               "text => document.querySelector('#test-translation')?.textContent === text",
               expected_text,timeout=8000)
