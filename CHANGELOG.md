@@ -1,3 +1,9 @@
+## Engineering phase 14 — release audit and documented certification gates
+
+- Added a fail-closed, CI-required source/bundle audit: version alignment, modern/legacy GM grants, exact external hosts, Manifest V3 permissions, HTTPS-only matching, identical generated engines and absence of temporary workflows.
+- Added explicit physical-device QA matrix, defect evidence requirements and a transparent beta release-readiness decision.
+- No change to financial calculations, store behavior, runtime permissions or released app version. Physical Safari iOS, Opera GX, extension signing and store approval are still unverified.
+
 ## QA phase 13 — no user-facing version bump
 
 - Added high-density 180-price storefront scenarios and 160 rapid DOM updates on Chromium, Firefox and WebKit, desktop/mobile emulation.
