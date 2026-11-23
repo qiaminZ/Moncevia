@@ -1,0 +1,29 @@
+{
+  "name": "moncevia",
+  "version": "3.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Moncevia multi-browser userscript and native extension build",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:check": "node scripts/build.mjs --check",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/core src/types src/entry scripts/build.mjs",
+    "format:check": "prettier --check \"src/**/*.ts\" scripts/build.mjs eslint.config.js",
+    "test:core": "vitest run tests/core",
+    "test": "npm run typecheck && npm run test:core"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "typescript": "5.9.3",
+    "eslint": "9.39.1",
+    "typescript-eslint": "8.46.3",
+    "prettier": "3.6.2",
+    "vitest": "3.2.4",
+    "@eslint/js": "9.39.1",
+    "globals": "16.4.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

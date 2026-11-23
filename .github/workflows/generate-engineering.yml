@@ -1,0 +1,47 @@
+name: Generate Moncevia modular artifacts
+on:
+  push:
+    branches:
+      - refactor/typescript-v3.6.0
+permissions:
+  contents: write
+concurrency:
+  group: moncevia-generation-v3-6
+  cancel-in-progress: true
+jobs:
+  build:
+    if: "${{ !startsWith(github.event.head_commit.message, 'ci(generated):') }}"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned development tooling and create lockfile
+        run: npm install --no-audit --no-fund
+      - name: Format typed modules and tooling
+        run: npx prettier --write "src/**/*.ts" scripts/build.mjs eslint.config.js
+      - name: Typecheck, lint and core unit tests
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run test:core
+          npm run format:check
+      - name: Generate all browser artifacts from the same source
+        run: |
+          npm run build
+          python scripts/build_native.py
+          npm run build:check
+          python tests/test_architecture.py
+          node --check moncevia.user.js
+      - name: Commit build outputs to the protected migration branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json src scripts/build.mjs eslint.config.js moncevia.user.js extension/chromium/engine.js extension/firefox/engine.js
+          if ! git diff --cached --quiet; then
+            git commit -m "ci(generated): lock dependencies and build Moncevia 3.6.0"
+            git push origin HEAD:refactor/typescript-v3.6.0
+          fi

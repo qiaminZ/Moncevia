@@ -1,0 +1,27 @@
+"""Structural regression checks for the staged TypeScript/CSS migration."""
+from pathlib import Path
+import json
+
+ROOT=Path(__file__).resolve().parents[1]
+
+
+def test():
+    script=(ROOT/'moncevia.user.js').read_bytes()
+    assert script.startswith(b'// ==UserScript=='), 'Userscript metadata must be first'
+    assert b'// @version      3.6.0' in script[:900]
+    assert b'const HOST = location.hostname.toLowerCase()' in script
+    assert b'.clplens-badge' in script, 'CSS must be embedded without external fetch'
+    assert b'clplens-fab' in script
+    for browser in ('chromium','firefox'):
+        assert (ROOT/'extension'/browser/'engine.js').read_bytes()==script, 'Engine drift: '+browser
+    assert (ROOT/'src/styles/moncevia.css').stat().st_size>10000
+    assert (ROOT/'src/core/parse-amount.ts').exists()
+    assert (ROOT/'src/types/currency.ts').exists()
+    assert (ROOT/'src/legacy/runtime.js').exists()
+    assert (ROOT/'package-lock.json').exists(), 'Lockfile required for repeatable builds'
+    p=json.loads((ROOT/'package.json').read_text())
+    assert p['scripts'].get('typecheck') and p['scripts'].get('build:check')
+    print('PASS: modular sources, embedded CSS, userscript metadata, lockfile, native parity')
+
+
+if __name__=='__main__':test()
