@@ -1,4 +1,4 @@
-# Moncevia — Arquitectura de ingeniería (v3.9.0)
+# Moncevia — Arquitectura de ingeniería (v3.10.0)
 
 ## Objetivo
 
@@ -20,6 +20,8 @@ Mantener un **único código fuente** para el userscript iOS/Android y las exten
 - `src/detector/variant-detector.ts`: reconocimiento conservador de tarjetas, variantes, precios principales y símbolos ambiguos; no modifica el comercio.
 - `src/detector/selection-scheduler.ts`: programación y cancelación de comprobaciones posteriores a cambios asincrónicos de producto.
 - `src/ui/tab-controller.ts`: navegación por pestañas, atributos ARIA y teclado.
+- `src/i18n/catalog.ts`: catálogo ES→EN, fragmentos dinámicos y resolución del idioma Auto.
+- `src/i18n/localizer.ts`: actualización reversible y limitada al widget de textos y atributos de accesibilidad mediante observador de mutaciones.
 - `src/legacy/runtime.js`: integración y lógica restante en JavaScript durante la migración. **Todavía no está tipada**; pasarla a TS sin pruebas incrementaría el riesgo de regresiones.
 - `src/meta/userscript.header.txt`: encabezado y permisos del userscript.
 - `scripts/build.mjs`: compilación con esbuild y tres salidas idénticas.
@@ -50,6 +52,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 4. **Fase 4 (v3.8.0):** detector de variantes tipado, cancelación de reintentos obsoletos y protección de edición manual. Se amplían las pruebas de eventos y compatibilidad sin cambiar permisos, tasas o pagos.
 
 5. **Fase 5 (v3.9.0):** validación y normalización de configuraciones persistidas, fronteras tipadas para proveedores de criptomonedas y pruebas de respuestas obsoletas/corruptas. Se conserva la integración visual y parte de los adaptadores JS heredados.
+
+6. **Fase 6 (v3.10.0):** catálogo ES/EN y localización del widget migrados a módulos tipados, con pruebas de accesibilidad textual, atributos ARIA y restauración de idioma en Chromium, Firefox y WebKit. Los demás componentes aún pueden permanecer en JavaScript heredado.
 
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 
