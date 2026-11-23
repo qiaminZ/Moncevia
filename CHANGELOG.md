@@ -1,3 +1,12 @@
+## 3.7.0 / Desktop 0.3.0-beta — Phase 3: responsive UI and DOM scanner
+
+- Extracted DOM price annotation scanning, badge rendering, debounced rescan and own-mutation filtering to a TypeScript module.
+- Extracted semantic tab activation and keyboard navigation to an independent typed UI controller.
+- Added constrained responsive styles for narrow phones, tablets and short landscape viewports; never modifies merchant layouts.
+- Added floating-launcher aria-expanded state linked to the visibility of the Moncevia panel.
+- Added a viewport/keyboard regression matrix across Chromium, Firefox and WebKit, plus price-badge mutation tests and focused unit checks.
+- Preserved finance formulas, public rate providers, stored preference keys, and site authorization behavior. Part of the interactive UI and variant selection still uses the legacy JS runtime.
+
 ## 3.6.1 / Desktop 0.2.1-beta — Phase 2: typed financial core
 
 - Extrae las conversiones CLP, divisas y BTC/ETH/LTC a un núcleo TypeScript puro con tasas bid/ask e indicador USDT/USD.

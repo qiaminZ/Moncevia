@@ -8,13 +8,17 @@ ROOT=Path(__file__).resolve().parents[1]
 def test():
     script=(ROOT/'moncevia.user.js').read_bytes()
     assert script.startswith(b'// ==UserScript=='), 'Userscript metadata must be first'
-    assert b'// @version      3.6.1' in script[:900]
+    assert b'// @version      3.7.0' in script[:900]
     assert b'const HOST = location.hostname.toLowerCase()' in script
     assert b'.clplens-badge' in script, 'CSS must be embedded without external fetch'
     assert b'clplens-fab' in script
     for browser in ('chromium','firefox'):
         assert (ROOT/'extension'/browser/'engine.js').read_bytes()==script, 'Engine drift: '+browser
     assert (ROOT/'src/styles/moncevia.css').stat().st_size>10000
+    assert (ROOT/'src/detector/scan-controller.ts').exists()
+    assert (ROOT/'src/ui/tab-controller.ts').exists()
+    assert b'createPriceScanner' in script, 'Bundled scanner missing'
+    assert b'createTabController' in script, 'Bundled accessible navigation missing'
     for module in ('parse-amount.ts','conversion.ts','crypto-units.ts','fx-validation.ts','cache-validation.ts'):
         assert (ROOT/'src/core'/module).exists(), 'Missing typed core: '+module
     assert b'createConversionEngine' in script, 'Typed conversion engine must run in the installed artifact'

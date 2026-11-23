@@ -1,3 +1,9 @@
+## Diseño adaptable / Responsive design
+
+El panel de Moncevia se ajusta al ancho y altura disponibles en celulares, tablets, PC y notebooks. En orientación horizontal utiliza el alto visible para mantener las secciones accesibles. El diseño del comercio no se modifica. El botón flotante sigue siendo arrastrable y puede restablecerse desde Ajustes.
+
+**English:** The panel adapts to phones, tablets and desktop sizes; short landscape screens keep it scrollable. Moncevia does not resize or modify merchant websites. The launcher remains draggable and resettable.
+
 ## Si un botón de variante no actualiza el importe / Dynamic storefront synchronization
 
 1. Instala la última versión de Moncevia y recarga la página; evita duplicados del userscript y la extensión nativa.
