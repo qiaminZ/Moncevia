@@ -1,3 +1,12 @@
+## 3.8.0 / Desktop 0.4.0-beta — Phase 4: typed variant detector & event lifecycle
+
+- Migrated variant-card, selected-summary, main-product-price, text extraction and ambiguous `$` selection logic from legacy JavaScript into a typed read-only DOM detector.
+- Added cancellable, deduplicated retry scheduling for rapid variant clicks and asynchronous storefront updates.
+- Preserved manually entered amounts by cancelling scheduled scans on input focus and change; callbacks still require active site authorization.
+- Added unit tests covering ambiguous currencies, historical/per-unit prices, retry replacement and manual-override protections.
+- Added cross-browser manual-edit/rapid-variant regression tests in desktop and emulated mobile sizes.
+- No new hosts, APIs, permissions, financial formula changes or merchant checkout interaction. Remaining UI and event integration stays in JavaScript until independently verified.
+
 ## 3.7.0 / Desktop 0.3.0-beta — Phase 3: responsive UI and DOM scanner
 
 - Extracted DOM price annotation scanning, badge rendering, debounced rescan and own-mutation filtering to a TypeScript module.

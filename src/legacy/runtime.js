@@ -6,6 +6,8 @@ import { validateFXResponse } from '../core/fx-validation';
 import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
 import { createPriceScanner } from '../detector/scan-controller';
 import { createTabController } from '../ui/tab-controller';
+import { createVariantDetector } from '../detector/variant-detector';
+import { createSelectionScheduler } from '../detector/selection-scheduler';
 (() => {
   'use strict';
   // No accede a cookies, formularios, credenciales, wallets ni API privadas.
@@ -96,7 +98,7 @@ import { createTabController } from '../ui/tab-controller';
   let widget, fab, panel, stateLabel, sampleLabel, coinsLabel, calcOutput, calcInput, calcSelect, targetSelect, calcSource;
   let compactCard, compareOutput, transferOutput, historyOutput, history=[], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
   let pickerActive=false, flashTarget=null, flashTimer=null, pendingTab='calculator';
-  let observer, timer, selectionTimer, tab = 'calculator';
+  let observer, timer, tab = 'calculator';
   let panelOpenTicket = 0;
   let settingsBankGroup = null;
   const verifyBoxes = Object.create(null);
@@ -639,181 +641,15 @@ import { createTabController } from '../ui/tab-controller';
   }
   // v2.1: sincronizacion de la calculadora con opciones de compra seleccionadas.
   // La pagina permanece intacta; solo se lee el texto visible y nunca se inicia un pago.
-  function originalText(element) {
-    // Se omiten etiquetas de Moncevia al leer el precio original. De lo contrario,
-    // las conversiones BTC/ETH/LTC inyectadas se confundirian con el precio.
-    if (!element || (element.textContent||'').length>1600) return '';
-    const walker=document.createTreeWalker(element,NodeFilter.SHOW_TEXT);
-    const parts=[]; let text,count=0;
-    while ((text=walker.nextNode()) && count++<120) {
-      if (text.parentElement?.closest('#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"]')) continue;
-      const str=(text.nodeValue||'').trim();
-      if (str) parts.push(str);
-    }
-    return parts.join('\n').slice(0,650);
-  }
-  function matchesInText(rawText) {
-    const text=String(rawText || '').replace(/[\u00a0\u202f]/g,' ').slice(0,650);
-    const out=[];
-    for (const [rx,isSuffix] of [[prefixRE,false],[suffixRE,true]]) {
-      rx.lastIndex=0;
-      let m;
-      while ((m=rx.exec(text))) {
-        const currency=isSuffix ? m[2].toUpperCase() : prefixCurrency(m[0].slice(0,m[0].indexOf(m[1])).trim());
-        if (!currency) continue;
-        const amount=parseAmount(m[1],currency);
-        if (!Number.isFinite(amount) || amount < (CRYPTOS.includes(currency)?0.00000001:0.01)) continue;
-        const before=text.slice(Math.max(0,m.index-18),m.index).toLowerCase();
-        const after=text.slice(m.index+m[0].length,m.index+m[0].length+30).toLowerCase();
-        const perUnit=/^\s*(?:per\s*(?:day|week|month|unit)|\/\s*(?:day|week|month)|por\s*(?:d[ií]a|semana|mes|unidad))\b/.test(after);
-        const former=/(?:antes|original|was|regular|list price)\s*:?\s*$/.test(before);
-        out.push({amount, code:currency, perUnit, former, index:m.index});
-      }
-    }
-    // En tarjetas como RIFT hay un precio por dia y otro total. Preferir el total.
-    return out.sort((a,b)=> a.index-b.index);
-  }
-  function bestVisiblePrice(element) {
-    if (!element || element.nodeType!==1 || !element.isConnected) return null;
-    if (element.closest('#clplens-widget, .clplens-badge, [data-clplens-ignore]')) return null;
-    const raw=originalText(element);
-    if (!raw || raw.length>650) return null;
-    const matches=matchesInText(raw);
-    if (!matches.length || matches.length>6 || matches.every(m=>m.perUnit || m.former)) return null;
-    const chosen=[...matches].sort((a,b)=>{
-      const score=m=>(m.perUnit?-100:0)+(m.former?-60:0)+(m.code==='BTC'||m.code==='ETH'||m.code==='LTC'?-5:0);
-      return score(b)-score(a) || b.index-a.index; // preferir el precio vigente visible al final, no el mayor
-    })[0];
-    return chosen ? {amount:chosen.amount,code:chosen.code} : null;
-  }
-  function selectionLabel(text) {
-    const lines=String(text||'').split(/\n+/).map(s=>s.trim()).filter(Boolean);
-    const idx=lines.findIndex(s=>/^selected\s+(?:access|option|plan|duration|item|product)\b/i.test(s) || /^opci[oó]n\s+seleccionada\b/i.test(s));
-    if (idx>=0) {
-      const next=lines.slice(idx+1).find(s=>!matchesInText(s).length && s.length<65);
-      return next || 'Opcion seleccionada';
-    }
-    return 'Precio seleccionado';
-  }
-  function selectedSummaryPrice() {
-    // Busca rótulos explicitos (como SELECTED ACCESS de RIFT), no precios arbitrarios.
-    // Limitacion deliberada: si no hay una seleccion identificable se espera al toque del usuario.
-    const tree=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-    let text, scanned=0;
-    while ((text=tree.nextNode()) && scanned++<12000) {
-      if (!/^\s*(?:selected\s+(?:access|option|plan|duration|item|product)|opci[oó]n\s+seleccionada)\s*:?\s*$/i.test(text.nodeValue||'')) continue;
-      let el=text.parentElement;
-      for (let depth=0; el && depth<6; depth++,el=el.parentElement) {
-        if (el.closest('#clplens-widget, .clplens-badge')) break;
-        const content=originalText(el);
-        if (content.length>420) break;
-        const price=bestVisiblePrice(el);
-        if (price) return {...price, label:selectionLabel(content),source:'resumen'};
-      }
-    }
-    return null;
-  }
+  // Advanced storefront price interpretation is read-only and strictly typed.
+  const variantDetector=createVariantDetector({
+    parseAmount,prefixCurrency,prefixRE,suffixRE,figure,cryptoCodes:CRYPTOS,dollarCurrencyForSite
+  });
+  const {
+    originalText,matchesInText,bestVisiblePrice,selectedSummaryPrice,
+    currentProductPrice,sameMonetaryPrice,variantControl,unlabeledDollarPrice,tappedPrice
+  }=variantDetector;
 
-  // Prefer a unique current price in a product summary over stale values in variant cards.
-  function currentProductPrice() {
-    const selectors=[
-      '[data-testid="product-price"]','[data-testid="current-price"]',
-      '[data-price-current]','[data-price-role="current"]',
-      '.product__price','.product-price','.price--current','[itemprop="price"]'
-    ];
-    const results=new Map();
-    let scanned=0;
-    for (const selector of selectors) {
-      for (const el of document.querySelectorAll(selector)) {
-        if (++scanned>90) break;
-        if (!el.isConnected || el.closest(
-          '#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"],'+
-          'del,s,strike,.price--old,.price--compare,.compare-at-price,'+
-          '[class*="variant"],[id*="variant"],[role="option"],[role="listbox"],'+
-          'form[action*="checkout"]')) continue;
-        if (!el.getClientRects().length || getComputedStyle(el).visibility==='hidden') continue;
-        const live=el.querySelector('.price--current,ins,[data-price-current]') || el;
-        const chosen=bestVisiblePrice(live);
-        if (!chosen) continue;
-        const key=chosen.code+':'+chosen.amount;
-        results.set(key,{...chosen,label:'Precio actual del producto',source:'precio principal'});
-      }
-      if(scanned>90) break;
-    }
-    if (results.size===1) return [...results.values()][0];
-    if (results.size>1) return null;
-    return productHeroPrice();
-  }
-  // Generic product-detail fallback: locate a single main price between the
-  // product heading and the variant controls. Do not inspect catalogue grids.
-  function productHeroPrice() {
-    const headings=[...document.querySelectorAll('main h1,article h1,[itemtype*="Product"] h1')]
-      .filter(el=>el.isConnected && el.getClientRects().length);
-    if(headings.length!==1) return null;
-    let root=headings[0].parentElement;
-    for(let depth=0;root && root!==document.body && depth<5;depth++,root=root.parentElement) {
-      if(!root.querySelector('[class*="variant"],[id*="variant"],[role="option"],[data-variant]'))
-        continue;
-      const raw=originalText(root);
-      if(!raw) continue;
-      const lines=raw.split('\n').map(x=>x.trim());
-      const at=lines.findIndex(x=>/^(?:variant|variants|option|options|choose variant|select variant)$/i.test(x));
-      if(at<1) continue;
-      const matches=matchesInText(lines.slice(0,at).join('\n'))
-        .filter(m=>!m.former && !m.perUnit);
-      const unique=new Map(matches.map(m=>[m.code+':'+m.amount,m]));
-      if(unique.size!==1) continue;
-      const price=[...unique.values()][0];
-      return {amount:price.amount,code:price.code,label:'Precio actual del producto',source:'precio principal'};
-    }
-    return null;
-  }
-  function sameMonetaryPrice(a,b) {
-    return !!a && !!b && a.code===b.code && Math.abs(a.amount-b.amount)<1e-8;
-  }
-  function variantControl(target) {
-    if (!target || target.nodeType!==1 || target.closest(
-      '#clplens-widget,#moncevia-dollar-dialog,.clplens-badge,'+
-      'input,textarea,[contenteditable],a[href*="checkout"],form[action*="checkout"]')) return null;
-    const control=target.closest(
-      '[data-variant],[data-product-option],[role="option"],[role="radio"],'+
-      '[aria-pressed],[aria-selected],[data-option-value],'+
-      '[class*="variant-card"],[class*="variant-option"],[class*="option-card"],button,label'
-    );
-    if (!control || control.matches('[disabled],[aria-disabled="true"]') ||
-        control.closest('header,nav,footer,[role="navigation"]')) return null;
-    const name=(originalText(control)||control.getAttribute('aria-label')||'').trim();
-    if (/^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(name)) return null;
-    const hint=control.closest(
-      '[data-variant],[data-product-option],[class*="variant"],[id*="variant"],'+
-      '[class*="product-option"],[role="listbox"]'
-    );
-    return hint || (/\b(?:days?|weeks?|months?|years?|lifetime|license|licen[cs]e|tier|plan|size|color|colour|medium|large|small|basic|standard|premium)\b/i.test(name) ? control : null);
-  }
-  // A bare $ is ambiguous. Detect candidate *amounts* without assuming their currency.
-  // Read the smallest visible card containing one price; never inspect forms, checkouts or links.
-  function unlabeledDollarPrice(target) {
-    if (dollarCurrencyForSite() || !target || target.nodeType!==1 ||
-        target.closest('#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, input, textarea, select, [contenteditable]')) return null;
-    // A variant button may itself contain a bare $; allow the currency prompt
-    // but never interpret checkout/navigation buttons as product prices.
-    if (target.closest('a,button,form') && !variantControl(target)) return null;
-    const rx=new RegExp(String.raw`(?<![\p{L}\d])\$\s*(${figure})(?![\p{L}\d])`, 'gu');
-    let el=target;
-    for (let depth=0;el && depth<7 && el!==document.body;depth++,el=el.parentElement) {
-      const raw=originalText(el);
-      if (!raw || raw.length>520) continue;
-      const matches=[...raw.matchAll(rx)].filter(m=>Number.isFinite(parseAmount(m[1],'USD')));
-      if (matches.length!==1) continue;
-      // If another explicit currency also appears, don't override that price.
-      if (matchesInText(raw).length) continue;
-      const amount=parseAmount(matches[0][1],'USD');
-      const lines=raw.split('\n').map(x=>x.trim()).filter(Boolean);
-      const label=lines.find(x=>/\b(?:days?|weeks?|months?|lifetime|annual|year|plan|tier|license)\b/i.test(x) && !x.includes('$'));
-      return {amount,code:null,label:label||'Precio seleccionado',source:'precio estático'};
-    }
-    return null;
-  }
   function selectPriceDirect(price) {
     if (!price || !SUPPORTED_CURRENCIES.includes(price.code)) return;
     manualOverride=false;pendingSelection=null;
@@ -868,44 +704,6 @@ import { createTabController } from '../ui/tab-controller';
     });
     actions.append(confirm,cancel);card.append(title,explanation,priceLabel,choice,actions);overlay.append(card);document.body.append(overlay);
     choice.focus();
-  }
-  function tappedPrice(target) {
-    if (!target || target.nodeType!==1 || target.closest('#clplens-widget,.clplens-badge,[data-clplens-ignore],input,textarea,select,[contenteditable],form')) return null;
-    const control=variantControl(target);
-    const actionable=target.closest('button,a,[role="button"]');
-    const actionLabel=(actionable && originalText(actionable).trim()) || '';
-    // Never treat a checkout/help action as a price just because its parent
-    // product page has a visible price somewhere else.
-    if (actionable && /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(actionLabel))
-      return null;
-    const boundedCard=actionable && !control ?
-      actionable.closest('article,li,[data-product-id],[class*="product-card"],[class*="item-card"]') : null;
-    if (actionable && !control && !boundedCard && !matchesInText(originalText(actionable)).length)
-      return null;
-    let el=target;
-    for (let depth=0;el && depth<8;depth++,el=el.parentElement) {
-      if (el===document.body) break;
-      if (boundedCard && !boundedCard.contains(el)) break;
-      // A variant button with no price must never inherit the OLD main price
-      // merely because both are descendants of the same product container.
-      if (control && el!==control && el.contains(control)) {
-        const otherOptions=el.querySelectorAll('[data-variant],[role="option"],[role="radio"]');
-        if (otherOptions.length>1 || (el!==control.parentElement &&
-            !/\b(?:variant|option|tier|plan|card)\b/i.test(String(el.className)))) continue;
-      }
-      const matches=matchesInText(originalText(el))
-        .filter(m=>!m.perUnit && !m.former);
-      const distinct=new Set(matches.map(m=>m.code+':'+m.amount));
-      // Clicking an unrelated part of a product grid must not pick its last item.
-      if (distinct.size>1 && !control) continue;
-      const price=bestVisiblePrice(el);
-      if (price) {
-        const parts=originalText(el).split(/\n/).map(s=>s.trim()).filter(Boolean);
-        const label=parts.find(t=>/\b(?:key|plan|days?|weeks?|months?|lifetime|access)\b/i.test(t) && !matchesInText(t).length);
-        return {...price,label:label||'Precio tocado',source:'toque'};
-      }
-    }
-    return null;
   }
   function priceSignature(price) {
     return `${price.code}:${price.amount}:${price.label||''}`;
@@ -986,10 +784,12 @@ import { createTabController } from '../ui/tab-controller';
     }
     if (selected) applySelectedPrice(selected);
   }
+  const selectionScheduler=createSelectionScheduler({
+    run:()=>syncSelectedPrice(),
+    allowed:()=>settings.autoSyncSelection && isActive() && !manualOverride
+  });
   function scheduleSelectionSync(delay=160) {
-    if (!settings.autoSyncSelection || manualOverride) return;
-    clearTimeout(selectionTimer);
-    selectionTimer=setTimeout(syncSelectedPrice,delay);
+    selectionScheduler.debounce(delay);
   }
   function pageClickCapture(event) {
     if (pickerActive) {
@@ -1034,7 +834,7 @@ import { createTabController } from '../ui/tab-controller';
         pendingVariantChange={before,at:Date.now(),seq:++clickSequence};
         updateSourceLabel();
         scheduleSelectionSync(100);
-        for(const delay of [380,800,1500,2600]) setTimeout(syncSelectedPrice,delay);
+        selectionScheduler.replaceRetries([380,800,1500,2600]);
         return;
       }
       // Quantity steppers may update the product total asynchronously; monitor
@@ -1046,7 +846,7 @@ import { createTabController } from '../ui/tab-controller';
          /^(?:\+|−|-)$/u.test((action.textContent||'').trim()));
       if (currentSelection || quantityAction) {
         scheduleSelectionSync(140);
-        setTimeout(syncSelectedPrice,460);
+        selectionScheduler.replaceRetries([460]);
       }
       return;
     }
@@ -1056,7 +856,7 @@ import { createTabController } from '../ui/tab-controller';
     pendingSelection={price,before,at:Date.now(),seq:++clickSequence};
     applySelectedPrice(price);
     scheduleSelectionSync(130);
-    for(const delay of [450,1200,2600]) setTimeout(syncSelectedPrice,delay);
+    selectionScheduler.replaceRetries([450,1200,2600]);
   }
   function pageChangeCapture(event) {
     if (!settings.autoSyncSelection || !isActive() || event.target.closest?.('#clplens-widget')) return;
@@ -1074,7 +874,7 @@ import { createTabController } from '../ui/tab-controller';
     pendingSelection=null;
     pendingVariantChange=null;
     scheduleSelectionSync(180);
-    setTimeout(syncSelectedPrice,500);
+    selectionScheduler.replaceRetries([500]);
   }
 
   function flashPrice(target) {
@@ -1292,7 +1092,7 @@ import { createTabController } from '../ui/tab-controller';
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.7.0'));
+    headerActions.append(languageButton,node('span','mv-version','v3.8.0'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
@@ -1349,9 +1149,11 @@ import { createTabController } from '../ui/tab-controller';
     // Lock manual editing as soon as the user focuses this field, before an
     // asynchronous price sync can write into the input while they are typing.
     amountInput.addEventListener('focus',()=>{
-      manualOverride=true;pendingSelection=null;pendingVariantChange=null;updateSourceLabel();
+      manualOverride=true;pendingSelection=null;pendingVariantChange=null;
+      selectionScheduler.cancel();updateSourceLabel();
     });
-    amountInput.addEventListener('input',()=>{ manualOverride=true; pendingSelection=null;pendingVariantChange=null; settings.calcAmount=amountInput.value; updateSourceLabel(); renderCalc(); });
+    amountInput.addEventListener('input',()=>{ manualOverride=true; pendingSelection=null;pendingVariantChange=null;
+      selectionScheduler.cancel();settings.calcAmount=amountInput.value; updateSourceLabel(); renderCalc(); });
     amountInput.addEventListener('change',()=>persist());
     select.addEventListener('change',()=>{
       manualOverride=true; pendingSelection=null;settings.calcCurrency=select.value;
@@ -1732,6 +1534,7 @@ import { createTabController } from '../ui/tab-controller';
     window.addEventListener('pageshow',syncRates);
     document.addEventListener('visibilitychange',syncRates);
     window.setInterval(syncRates, 10 * 60_000);
+    window.addEventListener('pagehide',()=>{selectionScheduler.cancel();priceScanner.dispose();},{once:true});
     if (isActive()) void Promise.all([updateFX(false),updateCrypto(false)]);
   }
   boot();
