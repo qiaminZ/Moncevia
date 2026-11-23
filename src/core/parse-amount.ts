@@ -13,7 +13,7 @@ export function parseAmount(raw: string | number, code: CurrencyCode): number {
       if (sep) {
         const bits = s.split(sep);
         const cryptoCode = CRYPTO_CODES.has(code);
-        if (!cryptoCode && bits.length === 2 && (bits[1]?.length ?? 0) === 3 && bits[0].length <= 3) return NaN; // 1.234 puede significar 1,234 o 1234.
+        if (!cryptoCode && bits.length === 2 && (bits[1]?.length ?? 0) === 3 && (bits[0]?.length ?? 0) <= 3) return NaN; // 1.234 puede significar 1,234 o 1234.
         if (bits.length > 2) s = bits.join('');
         else s = bits.join('.');
       }
