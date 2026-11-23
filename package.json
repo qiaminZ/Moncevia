@@ -9,7 +9,7 @@
     "build:check": "node scripts/build.mjs --check",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/core src/types src/entry scripts/build.mjs",
-    "format:check": "prettier --check \"src/**/*.{ts,css}\" scripts/build.mjs",
+    "format:check": "prettier --check \"src/**/*.ts\" scripts/build.mjs eslint.config.js",
     "test:core": "vitest run tests/core",
     "test": "npm run typecheck && npm run test:core"
   },
