@@ -1,3 +1,13 @@
+## Moncevia v3.9.0 — Fase 5: validación de configuración y proveedores
+
+Los ajustes persistidos se normalizan en `src/core/settings-validation.ts`. Se conservan los dominios autorizados y preferencias válidas de versiones anteriores, y se rechazan entradas corruptas o configuraciones desconocidas sin ampliar permisos. El nuevo `src/core/provider-validation.ts` verifica las respuestas públicas de Binance, CoinGecko y Coinbase, incluidos los símbolos de criptoactivos, valores bid/ask, diferenciales y vigencia cuando el proveedor la entrega.
+
+- Mantiene sin cambios los nombres de claves de almacenamiento, endpoints de cotización, fórmulas y restricciones de pago.
+- La paridad USDT/USD de CoinGecko se valida separadamente de las cotizaciones Binance en USDT.
+- Binance y Coinbase no proporcionan un timestamp verificable en los endpoints actuales: la hora de recepción local controla su vigencia; los valores son orientativos.
+- Incluye pruebas unitarias de datos fraudulentos o incompletos, consentimientos de sitios y formatos antiguos.
+- La UI y varias integraciones todavía usan JavaScript heredado. Las pruebas de navegadores emulados no certifican instalaciones físicas de Safari u Opera GX.
+
 ## Moncevia v3.8.0 — Fase 4: variantes tipadas y control de eventos
 
 La detección avanzada de **planes, variantes, precios principales, resúmenes y símbolos monetarios ambiguos** ahora reside en `src/detector/variant-detector.ts` con tipado estricto y reglas conservadoras. El nuevo `src/detector/selection-scheduler.ts` cancela reintentos anteriores cuando el usuario cambia de opción y suspende las sincronizaciones pendientes durante una edición manual.
