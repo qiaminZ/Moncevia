@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.14.0
+// @version      3.15.0
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -933,6 +933,84 @@
     return { widget, fab, panel, header, stateLabel, coinsLabel, languageButton };
   }
 
+  // src/platform/page-lifecycle.ts
+  function createPageLifecycle(options) {
+    let started = false;
+    let suspended = false;
+    let scheduledFrame = null;
+    let interval;
+    const observer = new MutationObserver((changes) => {
+      if (!started || suspended || changes.every(options.isOwnMutation) || scheduledFrame !== null)
+        return;
+      scheduledFrame = requestAnimationFrame(() => {
+        scheduledFrame = null;
+        if (started && !suspended) options.onMutation();
+      });
+    });
+    function observe() {
+      if (!options.root.isConnected) return;
+      observer.observe(options.root, { childList: true, subtree: true, characterData: true });
+    }
+    function onScroll() {
+      if (!suspended) options.onScroll();
+    }
+    function onRefresh() {
+      if (!suspended) options.onRefresh();
+    }
+    function suspend() {
+      if (!started || suspended) return;
+      suspended = true;
+      observer.disconnect();
+      if (scheduledFrame !== null) cancelAnimationFrame(scheduledFrame);
+      scheduledFrame = null;
+      options.onSuspend();
+    }
+    function onPageShow() {
+      if (!started) return;
+      if (suspended) {
+        suspended = false;
+        observe();
+        options.onResume();
+      }
+      options.onRefresh();
+    }
+    function start() {
+      if (started) return;
+      started = true;
+      suspended = false;
+      observe();
+      document.addEventListener("click", options.onClick, true);
+      document.addEventListener("change", options.onChange, true);
+      document.addEventListener("keydown", options.onKeydown, true);
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("pageshow", onPageShow);
+      window.addEventListener("pagehide", suspend);
+      document.addEventListener("visibilitychange", onRefresh);
+      interval = setInterval(onRefresh, options.refreshIntervalMs ?? 10 * 6e4);
+    }
+    function stop() {
+      if (!started) return;
+      suspend();
+      document.removeEventListener("click", options.onClick, true);
+      document.removeEventListener("change", options.onChange, true);
+      document.removeEventListener("keydown", options.onKeydown, true);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("pagehide", suspend);
+      document.removeEventListener("visibilitychange", onRefresh);
+      if (interval !== void 0) clearInterval(interval);
+      interval = void 0;
+      started = false;
+    }
+    return {
+      start,
+      stop,
+      get active() {
+        return started && !suspended;
+      }
+    };
+  }
+
   // src/platform/gm-bridge.ts
   function createGMBridge({ modern = null, legacy = null }) {
     const modernGet = typeof modern?.getValue === "function";
@@ -1632,7 +1710,7 @@
     let widget, fab, panel, stateLabel, sampleLabel, coinsLabel, calcOutput, calcInput, calcSelect, targetSelect, calcSource;
     let compactCard, compareOutput, transferOutput, historyOutput, history = [], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
     let pickerActive = false, flashTarget = null, flashTimer = null, pendingTab = "calculator";
-    let observer, timer, tab = "calculator";
+    let tab = "calculator";
     let panelOpenTicket = 0;
     let settingsBankGroup = null;
     const verifyBoxes = /* @__PURE__ */ Object.create(null);
@@ -2377,7 +2455,7 @@
     function createUI() {
       stylesheet();
       const shell = createPanelShell({
-        version: "3.14.0",
+        version: "3.15.0",
         onLanguageToggle: () => switchLanguage(uiLanguage() === "es" ? "en" : "es")
       });
       widget = shell.widget;
@@ -2946,44 +3024,44 @@
       scan();
       renderHistory();
       renderCompact();
-      document.addEventListener("click", pageClickCapture, true);
-      document.addEventListener("keydown", (event) => {
-        if (pickerActive && event.key === "Escape") {
-          stopPicker();
-          panel.hidden = false;
-          refresh();
-        }
-      }, true);
-      document.addEventListener("change", pageChangeCapture, true);
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && panel && !panel.hidden) {
-          panel.hidden = true;
-          fab.focus();
-          renderCompact();
-        }
-      }, true);
-      window.addEventListener("scroll", () => reScan(), { passive: true });
-      scheduleSelectionSync(180);
-      observer = new MutationObserver((changes) => {
-        if (changes.every(ownMutation)) return;
-        reScan();
-        scheduleSelectionSync(160);
+      const lifecycle = createPageLifecycle({
+        root: document.body,
+        isOwnMutation: ownMutation,
+        onMutation: () => {
+          reScan();
+          scheduleSelectionSync(160);
+        },
+        onClick: pageClickCapture,
+        onChange: pageChangeCapture,
+        onKeydown: (event) => {
+          if (pickerActive && event.key === "Escape") {
+            stopPicker();
+            panel.hidden = false;
+            refresh();
+          }
+          if (event.key === "Escape" && panel && !panel.hidden) {
+            panel.hidden = true;
+            fab.focus();
+            renderCompact();
+          }
+        },
+        onScroll: () => reScan(),
+        onRefresh: () => {
+          if (document.visibilityState === "visible" && isActive()) {
+            void Promise.all([updateFX(false), updateCrypto(false)]);
+            refresh();
+            reScan(true);
+          }
+        },
+        onSuspend: () => {
+          selectionScheduler.cancel();
+          priceScanner.dispose();
+          uiLocalizer.stop();
+        },
+        onResume: () => uiLocalizer.watch()
       });
-      observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-      const syncRates = () => {
-        if (document.visibilityState === "visible" && isActive()) {
-          void Promise.all([updateFX(false), updateCrypto(false)]);
-          refresh();
-          reScan(true);
-        }
-      };
-      window.addEventListener("pageshow", syncRates);
-      document.addEventListener("visibilitychange", syncRates);
-      window.setInterval(syncRates, 10 * 6e4);
-      window.addEventListener("pagehide", () => {
-        selectionScheduler.cancel();
-        priceScanner.dispose();
-      }, { once: true });
+      lifecycle.start();
+      scheduleSelectionSync(180);
       if (isActive()) void Promise.all([updateFX(false), updateCrypto(false)]);
     }
     boot();

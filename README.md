@@ -1,3 +1,7 @@
+## Moncevia v3.15.0 — Fase 12: ciclo de vida y rendimiento
+
+El nuevo `src/platform/page-lifecycle.ts` agrupa mutaciones sucesivas por cuadro de animación, evita escaneos repetitivos en ráfagas y restaura los observadores tras volver a una pestaña mediante BFCache. Se preservan las acciones comerciales y las funciones financieras. Las pruebas físicas en Safari iOS y Opera GX aún se requieren.
+
 ## Moncevia v3.14.0 — Fase 11: interfaz modular
 
 El encabezado y los componentes elementales del panel se extrajeron a módulos TypeScript específicos (`src/ui/panel-shell.ts` y `src/ui/dom-factory.ts`). Las clases CSS, atributos accesibles, navegación y privacidad del contenido de las tiendas permanecen iguales. No se modifican tasas, pagos, almacenamiento, permisos ni proveedores. Esta versión conserva el carácter beta de las extensiones.

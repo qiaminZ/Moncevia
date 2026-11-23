@@ -1,3 +1,11 @@
+## 3.15.0 / Desktop 0.11.0-beta — Phase 12: runtime lifecycle performance
+
+- Extracted document mutation observation, event wiring, refresh cadence and bfcache suspension/resumption into `src/platform/page-lifecycle.ts` (strict TypeScript).
+- Coalesced rapid merchant DOM mutations to one animation frame before scheduling scans and variant sync; no changes to merchant prices or controls.
+- Preserved Escape, normal commerce clicks, locale updates, rate refresh and privacy gating. Pauses observers on pagehide and restores them on pageshow.
+- Added Chromium, Firefox and WebKit desktop/mobile regressions for mutation bursts and bfcache restoration.
+- This is not full legacy JavaScript removal; finance rendering and complex settings forms remain in the legacy runtime. Physical-device validation remains pending.
+
 ## 3.14.0 / Desktop 0.10.0-beta — Phase 11: typed panel shell and UI components
 
 - Extracted DOM helpers (disclosures, rows, links, text and CSS attachment) to strict `src/ui/dom-factory.ts`.

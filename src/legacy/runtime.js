@@ -11,6 +11,7 @@ import { createTabController } from '../ui/tab-controller';
 import { createFabController } from '../ui/fab-controller';
 import { createNode, createExternalLink, appendLine, appendDisclosure, createCardRow, appendEmbeddedStyles } from '../ui/dom-factory';
 import { createPanelShell } from '../ui/panel-shell';
+import { createPageLifecycle } from '../platform/page-lifecycle';
 import { createGMBridge } from '../platform/gm-bridge';
 import { createPersistenceController, MONCEVIA_STORAGE_KEYS } from '../platform/persistence-controller';
 import { createVariantDetector } from '../detector/variant-detector';
@@ -69,7 +70,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   let widget, fab, panel, stateLabel, sampleLabel, coinsLabel, calcOutput, calcInput, calcSelect, targetSelect, calcSource;
   let compactCard, compareOutput, transferOutput, historyOutput, history=[], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
   let pickerActive=false, flashTarget=null, flashTimer=null, pendingTab='calculator';
-  let observer, timer, tab = 'calculator';
+  let tab = 'calculator';
   let panelOpenTicket = 0;
   let settingsBankGroup = null;
   const verifyBoxes = Object.create(null);
@@ -709,7 +710,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   function createUI() {
     stylesheet();
     const shell=createPanelShell({
-      version:'3.14.0',
+      version:'3.15.0',
       onLanguageToggle:()=>switchLanguage(uiLanguage()==='es'?'en':'es')
     });
     widget=shell.widget;fab=shell.fab;panel=shell.panel;
@@ -1107,30 +1108,32 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   function startRuntime() {
     if (document.getElementById('clplens-widget')) return;
     createUI(); scan();renderHistory();renderCompact();
-    document.addEventListener('click',pageClickCapture,true);
-    document.addEventListener('keydown',event=>{if(pickerActive && event.key==='Escape'){stopPicker();panel.hidden=false;refresh();}},true);
-    document.addEventListener('change',pageChangeCapture,true);
-    document.addEventListener('keydown',event=>{
-      if (event.key==='Escape' && panel && !panel.hidden) {panel.hidden=true;fab.focus();renderCompact();}
-    },true);
-    window.addEventListener('scroll',()=>reScan(),{passive:true});
-    scheduleSelectionSync(180);
-    observer=new MutationObserver(changes=>{
-      if (changes.every(ownMutation)) return;
-      reScan();
-      scheduleSelectionSync(160);
+    const lifecycle=createPageLifecycle({
+      root:document.body,
+      isOwnMutation:ownMutation,
+      onMutation:()=>{reScan();scheduleSelectionSync(160);},
+      onClick:pageClickCapture,
+      onChange:pageChangeCapture,
+      onKeydown:event=>{
+        if(pickerActive && event.key==='Escape'){
+          stopPicker();panel.hidden=false;refresh();
+        }
+        if(event.key==='Escape' && panel && !panel.hidden){
+          panel.hidden=true;fab.focus();renderCompact();
+        }
+      },
+      onScroll:()=>reScan(),
+      onRefresh:()=>{
+        if(document.visibilityState==='visible' && isActive()){
+          void Promise.all([updateFX(false),updateCrypto(false)]);
+          refresh();reScan(true);
+        }
+      },
+      onSuspend:()=>{selectionScheduler.cancel();priceScanner.dispose();uiLocalizer.stop();},
+      onResume:()=>uiLocalizer.watch()
     });
-    observer.observe(document.body,{childList:true,subtree:true,characterData:true});
-    const syncRates = () => {
-      if (document.visibilityState === 'visible' && isActive()) {
-        void Promise.all([updateFX(false),updateCrypto(false)]);
-        refresh(); reScan(true);
-      }
-    };
-    window.addEventListener('pageshow',syncRates);
-    document.addEventListener('visibilitychange',syncRates);
-    window.setInterval(syncRates, 10 * 60_000);
-    window.addEventListener('pagehide',()=>{selectionScheduler.cancel();priceScanner.dispose();},{once:true});
+    lifecycle.start();
+    scheduleSelectionSync(180);
     if (isActive()) void Promise.all([updateFX(false),updateCrypto(false)]);
   }
   boot();

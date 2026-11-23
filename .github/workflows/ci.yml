@@ -56,6 +56,9 @@ jobs:
           python tests/test_responsive_phase3.py
           MONCEVIA_TEST_BROWSER=firefox python tests/test_responsive_phase3.py
           MONCEVIA_TEST_BROWSER=webkit python tests/test_responsive_phase3.py
+          python tests/test_phase12_lifecycle.py
+          MONCEVIA_TEST_BROWSER=firefox python tests/test_phase12_lifecycle.py
+          MONCEVIA_TEST_BROWSER=webkit python tests/test_phase12_lifecycle.py
           python tests/test_phase11_panel_shell.py
           MONCEVIA_TEST_BROWSER=firefox python tests/test_phase11_panel_shell.py
           MONCEVIA_TEST_BROWSER=webkit python tests/test_phase11_panel_shell.py

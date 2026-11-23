@@ -1,4 +1,4 @@
-# Moncevia — Arquitectura de ingeniería (v3.14.0)
+# Moncevia — Arquitectura de ingeniería (v3.15.0)
 
 ## Objetivo
 
@@ -24,6 +24,7 @@ Mantener un **único código fuente** para el userscript iOS/Android y las exten
 - `src/ui/tab-controller.ts`: navegación por pestañas, atributos ARIA y teclado.
 - `src/ui/fab-controller.ts`: geometría, arrastre, teclado y persistencia de posición del botón flotante, sin alterar componentes de tiendas.
 - `src/platform/gm-bridge.ts`: interfaz tipada para almacenamiento y peticiones públicas de userscript managers modernos y heredados, sin credenciales ni acceso a las tiendas.
+- `src/platform/page-lifecycle.ts`: orquestador tipado de eventos, observadores, reanudación BFCache y colas de mutaciones en un cuadro de animación.
 - `src/platform/persistence-controller.ts`: recuperación independiente de preferencias, cachés e historial, escrituras serializadas, y resultado explícito de consentimientos guardados o rechazados.
 - `src/i18n/catalog.ts`: catálogo ES→EN, fragmentos dinámicos y resolución del idioma Auto.
 - `src/i18n/localizer.ts`: actualización reversible y limitada al widget de textos y atributos de accesibilidad mediante observador de mutaciones.
@@ -69,6 +70,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 10. **Fase 10 (v3.13.0):** separación del arranque de datos y la persistencia de ajustes/historial, recuperación parcial ante fallos, autorización efectiva solo tras guardado confirmado y pruebas con gestores de almacenamiento simulados. Aún permanecen renderizado, controles del panel y parte del ciclo de vida DOM en JavaScript heredado.
 
 11. **Fase 11 (v3.14.0):** extracción del encabezado y componentes DOM visuales a TypeScript, conservando clases, atributos ARIA y comportamiento en tres motores. Las secciones financieras y formularios complejos permanecen parcialmente heredados.
+
+12. **Fase 12 (v3.15.0):** se trasladan observador principal, eventos y reactivación BFCache a TypeScript, con agrupación de cambios DOM por frame y limpieza al salir. No se cambia el motor financiero ni la política de autorización.
 
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 

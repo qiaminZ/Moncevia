@@ -1,6 +1,10 @@
+## Fase 12 — Rendimiento y reanudación
+
+**Versión actual:** userscript **3.15.0** y extensiones beta **0.11.0**. Las ráfagas de cambios en la tienda se agrupan para evitar trabajo redundante y los observadores se reanudan al volver desde el historial del navegador (BFCache). Se conservan claves locales, permisos y fuentes. Actualiza la copia instalada desde `main` una vez que la versión esté publicada.
+
 ## Fase 11 — Actualización de interfaz
 
-**Versión actual:** userscript **3.14.0**; extensiones Chromium/Firefox **0.10.0-beta**. Actualiza desde `main` y recarga el complemento o la página; desactiva copias duplicadas.
+**Versión de la fase 11:** userscript **3.14.0**; extensiones Chromium/Firefox **0.10.0-beta**. Actualiza desde `main` y recarga el complemento o la página; desactiva copias duplicadas.
 
 ## Fase 10 — Recuperación y permisos persistidos
 
@@ -60,7 +64,7 @@ La posición se guarda en cada navegador por separado, y se reajusta cuando la p
 
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.10.0-beta (motor compartido con Moncevia Userscript 3.14.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.11.0-beta (motor compartido con Moncevia Userscript 3.15.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 
