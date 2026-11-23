@@ -4,6 +4,8 @@ import { createConversionEngine } from '../core/conversion';
 import { coinMinor, ceil8, roundUp2 } from '../core/crypto-units';
 import { validateFXResponse } from '../core/fx-validation';
 import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
+import { createPriceScanner } from '../detector/scan-controller';
+import { createTabController } from '../ui/tab-controller';
 (() => {
   'use strict';
   // No accede a cookies, formularios, credenciales, wallets ni API privadas.
@@ -1288,7 +1290,7 @@ import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.6.1'));
+    headerActions.append(languageButton,node('span','mv-version','v3.7.0'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
@@ -1312,17 +1314,12 @@ import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
     const pageCompare=node('div','mv-page');const pageHistory=node('div','mv-page');
     const pageSettingsRoot=node('div','mv-page');let pageSettings=pageSettingsRoot;
     Object.assign(pages,{calculator:pageCalc,crypto:pageCrypto,compare:pageCompare,history:pageHistory,settings:pageSettingsRoot});
-    const setTab = name => {
-      if (!Object.hasOwn(pages,name)) return;
-      tab=name;
-      for(const key of Object.keys(pages)) {
-        pages[key].classList.toggle('clplens-hidden',key!==name);
-        navButtons[key].setAttribute('aria-selected',String(key===name));
-        navButtons[key].tabIndex=key===name?0:-1;
-      }
-      if (name === 'history') renderHistory();
-      panel.scrollTop=0;
-    };
+    // Accessible tab selection lives in the strictly typed UI controller.
+    const tabController=createTabController({
+      pages,buttons:navButtons,panel,
+      onActivate:name=>{tab=name;if(name==='history')renderHistory();}
+    });
+    const setTab=name=>tabController.activate(name);
     for(const [key,label,symbol] of navItems){
       const button=node('button');button.type='button';button.setAttribute('role','tab');
       button.append(node('span','mv-nav-icon',symbol),node('span','',label));
@@ -1331,13 +1328,7 @@ import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
       navButtons[key]=button;nav.append(button);
       button.addEventListener('click',()=>setTab(key));
     }
-    nav.addEventListener('keydown',event=>{
-      const current=navItems.findIndex(item=>item[0]===tab);
-      const next=event.key==='ArrowRight'?(current+1)%navItems.length:
-        event.key==='ArrowLeft'?(current-1+navItems.length)%navItems.length:
-        event.key==='Home'?0:event.key==='End'?navItems.length-1:-1;
-      if(next>=0){event.preventDefault();setTab(navItems[next][0]);navButtons[navItems[next][0]].focus();}
-    });
+    nav.addEventListener('keydown',event=>tabController.onKeydown(event));
     panel.append(nav);window.clplensSelectTab=setTab;
     pageCrypto.append(node('h2','','Pago con criptomonedas'));
     line(pageCrypto,'Calcula lo que necesitarías comprar para cubrir un importe solicitado por un comercio.','mv-section-note');
@@ -1576,61 +1567,12 @@ import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
     watchLocalization();
   }
 
-  function skipText(textNode) {
-    const parent=textNode.parentElement;
-    if (!parent || !parent.isConnected || !textNode.nodeValue || textNode.nodeValue.length > 135) return true;
-    if (!/[0-9]/.test(textNode.nodeValue) || !/[€$£¥₿ΞŁA-Za-z]/.test(textNode.nodeValue)) return true;
-    if (parent.closest('#clplens-widget, .clplens-badge, [data-clplens-ignore], [contenteditable], [hidden], [aria-hidden="true"], form, [role="dialog"], [role="textbox"]')) return true;
-    if (parent.closest('button, a, input, option, select, textarea, script, style, noscript, pre, code, svg, title')) return true;
-    if (parent === document.body || parent === document.documentElement) return true;
-    const style = window.getComputedStyle(parent);
-    return style.display==='none' || style.visibility==='hidden' || !parent.getClientRects().length;
-  }
-  function createBadge(lines) {
-    // Display-only annotations: don't intercept clicks on the site's controls.
-    const badge=node('span','clplens-badge');
-    badge.dataset.clplensBadge='2';
-    badge.setAttribute('aria-label','Conversion aproximada de Moncevia');
-    for (const line of lines) badge.append(node('span','',line));
-    return badge;
-  }
-  function scan() {
-    if (!isActive()) return;
-    let checked=0,badges=0;
-    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-    let textNode;
-    while ((textNode=walker.nextNode()) && checked++ < SCAN_LIMIT && badges < BADGE_LIMIT) {
-      if (skipText(textNode)) continue;
-      const match=detectMoney(textNode.nodeValue);
-      // Inyectar inmediatamente despues del nodo TEXT, no despues del contenedor:
-      // funciona en precios anidados como la tarjeta €24.99 de RIFT.
-      const adjacent=textNode.nextSibling;
-      const existing = adjacent && adjacent.nodeType===1 && adjacent.classList.contains('clplens-badge') && adjacent.dataset.clplensBadge==='2' ? adjacent : null;
-      const lines=match ? badgeText(match) : null;
-      if (!lines) { if (existing) existing.remove(); continue; }
-      if (existing) {
-        const old=[...existing.children].map(x=>x.textContent);
-        if (old.join('\n') !== lines.join('\n')) existing.replaceChildren(...lines.map(s=>node('span','',s)));
-      } else {
-        textNode.parentNode.insertBefore(createBadge(lines),textNode.nextSibling);
-      }
-      badges++;
-    }
-  }
-  function reScan(force=false) {
-    if (force) document.querySelectorAll('.clplens-badge[data-clplens-badge="2"]').forEach(n=>n.remove());
-    clearTimeout(timer);
-    timer=setTimeout(scan,force?70:550);
-  }
-  function ownMutation(change) {
-    if (change.target?.nodeType===1 && change.target.closest('#clplens-widget,.clplens-badge')) return true;
-    if (change.target?.parentElement?.closest?.('#clplens-widget,.clplens-badge')) return true;
-    if (change.type==='childList') {
-      const changed=[...change.addedNodes,...change.removedNodes];
-      if (changed.length && changed.every(n=>n.nodeType===1 && (n.matches?.('#clplens-widget,.clplens-badge') || n.closest?.('#clplens-widget,.clplens-badge')))) return true;
-    }
-    return false;
-  }
+  // DOM price annotations are isolated from the legacy UI and finance engine.
+  const priceScanner=createPriceScanner({isActive,detectMoney,badgeText,scanLimit:SCAN_LIMIT,badgeLimit:BADGE_LIMIT});
+  const scan=()=>priceScanner.scan();
+  const reScan=(force=false)=>priceScanner.schedule(force);
+  const ownMutation=change=>priceScanner.isOwnMutation(change);
+
   async function requestJSON(url) {
     const result=await storage.xmlHttpRequest({ method:'GET',url, timeout:11000,responseType:'text',headers:{Accept:'application/json'} });
     if (!result || result.status!==200) throw Error('HTTP '+result?.status);
