@@ -1,3 +1,13 @@
+## Moncevia v3.10.0 — Fase 6: internacionalización modular y accesibilidad
+
+El catálogo bilingüe ES/EN y las reglas de traducción dinámica se trasladaron a `src/i18n/catalog.ts`, mientras que la localización reversible de textos, etiquetas accesibles y mensajes se gestiona desde `src/i18n/localizer.ts`. La interfaz conserva los nombres de pestañas, comportamiento de conversión, ajustes y diseño. El usuario puede alternar español, inglés o idioma automático sin reinstalar Moncevia.
+
+- En modo **Auto**, el navegador determina el idioma; la selección explícita tiene prioridad y se guarda localmente.
+- Los textos y atributos ARIA propios de Moncevia se traducen sin modificar precios, botones ni contenido del comercio.
+- El sistema recuerda el texto fuente para evitar traducciones acumuladas al alternar ES→EN→ES.
+- Se añaden pruebas de traducción de advertencias financieras, mensajes variables y accesibilidad en seis combinaciones de navegador/tamaño.
+- Las cotizaciones, permisos y fórmulas financieras no se modifican. La interfaz aún contiene componentes en JavaScript heredado, y las pruebas emuladas no sustituyen pruebas físicas con VoiceOver/Safari u Opera GX.
+
 ## Moncevia v3.9.0 — Fase 5: validación de configuración y proveedores
 
 Los ajustes persistidos se normalizan en `src/core/settings-validation.ts`. Se conservan los dominios autorizados y preferencias válidas de versiones anteriores, y se rechazan entradas corruptas o configuraciones desconocidas sin ampliar permisos. El nuevo `src/core/provider-validation.ts` verifica las respuestas públicas de Binance, CoinGecko y Coinbase, incluidos los símbolos de criptoactivos, valores bid/ask, diferenciales y vigencia cuando el proveedor la entrega.
