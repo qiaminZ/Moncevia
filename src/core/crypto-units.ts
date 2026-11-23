@@ -1,9 +1,8 @@
 /** Exact 10^-8 unit conversions for estimating crypto withdrawal balances. */
 export function coinMinor(raw: string | number): bigint | null {
   const initial = String(raw).trim().replace(',', '.');
-  const s = /e/i.test(initial) && Number.isFinite(Number(initial))
-    ? Number(initial).toFixed(8)
-    : initial;
+  const s =
+    /e/i.test(initial) && Number.isFinite(Number(initial)) ? Number(initial).toFixed(8) : initial;
   if (!/^\d+(?:\.\d+)?$/.test(s)) return null;
   const [integer, fraction = ''] = s.split('.');
   if (!integer || integer.length > 10 || fraction.length > 8) return null;

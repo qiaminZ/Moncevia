@@ -10,9 +10,17 @@ const positive = (value: unknown): value is number =>
  * Untrusted ExchangeRate-API response validator. Invalid or outdated market
  * data must never enter the local cache used for financial estimates.
  */
-export function validateFXResponse(input: unknown, now: number): (FxRates & { providerTime: number }) | null {
-  if (!isRecord(input) || input.result !== 'success' || input.base_code !== 'USD' ||
-      !isRecord(input.rates)) return null;
+export function validateFXResponse(
+  input: unknown,
+  now: number,
+): (FxRates & { providerTime: number }) | null {
+  if (
+    !isRecord(input) ||
+    input.result !== 'success' ||
+    input.base_code !== 'USD' ||
+    !isRecord(input.rates)
+  )
+    return null;
   const epoch = input.time_last_update_unix;
   if (!positive(epoch) || !Number.isFinite(now)) return null;
   const providerTime = epoch * 1000;

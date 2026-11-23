@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.6.0
+// @version      3.6.1
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -28,6 +28,7 @@
   var moncevia_default = "\n      .clplens-badge { display:inline-flex!important; flex-direction:column!important; align-items:flex-start!important; gap:1px!important; vertical-align:middle!important; margin:3px 3px 3px 6px!important; padding:3px 6px!important; border-radius:7px!important; background:#ecfdf5!important; color:#064e3b!important; font:600 11px/1.35 -apple-system,BlinkMacSystemFont,Arial,sans-serif!important; text-align:left!important; white-space:normal!important; overflow-wrap:anywhere!important; max-width:min(97vw,380px)!important; border:1px solid #a7f3d0!important; text-transform:none!important; letter-spacing:normal!important; pointer-events:none!important; }\n      .clplens-badge > span { display:block!important; font:inherit!important; color:inherit!important; }\n      #clplens-widget { all:initial!important; position:fixed!important; bottom:max(12px,env(safe-area-inset-bottom))!important; right:10px!important; z-index:2147483646!important; font:14px/1.4 -apple-system,BlinkMacSystemFont,Arial,sans-serif!important; color:#f8fafc!important; direction:ltr!important; }\n      #clplens-widget, #clplens-widget * { box-sizing:border-box!important; }\n      #clplens-widget * { font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif!important; }\n      #clplens-fab { display:flex!important; align-items:center!important; justify-content:center!important; min-height:42px!important; min-width:86px!important; padding:8px 13px!important; border:1px solid #475569!important; border-radius:26px!important; background:#0f172a!important; color:#fff!important; font-size:13px!important; font-weight:700!important; box-shadow:0 5px 20px #0007!important; cursor:grab!important; touch-action:none!important; user-select:none!important; -webkit-user-select:none!important; }\n      #clplens-fab.mv-fab-moved { position:fixed!important; left:var(--mv-fab-left)!important; top:var(--mv-fab-top)!important; right:auto!important; bottom:auto!important; }\n      #clplens-fab.mv-fab-dragging { cursor:grabbing!important; opacity:.88!important; }\n      #clplens-panel {z-index:2!important;}\n      #clplens-panel { position:absolute!important; bottom:50px!important; right:0!important; width:min(375px,calc(100vw - 20px))!important; max-height:min(74dvh,640px)!important; overflow-y:auto!important; overflow-x:hidden!important; border:1px solid #475569!important; border-radius:15px!important; background:#0f172a!important; box-shadow:0 15px 40px #0009!important; padding:13px!important; color:#f8fafc!important; }\n      #clplens-panel[hidden], #clplens-panel .clplens-hidden { display:none!important; }\n      #clplens-panel h2 { margin:0 0 5px!important; color:#fff!important; font-size:19px!important; font-weight:750!important; }\n      #clplens-panel p { margin:6px 0!important; color:#cbd5e1!important; font-size:12px!important; line-height:1.45!important; }\n      #clplens-panel .clplens-strong { color:#5eead4!important; font-weight:650!important; }\n      #clplens-panel .clplens-warning { color:#fcd34d!important; }\n      #clplens-panel .clplens-tabs { display:flex!important; gap:6px!important; margin:11px 0!important; }\n      #clplens-panel button { cursor:pointer!important; border:1px solid #64748b!important; border-radius:8px!important; background:#1e293b!important; color:#fff!important; min-height:36px!important; padding:7px 9px!important; font-size:13px!important; }\n      #clplens-panel button[aria-selected='true'] { background:#164e63!important; border-color:#5eead4!important; }\n      #clplens-panel .clplens-tabs button { flex:1!important; }\n      #clplens-panel label { display:flex!important; justify-content:space-between!important; align-items:center!important; gap:10px!important; padding:7px 0!important; border-bottom:1px solid #1e293b!important; color:#f8fafc!important; font-size:13px!important; }\n      #clplens-panel .clplens-field { display:flex!important; flex-direction:column!important; align-items:stretch!important; gap:5px!important; padding:5px 0!important; border:0!important; }\n      #clplens-panel .clplens-inputrow { display:flex!important; gap:8px!important; }\n      #clplens-panel input[type=number], #clplens-panel input[type=text], #clplens-panel select { min-height:37px!important; border:1px solid #64748b!important; border-radius:7px!important; background:#1e293b!important; color:#fff!important; padding:5px 7px!important; font-size:16px!important; width:96px!important; max-width:100%!important; }\n      #clplens-panel .clplens-inputrow input { flex:1!important; min-width:0!important; width:auto!important; }\n      #clplens-panel .clplens-inputrow select { width:98px!important; }\n      #clplens-panel input[type=checkbox] { width:20px!important; height:20px!important; accent-color:#2dd4bf!important; flex-shrink:0!important; }\n      #clplens-panel .clplens-results { padding:9px!important; border:1px solid #334155!important; border-radius:10px!important; margin-top:8px!important; background:#111e31!important; }\n      #clplens-panel .clplens-results div { padding:3px 0!important; color:#d1fae5!important; font-size:14px!important; font-variant-numeric:tabular-nums!important; word-break:break-word!important; }\n      #clplens-panel .clplens-actions { display:flex!important; gap:8px!important; position:sticky!important; bottom:-13px!important; background:#0f172a!important; padding:11px 0 2px!important; }\n      #clplens-panel .clplens-actions button { flex:1!important; }\n      #clplens-panel a { color:#67e8f9!important; text-decoration:underline!important; }\n      #clplens-panel .clplens-payment { padding:8px!important; margin:8px 0!important; border:1px solid #475569!important; border-radius:8px!important; background:#15233a!important; }\n      #clplens-panel .clplens-payment strong { display:block!important; color:#5eead4!important; padding-bottom:4px!important; }\n      #clplens-panel .clplens-payment div { margin:3px 0!important; overflow-wrap:anywhere!important; }\n      #clplens-panel .clplens-record { margin:8px 0!important; padding:9px!important; background:#15233a!important; border:1px solid #475569!important; border-radius:8px!important; }\n      #clplens-panel .clplens-record div { margin:3px 0!important; }\n      #clplens-panel .clplens-record button { margin-top:5px!important; }\n      #clplens-panel .clplens-action-row { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:7px!important; margin:8px 0!important; }\n      #clplens-panel .clplens-action-row button { min-height:42px!important; }\n      #clplens-widget #clplens-compact { position:absolute!important; right:0!important; bottom:52px!important; width:min(300px,calc(100vw - 24px))!important; padding:10px!important; border:1px solid #475569!important; border-radius:11px!important; background:#0f172a!important; box-shadow:0 5px 20px #0009!important; color:#f8fafc!important; font-size:12px!important; line-height:1.5!important; overflow-wrap:anywhere!important; }\n      #clplens-widget #clplens-compact[hidden] {display:none!important;}\n      #clplens-widget .clplens-mini-head {color:#5eead4!important;font-weight:600!important;}\n      #clplens-widget .clplens-mini-big {color:#fff!important;font-size:20px!important;font-weight:700!important;}\n      #clplens-widget .clplens-mini-note {color:#cbd5e1!important;font-size:10px!important;}\n      .clplens-price-flash { outline:3px solid #2dd4bf!important;outline-offset:2px!important; }\n      .clplens-picking * { cursor:crosshair!important; }\n\n      /* Moncevia 3.3: mini-app modular. All selectors scoped to the userscript. */\n      #clplens-panel {width:min(410px,calc(100vw - 20px))!important; max-height:min(80dvh,700px)!important; padding:0!important; border-radius:18px!important; background:#0b1424!important; scroll-padding-top:94px!important; overscroll-behavior:contain!important;}\n      #clplens-panel .mv-header {position:relative!important;z-index:1!important;background:#0b1424!important;padding:15px 15px 9px!important;border-bottom:1px solid #243449!important;}\n      #clplens-panel .mv-titlebar {display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;}\n      #clplens-panel .mv-lang-toggle {min-height:28px!important;min-width:38px!important;padding:3px 7px!important;font-size:11px!important;border-radius:7px!important;font-weight:700!important;color:#99f6e4!important;}\n      #clplens-panel .mv-titlebar h2 {font-size:18px!important;margin:0!important;letter-spacing:-.35px!important;}\n      #clplens-panel .mv-version {font-size:10px!important;color:#91a3b8!important;border:1px solid #334155!important;border-radius:5px!important;padding:3px 5px!important;white-space:nowrap!important;}\n      #clplens-panel .mv-status {display:flex!important;align-items:center!important;gap:6px!important;margin:8px 0 0!important;color:#8da7b5!important;font-size:11px!important;line-height:1.35!important;}\n      #clplens-panel .mv-dot {width:7px!important;height:7px!important;flex:none!important;border-radius:50%!important;background:#2dd4bf!important;}\n      #clplens-panel .mv-dot.mv-stale {background:#f59e0b!important;}\n      #clplens-panel .mv-nav {display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2px!important;background:#101c2c!important;padding:5px!important;margin:0!important;border-bottom:1px solid #25344a!important;position:sticky!important;top:0!important;z-index:5!important;}\n      #clplens-panel .mv-nav button {min-width:0!important;min-height:43px!important;padding:5px 2px!important;border:0!important;border-radius:8px!important;background:transparent!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;font-size:10px!important;font-weight:600!important;color:#a7bbca!important;}\n      #clplens-panel .mv-nav button .mv-nav-icon {font-size:16px!important;line-height:1!important;font-weight:550!important;}\n      #clplens-panel .mv-nav button[aria-selected='true'] {background:#134e59!important;color:#ccfbf1!important;outline:1px solid #36b7ac!important;}\n      #clplens-panel .mv-page {padding:14px 15px 12px!important;min-height:160px!important;}\n      #clplens-panel .mv-page > h2 {margin:1px 0 10px!important;font-size:16px!important;}\n      #clplens-panel .mv-hint {font-size:11px!important;color:#97adbe!important;margin:5px 0 12px!important;line-height:1.4!important;}\n      #clplens-panel .mv-target-row {display:flex!important;gap:8px!important;align-items:stretch!important;margin-top:6px!important;}\n      #clplens-panel .mv-target-row select {flex:1!important;min-width:0!important;width:auto!important;}\n      #clplens-panel .mv-swap {flex:none!important;min-width:52px!important;min-height:41px!important;border:1px solid #2cc3b4!important;border-radius:9px!important;background:#123e4b!important;color:#ccfbf1!important;font-size:22px!important;cursor:pointer!important;}\n      #clplens-panel .mv-swap:focus-visible {outline:2px solid #5eead4!important;outline-offset:2px!important;}\n      #clplens-panel .mv-hero {border:1px solid #235462!important;background:linear-gradient(145deg,#143443,#112538)!important;border-radius:14px!important;padding:12px!important;margin:10px 0 13px!important;}\n      #clplens-panel .mv-hero .mv-kicker {font-size:10px!important;color:#b6d2d7!important;letter-spacing:.6px!important;text-transform:uppercase!important;}\n      #clplens-panel .mv-hero .mv-big {font-size:27px!important;line-height:1.25!important;font-weight:750!important;color:#e9fffa!important;overflow-wrap:anywhere!important;font-variant-numeric:tabular-nums!important;}\n      #clplens-panel .mv-hero .mv-sub {color:#91c9c6!important;font-size:11px!important;margin-top:5px!important;}\n      #clplens-panel .mv-disclosure.mv-rates-disclosure {margin:4px 0 0!important;border:0!important;background:transparent!important;}\n      #clplens-panel .mv-disclosure.mv-rates-disclosure > summary {font-size:11px!important;font-weight:500!important;color:#91aab9!important;padding:5px 0!important;}\n      #clplens-panel .mv-disclosure.mv-rates-disclosure .mv-details-content {border-top:0!important;padding:4px 0 7px!important;}\n      #clplens-panel .mv-rates {margin:0!important;color:#b2c6d2!important;font-size:12px!important;}\n      #clplens-panel .mv-rates b {color:#f8fafc!important;}\n      #clplens-panel .mv-grid {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;}\n      #clplens-panel .mv-unit {display:flex!important;justify-content:space-between!important;align-items:center!important;gap:7px!important;border:1px solid #26394e!important;border-radius:10px!important;background:#142237!important;padding:10px 9px!important;min-width:0!important;}\n      #clplens-panel .mv-unit span {font-size:11px!important;color:#9db0bf!important;white-space:nowrap!important;}\n      #clplens-panel .mv-unit strong {font-size:12px!important;color:#dcfef6!important;font-variant-numeric:tabular-nums!important;overflow-wrap:anywhere!important;text-align:right!important;}\n      #clplens-panel .mv-unit.mv-full {grid-column:span 2!important;}\n      #clplens-panel .clplens-action-row {margin:12px 0 0!important;gap:7px!important;}\n      #clplens-panel .clplens-action-row button {min-height:39px!important;font-size:11px!important;padding:7px!important;}\n      #clplens-panel .mv-action-primary {background:#105362!important;border-color:#2cc3b4!important;}\n      #clplens-panel .mv-subtle {font-size:11px!important;color:#9dafbd!important;margin:8px 0 0!important;}\n      #clplens-panel .mv-fee-notice {font-size:11px!important;line-height:1.4!important;color:#fed88b!important;border-left:2px solid #f59e0b!important;padding:5px 9px!important;margin:10px 0!important;background:#2b241e!important;border-radius:4px!important;}\n      #clplens-panel .mv-disclosure {border:1px solid #2d4056!important;border-radius:10px!important;background:#101e30!important;margin:8px 0!important;overflow:hidden!important;}\n      #clplens-panel .mv-disclosure > summary {cursor:pointer!important;list-style:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:12px!important;color:#f1f5f9!important;font-size:13px!important;font-weight:650!important;}\n      #clplens-panel .mv-disclosure > summary::-webkit-details-marker {display:none!important;}\n      #clplens-panel .mv-disclosure > summary:after {content:'⌄'!important;color:#93aabb!important;font-size:16px!important;flex:none!important;}\n      #clplens-panel .mv-disclosure[open] > summary:after {content:'⌃'!important;}\n      #clplens-panel .mv-disclosure .mv-details-content {padding:0 12px 11px!important;border-top:1px solid #27374b!important;}\n      #clplens-panel .mv-details-content label {min-height:42px!important;}\n      #clplens-panel .mv-payment-amount {font-weight:750!important;color:#d9fff5!important;font-size:15px!important;}\n      #clplens-panel .mv-payment-card > summary {align-items:flex-start!important;flex-wrap:wrap!important;}\n      #clplens-panel .mv-payment-card .mv-payment-status {display:block!important;width:100%!important;line-height:1.2!important;}\n      #clplens-panel .mv-payment-summary {display:flex!important;flex-direction:column!important;min-width:0!important;gap:3px!important;}\n      #clplens-panel .mv-payment-summary small {font-size:11px!important;color:#9aafc0!important;font-weight:450!important;}\n      #clplens-panel .mv-payment-status {font-size:10px!important;color:#ffcb80!important;white-space:nowrap!important;}\n      #clplens-panel .mv-payment-status.ready {color:#5eead4!important;}\n      #clplens-panel .mv-payment-details > div {margin:8px 0!important;overflow-wrap:anywhere!important;color:#cfdee7!important;font-size:12px!important;}\n      #clplens-panel .mv-payment-details .clplens-warning {color:#facf83!important;}\n      #clplens-panel .mv-linklike {background:transparent!important;border:0!important;color:#5eead4!important;padding:5px!important;font-size:12px!important;text-align:left!important;}\n      #clplens-panel .clplens-actions {margin:0!important;position:sticky!important;bottom:0!important;z-index:5!important;background:#0b1424!important;border-top:1px solid #25344a!important;padding:9px 15px calc(9px + env(safe-area-inset-bottom,0px))!important;}\n      #clplens-panel .clplens-actions button {min-height:39px!important;font-size:12px!important;}\n      #clplens-panel .mv-settings-group {margin:9px 0!important;}\n      #clplens-panel .mv-settings-group > summary {font-size:13px!important;}\n      #clplens-panel .mv-help {font-size:11px!important;color:#a8b8c5!important;line-height:1.45!important;}\n      #clplens-panel .mv-settings-group input {font-variant-numeric:tabular-nums!important;}\n      #clplens-panel .mv-settings-group label span {line-height:1.3!important;}\n      #clplens-panel .mv-section-note {color:#a3b9c8!important;font-size:11px!important;margin:5px 0 11px!important;}\n      #clplens-panel .mv-record-summary {display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:6px!important;align-items:center!important;}\n      #clplens-panel .mv-record-summary small {font-size:11px!important;color:#a0b8c7!important;}\n      #clplens-panel .mv-record-summary strong {font-size:13px!important;color:#e4fbf7!important;}\n      #clplens-panel button:focus-visible,#clplens-panel summary:focus-visible {outline:2px solid #5eead4!important;outline-offset:2px!important;}\n      /* Escritório/PC: panel más ancho y controles legibles, sin alterar el layout móvil. */\n      @media (min-width:850px) {\n        #clplens-widget {right:20px!important;bottom:20px!important;font-size:15px!important;}\n        #clplens-panel {width:min(490px,calc(100vw - 48px))!important;max-height:min(83dvh,780px)!important;}\n        #clplens-panel .mv-page {padding:18px 20px 16px!important;}\n        #clplens-panel .mv-header {padding:17px 20px 12px!important;}\n        #clplens-panel .mv-nav button {font-size:12px!important;min-height:48px!important;}\n        #clplens-panel .mv-unit strong {font-size:13px!important;}\n        #clplens-panel .mv-hero .mv-big {font-size:30px!important;}\n      }\n      @media (max-width:350px) {#clplens-panel .mv-nav button {font-size:9px!important;}#clplens-panel .mv-nav button .mv-nav-icon {font-size:14px!important;}#clplens-panel .mv-hero .mv-big {font-size:23px!important;}}\n      @media (prefers-reduced-motion:reduce) {#clplens-panel *,#clplens-fab {animation:none!important;transition:none!important;}}\n      @media (prefers-color-scheme: dark) { .clplens-badge { background:#064e3b!important; color:#ecfdf5!important; border-color:#047857!important; } }\n    ";
 
   // src/types/currency.ts
+  var FIAT_CODES = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "KRW", "BRL", "CNY"];
   var CRYPTO_LIST = ["BTC", "ETH", "LTC"];
   var CRYPTO_CODES = new Set(CRYPTO_LIST);
 
@@ -52,6 +53,180 @@
     }
     const value = Number(s);
     return value > 0 && value < 1e12 && Number.isFinite(value) ? value : NaN;
+  }
+
+  // src/core/conversion.ts
+  var FX_STALE_MS = 3 * 864e5;
+  var CRYPTO_STALE_MS = 45 * 6e4;
+  var isPositive = (value) => {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0;
+  };
+  var inDate = (value, now, ttl) => value !== null && Number.isFinite(value.fetchedAt) && now - value.fetchedAt >= 0 && now - value.fetchedAt < ttl;
+  function createConversionEngine(context) {
+    const { settings, fx, crypto, now } = context;
+    const activeFX = () => inDate(fx, now, FX_STALE_MS) && isPositive(fx?.rates.EUR) && isPositive(fx?.rates.CLP);
+    const activeCrypto = () => inDate(crypto, now, CRYPTO_STALE_MS) && (!crypto?.quotedAt || now - crypto.quotedAt >= -3e5 && now - crypto.quotedAt < CRYPTO_STALE_MS) && CRYPTO_LIST.every((code) => isPositive(crypto?.usd?.[code])) && (!crypto?.source?.startsWith("Binance") || isPositive(crypto.usdtUsd));
+    const usdClp = () => {
+      if (isPositive(settings.usdClpManual)) return Number(settings.usdClpManual);
+      return activeFX() ? Number(fx?.rates.CLP) : null;
+    };
+    const eurClp = () => {
+      if (isPositive(settings.eurClpManual)) return Number(settings.eurClpManual);
+      const base = usdClp();
+      return activeFX() && base !== null ? base / Number(fx?.rates.EUR) : null;
+    };
+    const spotAsk = (code) => {
+      if (!activeCrypto()) return null;
+      return isPositive(crypto?.askUSDT?.[code]) ? Number(crypto?.askUSDT?.[code]) * Number(crypto?.usdtUsd) : Number(crypto?.usd?.[code]);
+    };
+    const spotBid = (code) => {
+      if (!activeCrypto()) return null;
+      return isPositive(crypto?.bidUSDT?.[code]) ? Number(crypto?.bidUSDT?.[code]) * Number(crypto?.usdtUsd) : Number(crypto?.usd?.[code]);
+    };
+    const fiatUsd = (amount, code) => {
+      if (code === "USD") return amount;
+      const base = usdClp();
+      if (code === "EUR" && isPositive(settings.eurClpManual) && base !== null) {
+        return amount * Number(settings.eurClpManual) / base;
+      }
+      if (CRYPTO_LIST.some((coin) => coin === code)) {
+        const bid = spotBid(code);
+        return bid === null ? null : amount * bid;
+      }
+      if (!activeFX() || !isPositive(fx?.rates[code])) return null;
+      return amount / Number(fx?.rates[code]);
+    };
+    const toCLP = (amount, code) => {
+      if (code === "CLP") return amount;
+      if (code === "EUR" && isPositive(settings.eurClpManual)) {
+        return amount * Number(settings.eurClpManual);
+      }
+      const usd = fiatUsd(amount, code), rate = usdClp();
+      return usd !== null && rate !== null ? usd * rate : null;
+    };
+    const toUnits = (amount, from, to) => {
+      if (from === to) return amount;
+      if (to === "CLP") return toCLP(amount, from);
+      if (from === "CLP") {
+        const rate2 = usdClp();
+        if (rate2 === null) return null;
+        return toUnits(amount / rate2, "USD", to);
+      }
+      const usd = fiatUsd(amount, from);
+      if (usd === null) return null;
+      if (to === "USD") return usd;
+      const rate = usdClp();
+      if (to === "EUR" && isPositive(settings.eurClpManual) && rate !== null) {
+        return usd * rate / Number(settings.eurClpManual);
+      }
+      if (FIAT_CODES.some((fiat) => fiat === to) && activeFX() && isPositive(fx?.rates[to])) {
+        return usd * Number(fx?.rates[to]);
+      }
+      if (CRYPTO_LIST.some((coin) => coin === to) && activeCrypto()) {
+        const ask = spotAsk(to);
+        return ask !== null && ask > 0 ? usd / ask : null;
+      }
+      return null;
+    };
+    return {
+      activeFX,
+      activeCrypto,
+      fiatUsd,
+      usdClp,
+      eurClp,
+      toCLP,
+      toUnits,
+      spotAsk,
+      spotBid
+    };
+  }
+
+  // src/core/crypto-units.ts
+  function coinMinor(raw) {
+    const initial = String(raw).trim().replace(",", ".");
+    const s = /e/i.test(initial) && Number.isFinite(Number(initial)) ? Number(initial).toFixed(8) : initial;
+    if (!/^\d+(?:\.\d+)?$/.test(s)) return null;
+    const [integer, fraction = ""] = s.split(".");
+    if (!integer || integer.length > 10 || fraction.length > 8) return null;
+    return BigInt(integer) * 100000000n + BigInt((fraction + "00000000").slice(0, 8));
+  }
+  function ceil8(value) {
+    if (!Number.isFinite(value) || value < 0 || value > 1e10) return null;
+    const s = value.toFixed(12);
+    const [integer, fraction = ""] = s.split(".");
+    if (!integer) return null;
+    let units = BigInt(integer) * 100000000n + BigInt((fraction + "00000000").slice(0, 8));
+    if (/[1-9]/.test(fraction.slice(8))) units += 1n;
+    return Number(units) / 1e8;
+  }
+  var roundUp2 = (value) => Number.isFinite(value) ? Math.ceil((value - 1e-10) * 100) / 100 : null;
+
+  // src/core/fx-validation.ts
+  var isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+  var positive = (value) => typeof value === "number" && Number.isFinite(value) && value > 0;
+  function validateFXResponse(input, now) {
+    if (!isRecord(input) || input.result !== "success" || input.base_code !== "USD" || !isRecord(input.rates))
+      return null;
+    const epoch = input.time_last_update_unix;
+    if (!positive(epoch) || !Number.isFinite(now)) return null;
+    const providerTime = epoch * 1e3;
+    if (providerTime > now + 36e5 || now - providerTime > 7 * 864e5) return null;
+    if (!positive(input.rates.CLP) || !positive(input.rates.EUR)) return null;
+    const rates = {};
+    for (const code of [...FIAT_CODES, "CLP"]) {
+      const value = input.rates[code];
+      if (positive(value)) rates[code] = value;
+    }
+    return { fetchedAt: now, providerTime, rates };
+  }
+
+  // src/core/cache-validation.ts
+  var record = (input) => typeof input === "object" && input !== null && !Array.isArray(input);
+  var positiveNumber = (input) => {
+    const value = typeof input === "number" || typeof input === "string" ? Number(input) : NaN;
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
+  function readCachedFX(input) {
+    if (!record(input) || !Number.isFinite(input.fetchedAt) || !record(input.rates)) return null;
+    const rates = {};
+    for (const code of [...FIAT_CODES, "CLP"]) {
+      const value = positiveNumber(input.rates[code]);
+      if (value !== null) rates[code] = value;
+    }
+    if (!rates.CLP || !rates.EUR) return null;
+    const updatedAt = typeof input.updatedAt === "string" ? input.updatedAt.slice(0, 80) : void 0;
+    return updatedAt === void 0 ? { fetchedAt: input.fetchedAt, rates } : { fetchedAt: input.fetchedAt, rates, updatedAt };
+  }
+  function readCachedCrypto(input) {
+    if (!record(input) || !Number.isFinite(input.fetchedAt) || !record(input.usd)) return null;
+    const usd = {};
+    for (const code of CRYPTO_LIST) {
+      const value = positiveNumber(input.usd[code]);
+      if (value === null) return null;
+      usd[code] = value;
+    }
+    const source = typeof input.source === "string" ? input.source.slice(0, 100) : void 0;
+    const parity = positiveNumber(input.usdtUsd);
+    if (source?.startsWith("Binance") && parity === null) return null;
+    const askUSDT = {};
+    const bidUSDT = {};
+    for (const code of CRYPTO_LIST) {
+      const ask = record(input.askUSDT) ? positiveNumber(input.askUSDT[code]) : null;
+      const bid = record(input.bidUSDT) ? positiveNumber(input.bidUSDT[code]) : null;
+      if (ask !== null) askUSDT[code] = ask;
+      if (bid !== null) bidUSDT[code] = bid;
+    }
+    const quotedAt = typeof input.quotedAt === "number" && Number.isFinite(input.quotedAt) ? input.quotedAt : void 0;
+    return {
+      fetchedAt: input.fetchedAt,
+      usd,
+      ...source === void 0 ? {} : { source },
+      ...quotedAt === void 0 ? {} : { quotedAt },
+      ...parity === null ? {} : { usdtUsd: parity },
+      ...Object.keys(askUSDT).length ? { askUSDT } : {},
+      ...Object.keys(bidUSDT).length ? { bidUSDT } : {}
+    };
   }
 
   // src/legacy/runtime.js
@@ -459,9 +634,10 @@
     const validPositive = (n) => Number.isFinite(Number(n)) && Number(n) > 0;
     const isAuthorized = () => settings.allowedSites.includes(HOST);
     const isActive = () => isAuthorized() && settings.enabled && !settings.disabledSites.includes(HOST);
-    const inDate = (obj, time) => obj && Number.isFinite(obj.fetchedAt) && Date.now() - obj.fetchedAt >= 0 && Date.now() - obj.fetchedAt < time;
-    const activeCrypto = () => inDate(crypto, CRYPTO_STALE) && (!crypto.quotedAt || Date.now() - crypto.quotedAt >= -3e5 && Date.now() - crypto.quotedAt < CRYPTO_STALE) && CRYPTOS.every((c) => validPositive(crypto.usd?.[c])) && (!crypto.source?.startsWith("Binance") || validPositive(crypto.usdtUsd));
-    const activeFX = () => inDate(fx, FX_STALE) && validPositive(fx.rates?.EUR) && validPositive(fx.rates?.CLP);
+    const inDate2 = (obj, time) => obj && Number.isFinite(obj.fetchedAt) && Date.now() - obj.fetchedAt >= 0 && Date.now() - obj.fetchedAt < time;
+    const conversion = () => createConversionEngine({ settings, fx, crypto, now: Date.now() });
+    const activeCrypto = () => conversion().activeCrypto();
+    const activeFX = () => conversion().activeFX();
     const figure = String.raw`(?:\d{1,3}(?:[.,\s\u00a0\u202f]\d{3})+(?:[.,]\d{1,8})?|\d+(?:[.,]\d{1,8})?)`;
     const prefixRE = new RegExp(String.raw`(?<![\p{L}\d])(?:US\$|U\$S|USD|EUR|GBP|CAD|AUD|JPY|KRW|BRL|CNY|BTC|ETH|LTC|R\$|€|£|¥|₿|Ξ|Ł|\$)\s*(${figure})(?![\p{L}\d])`, "giu");
     const suffixRE = new RegExp(String.raw`(?<![\p{L}\d])(${figure})\s*(USD|EUR|GBP|CAD|AUD|JPY|KRW|BRL|CNY|BTC|ETH|LTC)(?![\p{L}\d])`, "giu");
@@ -496,67 +672,13 @@
       }
       return null;
     }
-    function fiatUsd(amount, code) {
-      if (code === "USD") return amount;
-      if (code === "EUR" && validPositive(settings.eurClpManual) && usdClp()) return amount * Number(settings.eurClpManual) / usdClp();
-      if (CRYPTOS.includes(code)) return activeCrypto() ? amount * spotBid(code) : null;
-      if (!activeFX() || !validPositive(fx.rates[code])) return null;
-      return amount / fx.rates[code];
-    }
-    function usdClp() {
-      if (validPositive(settings.usdClpManual)) return Number(settings.usdClpManual);
-      return activeFX() ? fx.rates.CLP : null;
-    }
-    function eurClp() {
-      if (validPositive(settings.eurClpManual)) return Number(settings.eurClpManual);
-      if (!activeFX() || !usdClp()) return null;
-      return usdClp() / fx.rates.EUR;
-    }
-    function toCLP(amount, code) {
-      if (code === "CLP") return amount;
-      if (code === "EUR" && validPositive(settings.eurClpManual)) return amount * Number(settings.eurClpManual);
-      const usd = fiatUsd(amount, code), price = usdClp();
-      return usd != null && price ? usd * price : null;
-    }
-    function toUnits(amount, fromCode, toCode) {
-      if (fromCode === toCode) return amount;
-      if (toCode === "CLP") return toCLP(amount, fromCode);
-      if (fromCode === "CLP") {
-        const rate = usdClp();
-        if (!rate) return null;
-        return toUnits(amount / rate, "USD", toCode);
-      }
-      const usd = fiatUsd(amount, fromCode);
-      if (usd == null) return null;
-      if (toCode === "USD") return usd;
-      if (toCode === "EUR" && validPositive(settings.eurClpManual) && usdClp()) return usd * usdClp() / Number(settings.eurClpManual);
-      if (FIAT.includes(toCode) && activeFX() && validPositive(fx.rates[toCode])) return usd * fx.rates[toCode];
-      if (CRYPTOS.includes(toCode) && activeCrypto()) return usd / spotAsk(toCode);
-      return null;
-    }
-    function spotAsk(coin) {
-      return activeCrypto() && validPositive(crypto?.askUSDT?.[coin]) ? Number(crypto.askUSDT[coin]) * crypto.usdtUsd : activeCrypto() ? Number(crypto.usd[coin]) : null;
-    }
-    function spotBid(coin) {
-      return activeCrypto() && validPositive(crypto?.bidUSDT?.[coin]) ? Number(crypto.bidUSDT[coin]) * crypto.usdtUsd : activeCrypto() ? Number(crypto.usd[coin]) : null;
-    }
-    function coinMinor(raw) {
-      const initial = String(raw).trim().replace(",", ".");
-      const s = /e/i.test(initial) && Number.isFinite(Number(initial)) ? Number(initial).toFixed(8) : initial;
-      if (!/^\d+(?:\.\d+)?$/.test(s)) return null;
-      const [integer, frac = ""] = s.split(".");
-      if (integer.length > 10 || frac.length > 8) return null;
-      return BigInt(integer) * 100000000n + BigInt((frac + "00000000").slice(0, 8));
-    }
-    function ceil8(v) {
-      if (!Number.isFinite(v) || v < 0 || v > 1e10) return null;
-      const s = v.toFixed(12);
-      const [integer, frac = ""] = s.split(".");
-      let units = BigInt(integer) * 100000000n + BigInt((frac + "00000000").slice(0, 8));
-      if (/[1-9]/.test(frac.slice(8))) units += 1n;
-      return Number(units) / 1e8;
-    }
-    const roundUp2 = (v) => Number.isFinite(v) ? Math.ceil((v - 1e-10) * 100) / 100 : null;
+    const fiatUsd = (amount, code) => conversion().fiatUsd(amount, code);
+    const usdClp = () => conversion().usdClp();
+    const eurClp = () => conversion().eurClp();
+    const toCLP = (amount, code) => conversion().toCLP(amount, code);
+    const toUnits = (amount, fromCode, toCode) => conversion().toUnits(amount, fromCode, toCode);
+    const spotAsk = (coin) => conversion().spotAsk(coin);
+    const spotBid = (coin) => conversion().spotBid(coin);
     const safeLabel = (s) => String(s || "").replace(/[<>\r\n]/g, " ").slice(0, 45);
     function formatCoin(value, code) {
       if (!Number.isFinite(value)) return "—";
@@ -1437,16 +1559,16 @@
         historyOutput.append(node("p", "", "Sin consultas guardadas. Solo se registra cuando pulsas Guardar; no se almacenan direcciones ni datos bancarios."));
         return;
       }
-      for (const record of history) {
+      for (const record2 of history) {
         const row = node("div", "clplens-record");
-        const old = Number(record.clp), now = toCLP(Number(record.amount), record.code);
+        const old = Number(record2.clp), now = toCLP(Number(record2.amount), record2.code);
         const delta = old > 0 && validPositive(now) ? (now / old - 1) * 100 : null;
-        row.append(node("strong", "", `${dateTime(record.at)} · ${safeLabel(record.site)} · ${record.amount} ${record.code}`));
+        row.append(node("strong", "", `${dateTime(record2.at)} · ${safeLabel(record2.site)} · ${record2.amount} ${record2.code}`));
         row.append(node("div", "", `Entonces ${formatCLP(old)} · Ahora ${now != null ? formatCLP(now) : "sin tasa"}`));
-        row.append(node("div", "", `Variación CLP ${delta != null ? (delta >= 0 ? "+" : "") + formatDecimal(delta, 2) + " %" : "no disponible"} · ${safeLabel(record.cryptoSource)}`));
-        if (record.units && typeof record.units === "object") {
+        row.append(node("div", "", `Variación CLP ${delta != null ? (delta >= 0 ? "+" : "") + formatDecimal(delta, 2) + " %" : "no disponible"} · ${safeLabel(record2.cryptoSource)}`));
+        if (record2.units && typeof record2.units === "object") {
           const deltas = CRYPTOS.map((c) => {
-            const oldUnits = Number(record.units[c]), current = toUnits(Number(record.amount), record.code, c);
+            const oldUnits = Number(record2.units[c]), current = toUnits(Number(record2.amount), record2.code, c);
             if (!validPositive(oldUnits) || !validPositive(current)) return `${c}: sin comparación`;
             const diff = 100 * (current / oldUnits - 1);
             return `${c}: ${(diff >= 0 ? "+" : "") + formatDecimal(diff, 2)} %`;
@@ -1458,12 +1580,12 @@
         load.addEventListener("click", () => {
           manualOverride = true;
           pendingSelection = null;
-          settings.calcAmount = String(record.amount);
-          settings.calcCurrency = record.code;
-          if (SUPPORTED_CURRENCIES.includes(record.targetCurrency)) settings.targetCurrency = record.targetCurrency;
-          else settings.targetCurrency = targetFallback(record.code);
+          settings.calcAmount = String(record2.amount);
+          settings.calcCurrency = record2.code;
+          if (SUPPORTED_CURRENCIES.includes(record2.targetCurrency)) settings.targetCurrency = record2.targetCurrency;
+          else settings.targetCurrency = targetFallback(record2.code);
           calcInput.value = settings.calcAmount;
-          calcSelect.value = record.code;
+          calcSelect.value = record2.code;
           if (targetSelect) targetSelect.value = settings.targetCurrency;
           persist();
           activateTab("calculator");
@@ -1528,7 +1650,7 @@
       languageButton.type = "button";
       languageButton.className = "mv-lang-toggle";
       languageButton.addEventListener("click", () => switchLanguage(uiLanguage() === "es" ? "en" : "es"));
-      headerActions.append(languageButton, node("span", "mv-version", "v3.6.0"));
+      headerActions.append(languageButton, node("span", "mv-version", "v3.6.1"));
       titlebar.append(headerActions);
       header.append(titlebar);
       const status = node("div", "mv-status");
@@ -2039,15 +2161,12 @@
       return JSON.parse(result.responseText || result.response);
     }
     async function updateFXImpl(force = false) {
-      if (!force && inDate(fx, FX_TTL)) return;
+      if (!force && inDate2(fx, FX_TTL)) return;
       try {
         const data = await requestJSON("https://open.er-api.com/v6/latest/USD");
-        const providerTime = Number(data.time_last_update_unix) * 1e3;
-        if (data.result !== "success" || data.base_code !== "USD" || !validPositive(data.rates?.CLP) || !validPositive(data.rates?.EUR) || !Number.isFinite(providerTime) || providerTime > Date.now() + 36e5 || Date.now() - providerTime > 7 * 864e5)
-          throw Error("FX invalida u obsoleta");
-        const rates = {};
-        for (const c of [...FIAT, "CLP"]) if (validPositive(data.rates[c])) rates[c] = Number(data.rates[c]);
-        fx = { fetchedAt: Date.now(), updatedAt: dateTime(Number(data.time_last_update_unix) * 1e3 || Date.now()), rates };
+        const validated = validateFXResponse(data, Date.now());
+        if (!validated) throw Error("FX invalida u obsoleta");
+        fx = { fetchedAt: validated.fetchedAt, updatedAt: dateTime(validated.providerTime), rates: validated.rates };
         await storage.setValue(FX_KEY, fx);
       } catch (e) {
         console.info("[Moncevia] FX no disponible:", e?.message || e);
@@ -2056,7 +2175,7 @@
       reScan(true);
     }
     async function updateCryptoImpl(force = false) {
-      if (!force && inDate(crypto, CRYPTO_TTL) && activeCrypto() && crypto.source?.startsWith("Binance")) return;
+      if (!force && inDate2(crypto, CRYPTO_TTL) && activeCrypto() && crypto.source?.startsWith("Binance")) return;
       const binanceHosts = ["https://data-api.binance.vision", "https://api.binance.com"];
       try {
         let data = null;
@@ -2122,7 +2241,7 @@
       reScan(true);
     }
     async function updateFX(force = false) {
-      if (!force && inDate(fx, FX_TTL)) return;
+      if (!force && inDate2(fx, FX_TTL)) return;
       if (fxRequest) return fxRequest;
       fxRequest = updateFXImpl(force);
       try {
@@ -2132,7 +2251,7 @@
       }
     }
     async function updateCrypto(force = false) {
-      if (!force && inDate(crypto, CRYPTO_TTL) && activeCrypto() && crypto.source?.startsWith("Binance")) return;
+      if (!force && inDate2(crypto, CRYPTO_TTL) && activeCrypto() && crypto.source?.startsWith("Binance")) return;
       if (cryptoRequest) return cryptoRequest;
       cryptoRequest = updateCryptoImpl(force);
       try {
@@ -2155,11 +2274,11 @@
         settings.dollarCurrencySites = Object.fromEntries(Object.entries(settings.dollarCurrencySites).filter(([host, currency]) => /^[a-z0-9.-]{1,255}$/.test(host) && ["USD", "CLP", "CAD", "AUD"].includes(currency)).slice(0, 100));
         settings.allowedSites = settings.allowedSites.filter((host) => typeof host === "string" && /^[a-z0-9.-]{1,255}$/.test(host)).slice(0, 100);
         const oldFX = await storage.getValue(FX_KEY, null);
-        if (oldFX && Number.isFinite(oldFX.fetchedAt) && validPositive(oldFX.rates?.CLP)) fx = oldFX;
+        fx = readCachedFX(oldFX);
         const hist = await storage.getValue(HISTORY_KEY, []);
         history = Array.isArray(hist) ? hist.slice(0, 30).filter((e) => Number.isFinite(e.at) && typeof e.code === "string" && validPositive(e.amount) && validPositive(e.clp)) : [];
         const oldCrypto = await storage.getValue(CRYPTO_KEY, null);
-        if (oldCrypto && Number.isFinite(oldCrypto.fetchedAt) && CRYPTOS.every((c) => validPositive(oldCrypto.usd?.[c])) && (!oldCrypto.source?.startsWith("Binance") || validPositive(oldCrypto.usdtUsd))) crypto = oldCrypto;
+        crypto = readCachedCrypto(oldCrypto);
       } catch (e) {
         console.info("[Moncevia] Almacenamiento no disponible:", e?.message || e);
       }

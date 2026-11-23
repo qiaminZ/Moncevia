@@ -43,8 +43,10 @@ export function readCachedCrypto(input: unknown): CryptoRates | null {
     if (ask !== null) askUSDT[code] = ask;
     if (bid !== null) bidUSDT[code] = bid;
   }
-  const quotedAt = typeof input.quotedAt === 'number' && Number.isFinite(input.quotedAt)
-    ? input.quotedAt : undefined;
+  const quotedAt =
+    typeof input.quotedAt === 'number' && Number.isFinite(input.quotedAt)
+      ? input.quotedAt
+      : undefined;
   return {
     fetchedAt: input.fetchedAt as number,
     usd,

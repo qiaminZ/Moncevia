@@ -1,4 +1,10 @@
-import { CRYPTO_LIST, FIAT_CODES, type CryptoCurrency, type CurrencyCode, type FiatCurrency } from '../types/currency';
+import {
+  CRYPTO_LIST,
+  FIAT_CODES,
+  type CryptoCurrency,
+  type CurrencyCode,
+  type FiatCurrency,
+} from '../types/currency';
 
 export const FX_STALE_MS = 3 * 86_400_000;
 export const CRYPTO_STALE_MS = 45 * 60_000;
@@ -32,17 +38,21 @@ const isPositive = (value: unknown): boolean => {
   return Number.isFinite(number) && number > 0;
 };
 const inDate = (value: { readonly fetchedAt: number } | null, now: number, ttl: number) =>
-  value !== null && Number.isFinite(value.fetchedAt) &&
-  now - value.fetchedAt >= 0 && now - value.fetchedAt < ttl;
+  value !== null &&
+  Number.isFinite(value.fetchedAt) &&
+  now - value.fetchedAt >= 0 &&
+  now - value.fetchedAt < ttl;
 
 /** Pure rate and conversion calculator. This does not fetch or mutate application state. */
 export function createConversionEngine(context: ConversionContext) {
   const { settings, fx, crypto, now } = context;
-  const activeFX = () => inDate(fx, now, FX_STALE_MS) &&
-    isPositive(fx?.rates.EUR) && isPositive(fx?.rates.CLP);
-  const activeCrypto = () => inDate(crypto, now, CRYPTO_STALE_MS) &&
-    (!crypto?.quotedAt || (now - crypto.quotedAt >= -300_000 && now - crypto.quotedAt < CRYPTO_STALE_MS)) &&
-    CRYPTO_LIST.every(code => isPositive(crypto?.usd?.[code])) &&
+  const activeFX = () =>
+    inDate(fx, now, FX_STALE_MS) && isPositive(fx?.rates.EUR) && isPositive(fx?.rates.CLP);
+  const activeCrypto = () =>
+    inDate(crypto, now, CRYPTO_STALE_MS) &&
+    (!crypto?.quotedAt ||
+      (now - crypto.quotedAt >= -300_000 && now - crypto.quotedAt < CRYPTO_STALE_MS)) &&
+    CRYPTO_LIST.every((code) => isPositive(crypto?.usd?.[code])) &&
     (!crypto?.source?.startsWith('Binance') || isPositive(crypto.usdtUsd));
 
   const usdClp = (): number | null => {
@@ -70,9 +80,9 @@ export function createConversionEngine(context: ConversionContext) {
     if (code === 'USD') return amount;
     const base = usdClp();
     if (code === 'EUR' && isPositive(settings.eurClpManual) && base !== null) {
-      return amount * Number(settings.eurClpManual) / base;
+      return (amount * Number(settings.eurClpManual)) / base;
     }
-    if (CRYPTO_LIST.some(coin => coin === code)) {
+    if (CRYPTO_LIST.some((coin) => coin === code)) {
       const bid = spotBid(code as CryptoCurrency);
       return bid === null ? null : amount * bid;
     }
@@ -84,7 +94,8 @@ export function createConversionEngine(context: ConversionContext) {
     if (code === 'EUR' && isPositive(settings.eurClpManual)) {
       return amount * Number(settings.eurClpManual);
     }
-    const usd = fiatUsd(amount, code), rate = usdClp();
+    const usd = fiatUsd(amount, code),
+      rate = usdClp();
     return usd !== null && rate !== null ? usd * rate : null;
   };
   const toUnits = (amount: number, from: CurrencyCode, to: CurrencyCode): number | null => {
@@ -100,17 +111,30 @@ export function createConversionEngine(context: ConversionContext) {
     if (to === 'USD') return usd;
     const rate = usdClp();
     if (to === 'EUR' && isPositive(settings.eurClpManual) && rate !== null) {
-      return usd * rate / Number(settings.eurClpManual);
+      return (usd * rate) / Number(settings.eurClpManual);
     }
-    if (FIAT_CODES.some(fiat => fiat === to) && activeFX() &&
-        isPositive(fx?.rates[to as FiatCurrency])) {
+    if (
+      FIAT_CODES.some((fiat) => fiat === to) &&
+      activeFX() &&
+      isPositive(fx?.rates[to as FiatCurrency])
+    ) {
       return usd * Number(fx?.rates[to as FiatCurrency]);
     }
-    if (CRYPTO_LIST.some(coin => coin === to) && activeCrypto()) {
+    if (CRYPTO_LIST.some((coin) => coin === to) && activeCrypto()) {
       const ask = spotAsk(to as CryptoCurrency);
       return ask !== null && ask > 0 ? usd / ask : null;
     }
     return null;
   };
-  return { activeFX, activeCrypto, fiatUsd, usdClp, eurClp, toCLP, toUnits, spotAsk, spotBid } as const;
+  return {
+    activeFX,
+    activeCrypto,
+    fiatUsd,
+    usdClp,
+    eurClp,
+    toCLP,
+    toUnits,
+    spotAsk,
+    spotBid,
+  } as const;
 }
