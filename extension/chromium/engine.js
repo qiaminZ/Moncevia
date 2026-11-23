@@ -2690,12 +2690,15 @@
       clearHistory.type = "button";
       clearHistory.addEventListener("click", async () => {
         if (!window.confirm("¿Borrar las consultas guardadas en Moncevia?")) return;
-        if (!await persistence.saveHistory([])) {
-          window.alert("No fue posible borrar el historial local.");
-          return;
-        }
+        const previousHistory = history;
         history = [];
         renderHistory();
+        if (!await persistence.saveHistory([])) {
+          history = [...history, ...previousHistory].slice(0, 30);
+          void persistence.saveHistory(history);
+          renderHistory();
+          window.alert("No fue posible borrar el historial local.");
+        }
       });
       pageHistory.append(clearHistory);
       const exportHistory = node("button", "", "Exportar historial CSV");
