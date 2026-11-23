@@ -1,0 +1,54 @@
+name: Phase 3 full browser validation
+on:
+  push:
+    branches: [refactor/phase3-ui-detector-responsive-v3.7.0]
+    paths: ['.github/phase3-verify.trigger']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install TypeScript tooling
+        run: npm ci --no-audit --no-fund
+      - name: Typecheck, lint and unit tests
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run format:check
+          npm run test:core
+          npm run build:check
+          python tests/test_architecture.py
+      - name: Static check
+        run: node --check moncevia.user.js
+      - name: Install browser tests
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python -m playwright install --with-deps chromium firefox webkit
+      - name: Browser regression tests
+        run: |
+          python tests/test_browser.py
+          python tests/test_ui_mobile.py
+          python tests/test_i18n.py
+          python tests/test_cross_platform.py
+          python tests/test_currency_pairs.py
+          python tests/test_static_prices.py
+          python tests/test_panel_responsiveness.py
+          python tests/test_scanner_phase3.py
+          python tests/test_responsive_phase3.py
+          MONCEVIA_TEST_BROWSER=firefox python tests/test_responsive_phase3.py
+          MONCEVIA_TEST_BROWSER=webkit python tests/test_responsive_phase3.py
+          python tests/test_draggable_fab.py
+          python tests/test_shop_scenarios.py
+          MONCEVIA_TEST_BROWSER=firefox python tests/test_shop_scenarios.py
+          MONCEVIA_TEST_BROWSER=webkit python tests/test_shop_scenarios.py
+      - name: Native extension manifest and broker tests
+        run: |
+          python scripts/build_native.py
+          python tests/test_native_packages.py
+          node tests/test_native_bridges.js
