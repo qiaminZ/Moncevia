@@ -62,12 +62,21 @@ def run_journey(browser, engine, mobile):
         )
         assert page.get_by_role("tab").count() == 5
         wait_tab(page, "mv-tab-calculator", "Convertir")
+        # Close the overlay before touching controls behind it on small screens.
+        fab.click()
+        page.wait_for_function(
+            """() => document.querySelector('#clplens-fab')?.getAttribute('aria-expanded') === 'false'"""
+        )
         page.locator("#opt7").click()
         wait_amount(page, "49.99")
         assert page.locator("#total").inner_text() == "€49.99"
         page.locator("#plus").click()
         wait_amount(page, "99.98")
         assert page.locator("#total").inner_text() == "€99.98"
+        fab.click()
+        page.wait_for_function(
+            """() => document.querySelector('#clplens-fab')?.getAttribute('aria-expanded') === 'true'"""
+        )
 
         # Keyboard focus and semantic tab state cannot depend on clicking icon pixels.
         tab = page.locator("#mv-tab-calculator")
