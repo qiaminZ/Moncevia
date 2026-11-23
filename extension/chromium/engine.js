@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.11.0
+// @version      3.12.0
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -1004,6 +1004,56 @@
     return { enable, restore, reset };
   }
 
+  // src/platform/gm-bridge.ts
+  function createGMBridge({ modern = null, legacy = null }) {
+    const modernGet = typeof modern?.getValue === "function";
+    const modernSet = typeof modern?.setValue === "function";
+    const modernRequest = typeof modern?.xmlHttpRequest === "function";
+    const legacyGet = typeof legacy?.getValue === "function";
+    const legacySet = typeof legacy?.setValue === "function";
+    const legacyRequest = typeof legacy?.xmlHttpRequest === "function";
+    if (!(modernGet || legacyGet) || !(modernSet || legacySet) || !(modernRequest || legacyRequest))
+      return null;
+    return {
+      async getValue(key, fallback) {
+        const value = modernGet ? await modern.getValue(key, fallback) : await legacy.getValue(key, fallback);
+        return value;
+      },
+      async setValue(key, value) {
+        return modernSet ? modern.setValue(key, value) : legacy.setValue(key, value);
+      },
+      xmlHttpRequest(options) {
+        return new Promise((resolve, reject) => {
+          let completed = false;
+          const finish = (ok, value) => {
+            if (completed) return;
+            completed = true;
+            if (ok) resolve(value);
+            else reject(value);
+          };
+          const wrapped = {
+            ...options,
+            onload: (data) => finish(true, data),
+            onerror: (error) => finish(false, error || new Error("Network request failed")),
+            ontimeout: () => finish(false, new Error("Network request timed out")),
+            onabort: () => finish(false, new Error("Network request cancelled"))
+          };
+          try {
+            const result = modernRequest ? modern.xmlHttpRequest(wrapped) : legacy.xmlHttpRequest(wrapped);
+            if (result && typeof result.then === "function") {
+              result.then(
+                (data) => finish(true, data),
+                (error) => finish(false, error)
+              );
+            }
+          } catch (error) {
+            finish(false, error);
+          }
+        });
+      }
+    };
+  }
+
   // src/detector/variant-detector.ts
   var isElement = (value) => typeof Element !== "undefined" && value instanceof Element;
   var forbiddenAction = /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i;
@@ -1314,47 +1364,15 @@
   // src/legacy/runtime.js
   (() => {
     "use strict";
-    const modernGM = typeof GM !== "undefined" && GM !== null ? GM : null;
-    const getModern = typeof modernGM?.getValue === "function";
-    const setModern = typeof modernGM?.setValue === "function";
-    const reqModern = typeof modernGM?.xmlHttpRequest === "function";
-    const getLegacy = typeof GM_getValue === "function";
-    const setLegacy = typeof GM_setValue === "function";
-    const reqLegacy = typeof GM_xmlhttpRequest === "function";
-    if (window.top !== window.self || !document.body || !(getModern || getLegacy) || !(setModern || setLegacy) || !(reqModern || reqLegacy)) return;
-    const storage = {
-      async getValue(key, fallback) {
-        return getModern ? modernGM.getValue(key, fallback) : GM_getValue(key, fallback);
-      },
-      async setValue(key, value) {
-        return setModern ? modernGM.setValue(key, value) : GM_setValue(key, value);
-      },
-      xmlHttpRequest(options) {
-        return new Promise((resolve, reject) => {
-          let completed = false;
-          const finish = (ok, value) => {
-            if (completed) return;
-            completed = true;
-            (ok ? resolve : reject)(value);
-          };
-          const wrapped = {
-            ...options,
-            onload: (data) => finish(true, data),
-            onerror: (error) => finish(false, error || new Error("Network request failed")),
-            ontimeout: () => finish(false, new Error("Network request timed out")),
-            onabort: () => finish(false, new Error("Network request cancelled"))
-          };
-          try {
-            const request = reqModern ? modernGM.xmlHttpRequest(wrapped) : GM_xmlhttpRequest(wrapped);
-            if (request && typeof request.then === "function") {
-              request.then((data) => finish(true, data), (error) => finish(false, error));
-            }
-          } catch (error) {
-            finish(false, error);
-          }
-        });
+    const storage = createGMBridge({
+      modern: typeof GM !== "undefined" && GM !== null ? GM : null,
+      legacy: {
+        getValue: typeof GM_getValue === "function" ? GM_getValue : void 0,
+        setValue: typeof GM_setValue === "function" ? GM_setValue : void 0,
+        xmlHttpRequest: typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : void 0
       }
-    };
+    });
+    if (window.top !== window.self || !document.body || !storage) return;
     const HOST = location.hostname.toLowerCase();
     const matchHost = (base) => HOST === base || HOST.endsWith("." + base);
     const restricted = [
@@ -2240,7 +2258,7 @@
       languageButton.type = "button";
       languageButton.className = "mv-lang-toggle";
       languageButton.addEventListener("click", () => switchLanguage(uiLanguage() === "es" ? "en" : "es"));
-      headerActions.append(languageButton, node("span", "mv-version", "v3.11.0"));
+      headerActions.append(languageButton, node("span", "mv-version", "v3.12.0"));
       titlebar.append(headerActions);
       header.append(titlebar);
       const status = node("div", "mv-status");

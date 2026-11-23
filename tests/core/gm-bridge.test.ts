@@ -31,8 +31,9 @@ describe('userscript manager transport boundary', () => {
     await bridge!.setValue('clplens_v1', { language: 'es' });
     expect(await bridge!.getValue('clplens_v1', null)).toEqual({ language: 'es' });
     expect(await bridge!.getValue('missing', 'default')).toBe('default');
-    expect((await bridge!.xmlHttpRequest({ method: 'GET', url: 'https://example.test/data' })).status)
-      .toBe(200);
+    expect(
+      (await bridge!.xmlHttpRequest({ method: 'GET', url: 'https://example.test/data' })).status,
+    ).toBe(200);
   });
 
   it('prefers asynchronous modern operations, falling back per missing operation', async () => {
@@ -53,8 +54,9 @@ describe('userscript manager transport boundary', () => {
     await bridge.setValue('clplens_history_v3', [{ at: 1 }]);
     expect(legacySet).toHaveBeenCalledOnce();
     expect(await bridge.getValue('clplens_history_v3', [])).toEqual([{ at: 1 }]);
-    expect((await bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test/data' })).status)
-      .toBe(200);
+    expect(
+      (await bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test/data' })).status,
+    ).toBe(200);
   });
 
   it('settles the same network request only once when callbacks and Promise both fire', async () => {
@@ -67,7 +69,9 @@ describe('userscript manager transport boundary', () => {
       },
     };
     const bridge = createGMBridge({ modern })!;
-    await expect(bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test' })).resolves.toEqual({
+    await expect(
+      bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test' }),
+    ).resolves.toEqual({
       status: 200,
       responseText: 'first',
     });
@@ -88,7 +92,9 @@ describe('userscript manager transport boundary', () => {
       const bridge = createGMBridge({ legacy })!;
       await expect(
         bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test' }),
-      ).rejects.toThrow(signal === 'onerror' ? 'offline' : signal === 'ontimeout' ? 'timed out' : 'cancelled');
+      ).rejects.toThrow(
+        signal === 'onerror' ? 'offline' : signal === 'ontimeout' ? 'timed out' : 'cancelled',
+      );
     },
   );
 
@@ -101,8 +107,8 @@ describe('userscript manager transport boundary', () => {
       },
     };
     const bridge = createGMBridge({ modern })!;
-    await expect(bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test' })).rejects.toThrow(
-      'bridge failure',
-    );
+    await expect(
+      bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test' }),
+    ).rejects.toThrow('bridge failure');
   });
 });
