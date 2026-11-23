@@ -15,6 +15,10 @@ def test():
     for browser in ('chromium','firefox'):
         assert (ROOT/'extension'/browser/'engine.js').read_bytes()==script, 'Engine drift: '+browser
     assert (ROOT/'src/styles/moncevia.css').stat().st_size>10000
+    for module in ('parse-amount.ts','conversion.ts','crypto-units.ts','fx-validation.ts','cache-validation.ts'):
+        assert (ROOT/'src/core'/module).exists(), 'Missing typed core: '+module
+    assert b'createConversionEngine' in script, 'Typed conversion engine must run in the installed artifact'
+    assert b'validateFXResponse' in script, 'Typed FX validation must run in the installed artifact'
     assert (ROOT/'src/core/parse-amount.ts').exists()
     assert (ROOT/'src/types/currency.ts').exists()
     assert (ROOT/'src/legacy/runtime.js').exists()
