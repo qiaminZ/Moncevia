@@ -1,3 +1,12 @@
+## 3.6.1 / Desktop 0.2.1-beta — Phase 2: typed financial core
+
+- Extrae las conversiones CLP, divisas y BTC/ETH/LTC a un núcleo TypeScript puro con tasas bid/ask e indicador USDT/USD.
+- Mueve unidades exactas de criptomonedas (10^-8) y redondeos de estimación a `src/core/crypto-units.ts`.
+- Valida respuestas públicas de ExchangeRate-API y registros de caché FX/cripto antes de utilizarlos.
+- Añade pruebas unitarias de conversiones, valores obsoletos, importes manuales, precisión, datos corruptos y vigencia.
+- Sin nuevos permisos ni cambios deliberados de interfaz, APIs o redondeos de transacciones.
+- La detección DOM, los controladores de interfaz y otros componentes permanecen como JavaScript heredado durante la migración progresiva.
+
 ## 3.6.0 / Desktop 0.2.0-beta — Engineering migration (staged)
 
 - Introduced TypeScript strict for the currency parser and currency definitions, while retaining the remaining runtime in JavaScript during migration.
