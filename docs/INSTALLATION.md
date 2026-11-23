@@ -1,3 +1,9 @@
+## Cambios rápidos de plan y entrada manual / Rapid option changes
+
+Al alternar entre planes, Moncevia espera el valor vigente del producto y descarta comprobaciones programadas para variantes anteriores. Si escribes manualmente un precio, se suspenden las sincronizaciones pendientes hasta que vuelvas a seleccionar explícitamente una opción de la página. La moneda representada por un símbolo `$` ambiguo debe seguir confirmándose por sitio. El total del checkout del comercio siempre tiene prioridad.
+
+**English:** Selecting a newer plan cancels older scheduled checks. Typing a manual amount suspends automatic selection until you click a product option again. Ambiguous `$` still requires confirmation; always verify the merchant's checkout total.
+
 ## Diseño adaptable / Responsive design
 
 El panel de Moncevia se ajusta al ancho y altura disponibles en celulares, tablets, PC y notebooks. En orientación horizontal utiliza el alto visible para mantener las secciones accesibles. El diseño del comercio no se modifica. El botón flotante sigue siendo arrastrable y puede restablecerse desde Ajustes.
