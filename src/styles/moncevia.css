@@ -192,7 +192,7 @@
     padding-inline: 16px!important;
   }
 }
-@media (max-height: 500px) and (orientation: landscape) {
+@media (max-height: 500px) {
   #clplens-panel {
     position: fixed!important;
     top: max(8px, env(safe-area-inset-top, 0px))!important;
