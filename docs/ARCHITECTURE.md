@@ -1,4 +1,4 @@
-# Moncevia — Arquitectura de ingeniería (v3.11.0)
+# Moncevia — Arquitectura de ingeniería (v3.12.0)
 
 ## Objetivo
 
@@ -21,6 +21,7 @@ Mantener un **único código fuente** para el userscript iOS/Android y las exten
 - `src/detector/selection-scheduler.ts`: programación y cancelación de comprobaciones posteriores a cambios asincrónicos de producto.
 - `src/ui/tab-controller.ts`: navegación por pestañas, atributos ARIA y teclado.
 - `src/ui/fab-controller.ts`: geometría, arrastre, teclado y persistencia de posición del botón flotante, sin alterar componentes de tiendas.
+- `src/platform/gm-bridge.ts`: interfaz tipada para almacenamiento y peticiones públicas de userscript managers modernos y heredados, sin credenciales ni acceso a las tiendas.
 - `src/i18n/catalog.ts`: catálogo ES→EN, fragmentos dinámicos y resolución del idioma Auto.
 - `src/i18n/localizer.ts`: actualización reversible y limitada al widget de textos y atributos de accesibilidad mediante observador de mutaciones.
 - `src/legacy/runtime.js`: integración y lógica restante en JavaScript durante la migración. **Todavía no está tipada**; pasarla a TS sin pruebas incrementaría el riesgo de regresiones.
@@ -59,6 +60,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 7. **Fase 7 (sin cambio de versión):** pruebas end-to-end adicionales con recorridos completos, teclado, selección de importes y privacidad en tres motores; certificación física por separado.
 
 8. **Fase 8 (v3.11.0):** extracción tipada del botón flotante y sus límites responsivos, con pruebas unitarias y de regresión. Persisten UI, acceso GM y parte de eventos financieros en el runtime heredado.
+
+9. **Fase 9 (v3.12.0):** extracción del adaptador GM de almacenamiento y red a TypeScript estricto, con compatibilidad asincrónica y callbacks antiguos, pruebas unitarias y regresión multi-motor. Aún quedan lógica de persistencia y componentes visuales heredados.
 
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 
