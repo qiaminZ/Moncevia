@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def test():
     script=(ROOT/'moncevia.user.js').read_bytes()
     assert script.startswith(b'// ==UserScript=='), 'Userscript metadata must be first'
-    assert b'// @version      3.11.0' in script[:900]
+    assert b'// @version      3.12.0' in script[:900]
     assert b'const HOST = location.hostname.toLowerCase()' in script
     assert b'.clplens-badge' in script, 'CSS must be embedded without external fetch'
     assert b'clplens-fab' in script
@@ -18,6 +18,8 @@ def test():
     assert (ROOT/'src/detector/scan-controller.ts').exists()
     assert (ROOT/'src/ui/tab-controller.ts').exists()
     assert (ROOT/'src/ui/fab-controller.ts').exists(), 'Typed FAB controller missing'
+    assert (ROOT/'src/platform/gm-bridge.ts').exists(), 'Typed GM transport module missing'
+    assert b'createGMBridge' in script, 'Bundled GM transport module missing'
     assert b'createFabController' in script, 'Compiled FAB controller missing'
     assert (ROOT/'src/i18n/catalog.ts').exists(), 'Missing typed translation catalog'
     assert (ROOT/'src/i18n/localizer.ts').exists(), 'Missing reversible UI localizer'
