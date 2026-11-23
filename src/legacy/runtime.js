@@ -967,10 +967,19 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     const clearHistory=node('button','','Borrar historial local');clearHistory.type='button';
     clearHistory.addEventListener('click',async()=>{
       if (!window.confirm('¿Borrar las consultas guardadas en Moncevia?')) return;
-      if (!await persistence.saveHistory([])) {
-        window.alert('No fue posible borrar el historial local.');return;
-      }
+      // Optimistically clear the in-memory history before queuing the write.
+      // A new Guardar action during the write will persist only new entries,
+      // never a stale snapshot containing records the user just deleted.
+      const previousHistory=history;
       history=[];renderHistory();
+      if (!await persistence.saveHistory([])) {
+        // Restore previous records without discarding entries added during
+        // the pending clear. The final queued write wins over earlier saves.
+        history=[...history,...previousHistory].slice(0,30);
+        void persistence.saveHistory(history);
+        renderHistory();
+        window.alert('No fue posible borrar el historial local.');
+      }
     });pageHistory.append(clearHistory);
     const exportHistory = node('button','','Exportar historial CSV');
     exportHistory.type='button';
