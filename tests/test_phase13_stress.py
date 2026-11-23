@@ -18,9 +18,11 @@ PRICES = "".join(
     for i in range(180)
 )
 HTML = (
-    "<html><body><main><h1>Catalogue</h1>" + PRICES +
+    "<html><body><main><h1>Catalogue</h1>" +
+    # These exclusions must occur BEFORE the 100-badge scanning ceiling.
     '<div hidden><span id="private-price">€9999.00</span></div>'
-    '<form><span id="form-price">€9998.00</span><input aria-label="discount"></form>'
+    '<form><span id="form-price">€9998.00</span><input aria-label="discount"></form>' +
+    PRICES +
     '<button id="buy" onclick="window.buyClicks=(window.buyClicks||0)+1">Purchase</button>'
     "</main></body></html>"
 )
@@ -51,7 +53,7 @@ def stress(browser, engine, mobile):
         assert page.locator("#form-price .clplens-badge").count() == 0
         merchant = page.locator("#price0")
         assert merchant.evaluate("el => el.firstChild.nodeValue") == "€10.50"
-        before = merchant.locator(".clplens-badge").inner_text()
+        before = merchant.locator(".clplens-badge").text_content()
 
         # Simulate a single-threaded commerce SPA applying dozens of rapid updates.
         page.evaluate("""() => {
@@ -65,6 +67,7 @@ def stress(browser, engine, mobile):
             arg=before, timeout=14000,
         )
         assert page.locator("#price0 .clplens-badge").count() == 1
+        assert page.locator("#price0 .clplens-badge").text_content() != before
         assert page.locator(".clplens-badge").count() <= 100
         assert page.locator("#price0").evaluate("el => el.firstChild.nodeValue") == "€92.00"
 
