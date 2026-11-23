@@ -29,7 +29,12 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
       xmlHttpRequest: typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : undefined
     }
   });
-  if (window.top !== window.self || !document.body || !storage) return;
+  if (window.top !== window.self || !storage) return;
+
+  // Safari Userscripts may execute before <body> exists despite document-idle.
+  // Wait without using page storage or issuing network requests prematurely.
+  function initializeAfterBody() {
+    if (!document.body) return;
 
   const HOST = location.hostname.toLowerCase();
   const matchHost = base => HOST === base || HOST.endsWith('.' + base);
@@ -710,7 +715,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   function createUI() {
     stylesheet();
     const shell=createPanelShell({
-      version:'3.15.0',
+      version:'3.15.1',
       onLanguageToggle:()=>switchLanguage(uiLanguage()==='es'?'en':'es')
     });
     widget=shell.widget;fab=shell.fab;panel=shell.panel;
@@ -1137,4 +1142,14 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     if (isActive()) void Promise.all([updateFX(false),updateCrypto(false)]);
   }
   boot();
+  }
+  if (document.body) initializeAfterBody();
+  else {
+    const bodyObserver = new MutationObserver(() => {
+      if (!document.body) return;
+      bodyObserver.disconnect();
+      initializeAfterBody();
+    });
+    bodyObserver.observe(document, { childList: true, subtree: true });
+  }
 })();
