@@ -11,55 +11,23 @@ import { createUILocalizer } from '../i18n/localizer';
 import { createPriceScanner } from '../detector/scan-controller';
 import { createTabController } from '../ui/tab-controller';
 import { createFabController } from '../ui/fab-controller';
+import { createGMBridge } from '../platform/gm-bridge';
 import { createVariantDetector } from '../detector/variant-detector';
 import { createSelectionScheduler } from '../detector/selection-scheduler';
 (() => {
   'use strict';
   // No accede a cookies, formularios, credenciales, wallets ni API privadas.
   // Solo solicita cotizaciones publicas; nunca efectua compras o transferencias.
-  // Adaptador multiplataforma: GM.* moderno (Userscripts, Tampermonkey y Violentmonkey)
-  // y GM_* clasico (gestores que aun usan callbacks). Sin acceso directo a fetch/CORS.
-  const modernGM = typeof GM !== 'undefined' && GM !== null ? GM : null;
-  const getModern = typeof modernGM?.getValue === 'function';
-  const setModern = typeof modernGM?.setValue === 'function';
-  const reqModern = typeof modernGM?.xmlHttpRequest === 'function';
-  const getLegacy = typeof GM_getValue === 'function';
-  const setLegacy = typeof GM_setValue === 'function';
-  const reqLegacy = typeof GM_xmlhttpRequest === 'function';
-  if (window.top !== window.self || !document.body ||
-      !(getModern || getLegacy) || !(setModern || setLegacy) || !(reqModern || reqLegacy)) return;
-  const storage = {
-    async getValue(key, fallback) {
-      return getModern ? modernGM.getValue(key, fallback) : GM_getValue(key, fallback);
-    },
-    async setValue(key, value) {
-      return setModern ? modernGM.setValue(key, value) : GM_setValue(key, value);
-    },
-    xmlHttpRequest(options) {
-      return new Promise((resolve, reject) => {
-        let completed = false;
-        const finish = (ok, value) => {
-          if (completed) return;
-          completed = true;
-          (ok ? resolve : reject)(value);
-        };
-        const wrapped = {
-          ...options,
-          onload: data => finish(true, data),
-          onerror: error => finish(false, error || new Error('Network request failed')),
-          ontimeout: () => finish(false, new Error('Network request timed out')),
-          onabort: () => finish(false, new Error('Network request cancelled'))
-        };
-        try {
-          const request = reqModern ? modernGM.xmlHttpRequest(wrapped) : GM_xmlhttpRequest(wrapped);
-          // Algunos gestores devuelven Promise; otros solo llaman onload/onerror.
-          if (request && typeof request.then === 'function') {
-            request.then(data => finish(true, data), error => finish(false, error));
-          }
-        } catch (error) { finish(false, error); }
-      });
+  // Typed, per-operation adapter supports modern Promise-based GM and legacy GM_* callbacks.
+  const storage = createGMBridge({
+    modern: typeof GM !== 'undefined' && GM !== null ? GM : null,
+    legacy: {
+      getValue: typeof GM_getValue === 'function' ? GM_getValue : undefined,
+      setValue: typeof GM_setValue === 'function' ? GM_setValue : undefined,
+      xmlHttpRequest: typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : undefined
     }
-  };
+  });
+  if (window.top !== window.self || !document.body || !storage) return;
 
   const HOST = location.hostname.toLowerCase();
   const matchHost = base => HOST === base || HOST.endsWith('.' + base);
@@ -778,7 +746,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.11.0'));
+    headerActions.append(languageButton,node('span','mv-version','v3.12.0'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));

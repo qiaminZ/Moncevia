@@ -1,3 +1,7 @@
+## Moncevia v3.12.0 — Fase 9: transporte GM tipado
+
+El acceso a almacenamiento local y las peticiones a fuentes públicas de cotización pasan por `src/platform/gm-bridge.ts`, compatible con métodos modernos `GM.*` (Promise/callback) y métodos antiguos `GM_*` (síncronos/callback). La selección del adaptador se realiza por operación, sin ampliar permisos ni alterar las claves de preferencias, tasas e historial. Se incorporan pruebas unitarias y regresiones de un gestor heredado en Chromium, Firefox y WebKit, sobre escritorio y móvil emulado. Las instalaciones físicas de Safari/Opera GX requieren comprobación independiente.
+
 ## Moncevia v3.11.0 — Fase 8: controlador flotante tipado
 
 El botón flotante conserva el arrastre táctil/ratón, navegación por teclado, límites de pantalla, posición guardada y restablecimiento; su lógica se trasladó a `src/ui/fab-controller.ts` en TypeScript estricto. Nuevas pruebas unitarias comprueban coordenadas y ventanas pequeñas; continúan las regresiones integrales de la fase 7. Sin cambios en conversiones, dominios, APIs, pagos ni claves de almacenamiento. La certificación física de Opera GX y Safari sigue pendiente.

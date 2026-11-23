@@ -1,3 +1,9 @@
+## Fase 9 — Compatibilidad de gestores de userscripts
+
+**Versión actual:** userscript **3.12.0** y extensiones nativas **0.8.0-beta**. El adaptador de almacenamiento y solicitudes se modernizó sin modificar los nombres de preferencias locales ni el proceso de autorización. En gestores antiguos con API `GM_*`, conserva la lectura y escritura de preferencias y las peticiones mediante callbacks. Al actualizar el userscript, recarga la página; al actualizar una extensión local, recarga también el complemento en el navegador. No instales simultáneamente la extensión y el userscript en el mismo sitio.
+
+**English:** Userscript 3.12.0 and native extensions 0.8.0-beta keep existing stored data and site permissions while supporting modern `GM.*` and older `GM_*` managers. Reload the script or unpacked extension after updating; disable duplicate installations.
+
 ## Fase 6 — Idioma automático y selección manual
 
 Moncevia v3.10.0 conserva el selector Español / English / Auto. El idioma automático sigue la configuración del navegador y los cambios manuales se guardan localmente. Las traducciones se aplican únicamente al panel, mensajes y controles de Moncevia: nunca al contenido de la tienda. Actualiza el userscript o recarga tu extensión local tras instalar los archivos nuevos.
@@ -6,9 +12,9 @@ Moncevia v3.10.0 conserva el selector Español / English / Auto. El idioma autom
 
 ## Fase 5 — Configuración segura / Typed configuration
 
-Moncevia v3.10.0 verifica los ajustes almacenados y las cotizaciones públicas antes de utilizarlos. Los dominios autorizados y parámetros válidos se conservan, pero las entradas dañadas se descartan; Moncevia no amplía los permisos por una migración. Para la extensión de PC, actualiza el directorio del repositorio y recarga el manifiesto de Chromium/Firefox. Los datos de un proveedor siguen siendo aproximaciones, no importes ejecutables.
+Moncevia v3.9.0 verifica los ajustes almacenados y las cotizaciones públicas antes de utilizarlos. Los dominios autorizados y parámetros válidos se conservan, pero las entradas dañadas se descartan; Moncevia no amplía los permisos por una migración. Para la extensión de PC, actualiza el directorio del repositorio y recarga el manifiesto de Chromium/Firefox. Los datos de un proveedor siguen siendo aproximaciones, no importes ejecutables.
 
-**English:** Version 3.10.0 checks saved preferences and public quote payloads before use, without expanding site permissions. Refresh unpacked desktop extensions after updating their files. Quotes are informational, not executable prices.
+**English:** Version 3.9.0 checks saved preferences and public quote payloads before use, without expanding site permissions. Refresh unpacked desktop extensions after updating their files. Quotes are informational, not executable prices.
 
 ## Cambios rápidos de plan y entrada manual / Rapid option changes
 
@@ -44,7 +50,7 @@ La posición se guarda en cada navegador por separado, y se reajusta cuando la p
 
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.1.5 beta (motor de cálculo compartido con Moncevia Userscript 3.5.5). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.8.0-beta (motor compartido con Moncevia Userscript 3.12.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 

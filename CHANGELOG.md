@@ -1,3 +1,11 @@
+## 3.12.0 / Desktop 0.8.0-beta — Phase 9: typed GM storage and transport boundary
+
+- Extracted the modern/legacy userscript-manager adapter into strict `src/platform/gm-bridge.ts`: `GM.getValue`, `GM.setValue`, `GM.xmlHttpRequest`, `GM_getValue`, `GM_setValue`, and `GM_xmlhttpRequest`.
+- Preserved per-method modern precedence, callback-only transport, async modern implementations, synchronous legacy storage and once-only HTTP response settling.
+- Added unit tests for fallback, failures, duplicate completions and callback errors, plus a multi-engine legacy-manager browser journey on emulated desktop and mobile.
+- Kept local storage keys, existing public quote hosts, merchant consent model, conversion algorithms, checkout exclusions, and extension permissions unchanged.
+- This is a staged migration: visual UI, request scheduling and portions of data persistence still run in the legacy runtime. Physical Safari/Opera GX tests remain pending.
+
 ## 3.11.0 / Desktop 0.7.0-beta — Phase 8: typed floating launcher
 
 - Extracted the floating button's pointer/touch, keyboard, resize, restore, reset and normalized-position logic into strict `src/ui/fab-controller.ts`.
