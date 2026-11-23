@@ -3,8 +3,6 @@ import { parseAmount } from '../core/parse-amount';
 import { createConversionEngine } from '../core/conversion';
 import { coinMinor, ceil8, roundUp2 } from '../core/crypto-units';
 import { validateFXResponse } from '../core/fx-validation';
-import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
-import { normalizeSettings } from '../core/settings-validation';
 import { validateUSDTParity, validateBinanceSnapshot, validateCoinGeckoSnapshot, validateCoinbaseSnapshot } from '../core/provider-validation';
 import { resolveLanguage, translateUI } from '../i18n/catalog';
 import { createUILocalizer } from '../i18n/localizer';
@@ -12,6 +10,7 @@ import { createPriceScanner } from '../detector/scan-controller';
 import { createTabController } from '../ui/tab-controller';
 import { createFabController } from '../ui/fab-controller';
 import { createGMBridge } from '../platform/gm-bridge';
+import { createPersistenceController, MONCEVIA_STORAGE_KEYS } from '../platform/persistence-controller';
 import { createVariantDetector } from '../detector/variant-detector';
 import { createSelectionScheduler } from '../detector/selection-scheduler';
 (() => {
@@ -43,10 +42,8 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
       /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname)) return;
   if (document.getElementById('clplens-widget') || document.querySelector('input[type="password"]')) return;
 
-  const SETTINGS_KEY = 'clplens_v1'; // Formato compatible; la migracion depende del almacenamiento de Userscripts.
-  const FX_KEY = 'clplens_usd_rates_v1';
-  const CRYPTO_KEY = 'clplens_crypto_rates_v2';
-  const HISTORY_KEY = 'clplens_history_v3';
+  const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
+  const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
   const FX_TTL = 12 * 3600_000;
   const FX_STALE = 3 * 86400_000;
   const CRYPTO_TTL = 5 * 60_000;
@@ -212,11 +209,12 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
     return a;
   };
-  let storePromise = Promise.resolve();
-  function persist() {
-    const snapshot = JSON.parse(JSON.stringify(settings));
-    storePromise = storePromise.then(() => storage.setValue(SETTINGS_KEY,snapshot)).catch(() => {});
-  }
+  // Durable preferences and history are serialized by the typed persistence controller.
+  const persistence=createPersistenceController({
+    storage,defaults:DEFAULTS,
+    onError:(key,error)=>console.info('[Moncevia] Almacenamiento '+key+':',error?.message||error)
+  });
+  const persist=()=>persistence.saveSettings(settings);
   // The launcher now uses a strictly typed controller. Settings and storage keys stay unchanged.
   const fabController=createFabController({
     button:()=>fab,
@@ -669,7 +667,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
       cryptoSource:activeCrypto()?crypto.source:'no disponible',cryptoAt:crypto?.fetchedAt||null,
       fxAt:fx?.fetchedAt||null,units:Object.fromEntries(CRYPTOS.map(c=>[c,toUnits(amount,code,c)]))};
     history=[entry,...history].slice(0,30);
-    void storage.setValue(HISTORY_KEY,history).catch(()=>{});
+    void persistence.saveHistory(history);
     renderHistory();
   }
   function renderHistory() {
@@ -746,7 +744,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     headerActions.style.cssText='display:flex;align-items:center;gap:7px;';
     languageButton=node('button','','ES');languageButton.type='button';languageButton.className='mv-lang-toggle';
     languageButton.addEventListener('click',()=>switchLanguage(uiLanguage()==='es'?'en':'es'));
-    headerActions.append(languageButton,node('span','mv-version','v3.12.0'));
+    headerActions.append(languageButton,node('span','mv-version','v3.13.0'));
     titlebar.append(headerActions);
     header.append(titlebar);
     const status=node('div','mv-status');status.append(node('span','mv-dot'));
@@ -953,10 +951,14 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     revokeSite.type = 'button';
     revokeSite.addEventListener('click',async()=>{
       if (!window.confirm('¿Revocar acceso de Moncevia a este dominio?')) return;
+      const previousAllowed=settings.allowedSites,previousDisabled=settings.disabledSites;
       settings.allowedSites=settings.allowedSites.filter(host=>host!==HOST);
       settings.disabledSites=settings.disabledSites.filter(host=>host!==HOST);
-      try {await storage.setValue(SETTINGS_KEY,JSON.parse(JSON.stringify(settings)));}
-      catch(e) { window.alert('No fue posible guardar la revocación.');return; }
+      if (!await persist()) {
+        settings.allowedSites=previousAllowed;
+        settings.disabledSites=previousDisabled;
+        window.alert('No fue posible guardar la revocación.');return;
+      }
       location.reload();
     });
     pageSettings.append(revokeSite);
@@ -965,7 +967,10 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     const clearHistory=node('button','','Borrar historial local');clearHistory.type='button';
     clearHistory.addEventListener('click',async()=>{
       if (!window.confirm('¿Borrar las consultas guardadas en Moncevia?')) return;
-      history=[];try{await storage.setValue(HISTORY_KEY,[]);}catch(e){}renderHistory();
+      if (!await persistence.saveHistory([])) {
+        window.alert('No fue posible borrar el historial local.');return;
+      }
+      history=[];renderHistory();
     });pageHistory.append(clearHistory);
     const exportHistory = node('button','','Exportar historial CSV');
     exportHistory.type='button';
@@ -1108,26 +1113,28 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     try {return await cryptoRequest;} finally {cryptoRequest = null;}
   }
   async function boot() {
-    try {
-      const previous=await storage.getValue(SETTINGS_KEY,null);
-      settings=normalizeSettings(previous,DEFAULTS);
-      const oldFX=await storage.getValue(FX_KEY,null);
-      fx=readCachedFX(oldFX);
-      const hist=await storage.getValue(HISTORY_KEY,[]);history=Array.isArray(hist)?hist.slice(0,30).filter(e=>Number.isFinite(e.at)&&typeof e.code==='string'&&validPositive(e.amount)&&validPositive(e.clp)):[];
-      const oldCrypto=await storage.getValue(CRYPTO_KEY,null);
-      crypto=readCachedCrypto(oldCrypto);
-    } catch(e) { console.info('[Moncevia] Almacenamiento no disponible:',e?.message||e); }
+    const restored=await persistence.load();
+    settings=restored.settings;fx=restored.fx;history=restored.history;crypto=restored.crypto;
     // Solo el dominio explícitamente autorizado recibe escaneo, panel completo o peticiones de FX.
     if (!isAuthorized()) {
       const opt=node('button','','Moncevia · activar aquí');
       opt.id='moncevia-optin'; opt.type='button';
       opt.textContent=tr(opt.textContent);
       opt.setAttribute('aria-label',tr('Permitir Moncevia en este dominio'));
-      opt.setAttribute('aria-label','Permitir Moncevia en este dominio');
       Object.assign(opt.style,{position:'fixed',bottom:'max(12px,env(safe-area-inset-bottom))',right:'10px',zIndex:'2147483645',font:'12px system-ui',color:'#e2e8f0',background:'#1e293b',padding:'9px 11px',border:'1px solid #64748b',borderRadius:'18px',opacity:'0.85'});
-      opt.addEventListener('click',()=>{
+      opt.addEventListener('click',async()=>{
+        if (opt.disabled) return;
+        opt.disabled=true;
+        const previousAllowed=settings.allowedSites;
         settings.allowedSites=[...new Set([...settings.allowedSites,HOST])];
-        persist();opt.remove();startRuntime();
+        // Never scan the merchant site or call public rate providers until
+        // its explicit authorization has actually been stored.
+        if (!await persist()) {
+          settings.allowedSites=previousAllowed;
+          opt.disabled=false;
+          window.alert('No fue posible guardar la autorización.');return;
+        }
+        opt.remove();startRuntime();
       });
       document.body.append(opt);
       return;
