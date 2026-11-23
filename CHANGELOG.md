@@ -1,3 +1,11 @@
+## 3.10.0 / Desktop 0.6.0-beta — Phase 6: typed internationalization
+
+- Moved the existing Spanish-English phrase catalog and dynamic fragments out of legacy runtime into typed `src/i18n/catalog.ts`.
+- Added a reversible DOM-scoped localization controller (`src/i18n/localizer.ts`) for text, placeholders, titles, ARIA labels, the language button and the preference selector.
+- Preserved the language preference precedence (explicit ES/EN over browser Auto) and local data storage; merchant page text is never translated.
+- Added pure unit coverage for locale resolution, static warnings, dynamic rates and fragment catalog integrity, plus cross-engine Playwright checks on mobile/desktop with dynamic labels.
+- No new network requests, permissions or financial changes. Some visual UI and lifecycle integration remains in legacy JavaScript; real VoiceOver/Opera GX device testing remains separate.
+
 ## 3.9.0 / Desktop 0.5.0-beta — Phase 5: typed settings and provider boundaries
 
 - Migrated persisted preference normalization into strict TypeScript, retaining known valid site consents and rejecting malformed options, unknown keys and invalid position/currency values.
