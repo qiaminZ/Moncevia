@@ -1,8 +1,14 @@
+## Fase 6 — Idioma automático y selección manual
+
+Moncevia v3.10.0 conserva el selector Español / English / Auto. El idioma automático sigue la configuración del navegador y los cambios manuales se guardan localmente. Las traducciones se aplican únicamente al panel, mensajes y controles de Moncevia: nunca al contenido de la tienda. Actualiza el userscript o recarga tu extensión local tras instalar los archivos nuevos.
+
+**English:** Auto follows your browser language; explicit ES or EN preferences override it. Moncevia only translates its own panel, messages and accessibility labels. The merchant's website is unaffected.
+
 ## Fase 5 — Configuración segura / Typed configuration
 
-Moncevia v3.9.0 verifica los ajustes almacenados y las cotizaciones públicas antes de utilizarlos. Los dominios autorizados y parámetros válidos se conservan, pero las entradas dañadas se descartan; Moncevia no amplía los permisos por una migración. Para la extensión de PC, actualiza el directorio del repositorio y recarga el manifiesto de Chromium/Firefox. Los datos de un proveedor siguen siendo aproximaciones, no importes ejecutables.
+Moncevia v3.10.0 verifica los ajustes almacenados y las cotizaciones públicas antes de utilizarlos. Los dominios autorizados y parámetros válidos se conservan, pero las entradas dañadas se descartan; Moncevia no amplía los permisos por una migración. Para la extensión de PC, actualiza el directorio del repositorio y recarga el manifiesto de Chromium/Firefox. Los datos de un proveedor siguen siendo aproximaciones, no importes ejecutables.
 
-**English:** Version 3.9.0 checks saved preferences and public quote payloads before use, without expanding site permissions. Refresh unpacked desktop extensions after updating their files. Quotes are informational, not executable prices.
+**English:** Version 3.10.0 checks saved preferences and public quote payloads before use, without expanding site permissions. Refresh unpacked desktop extensions after updating their files. Quotes are informational, not executable prices.
 
 ## Cambios rápidos de plan y entrada manual / Rapid option changes
 
