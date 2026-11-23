@@ -158,7 +158,7 @@ export function createFabController(options: FabControllerOptions) {
           savePosition();
         }
       }
-      button.classList.remove('mv-fab-dragging');
+      button?.classList.remove('mv-fab-dragging');
       drag = null;
     }
     button.addEventListener('pointerup', (event) => finish(event));
