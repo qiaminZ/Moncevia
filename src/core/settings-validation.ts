@@ -100,9 +100,9 @@ export function normalizeSettings(input: unknown, defaults: MonceviaSettings): M
   for (const key of boolKeys) if (typeof input[key] === 'boolean') result[key] = input[key];
   for (const key of numberKeys) result[key] = safeNumber(input[key], defaults[key]);
   for (const key of ['allowedSites','disabledSites','bareDollarSites'] as const) {
-    if (Object.hasOwn(input,key)) result[key] = hosts(input[key]);
+    if (Object.prototype.hasOwnProperty.call(input,key)) result[key] = hosts(input[key]);
   }
-  if (Object.hasOwn(input, 'dollarCurrencySites')) {
+  if (Object.prototype.hasOwnProperty.call(input, 'dollarCurrencySites')) {
     const overrides: Record<string, DollarCurrency> = Object.create(null);
     if (rec(input.dollarCurrencySites)) {
       for (const [host, code] of Object.entries(input.dollarCurrencySites).slice(0,200)) {
