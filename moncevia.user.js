@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.12.0
+// @version      3.13.0
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -181,169 +181,8 @@
     return { fetchedAt: now, providerTime, rates };
   }
 
-  // src/core/cache-validation.ts
-  var record = (input) => typeof input === "object" && input !== null && !Array.isArray(input);
-  var positiveNumber = (input) => {
-    const value = typeof input === "number" || typeof input === "string" ? Number(input) : NaN;
-    return Number.isFinite(value) && value > 0 ? value : null;
-  };
-  function readCachedFX(input) {
-    if (!record(input) || !Number.isFinite(input.fetchedAt) || !record(input.rates)) return null;
-    const rates = {};
-    for (const code of [...FIAT_CODES, "CLP"]) {
-      const value = positiveNumber(input.rates[code]);
-      if (value !== null) rates[code] = value;
-    }
-    if (!rates.CLP || !rates.EUR) return null;
-    const updatedAt = typeof input.updatedAt === "string" ? input.updatedAt.slice(0, 80) : void 0;
-    return updatedAt === void 0 ? { fetchedAt: input.fetchedAt, rates } : { fetchedAt: input.fetchedAt, rates, updatedAt };
-  }
-  function readCachedCrypto(input) {
-    if (!record(input) || !Number.isFinite(input.fetchedAt) || !record(input.usd)) return null;
-    const usd = {};
-    for (const code of CRYPTO_LIST) {
-      const value = positiveNumber(input.usd[code]);
-      if (value === null) return null;
-      usd[code] = value;
-    }
-    const source = typeof input.source === "string" ? input.source.slice(0, 100) : void 0;
-    const parity = positiveNumber(input.usdtUsd);
-    if (source?.startsWith("Binance") && parity === null) return null;
-    const askUSDT = {};
-    const bidUSDT = {};
-    for (const code of CRYPTO_LIST) {
-      const ask = record(input.askUSDT) ? positiveNumber(input.askUSDT[code]) : null;
-      const bid = record(input.bidUSDT) ? positiveNumber(input.bidUSDT[code]) : null;
-      if (ask !== null) askUSDT[code] = ask;
-      if (bid !== null) bidUSDT[code] = bid;
-    }
-    const quotedAt = typeof input.quotedAt === "number" && Number.isFinite(input.quotedAt) ? input.quotedAt : void 0;
-    return {
-      fetchedAt: input.fetchedAt,
-      usd,
-      ...source === void 0 ? {} : { source },
-      ...quotedAt === void 0 ? {} : { quotedAt },
-      ...parity === null ? {} : { usdtUsd: parity },
-      ...Object.keys(askUSDT).length ? { askUSDT } : {},
-      ...Object.keys(bidUSDT).length ? { bidUSDT } : {}
-    };
-  }
-
-  // src/core/settings-validation.ts
-  var rec = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
-  var hostRE = /^[a-z0-9.-]{1,255}$/;
-  var boolKeys = [
-    "enabled",
-    "historySite",
-    "compareInline",
-    "showCryptoInline",
-    "autoSyncSelection",
-    "feeKnownBTC",
-    "feeKnownETH",
-    "feeKnownLTC",
-    "spotFeeKnown",
-    "usdtFundKnown",
-    "compactMode",
-    "visualPick",
-    "prexKnown",
-    "santanderKnown",
-    "exactPayEnabled"
-  ];
-  var numberKeys = [
-    "usdClpManual",
-    "eurClpManual",
-    "prexExtra",
-    "santanderExtra",
-    "taxExtra",
-    "feeBTC",
-    "feeETH",
-    "feeLTC",
-    "spotFeePct",
-    "usdtFundPct",
-    "bufferPct"
-  ];
-  var dollarCodes = ["USD", "CLP", "CAD", "AUD"];
-  var currencies = ["CLP", ...FIAT_CODES, ...CRYPTO_LIST];
-  function hosts(input) {
-    if (!Array.isArray(input)) return [];
-    return [
-      ...new Set(
-        input.filter((host) => typeof host === "string" && hostRE.test(host))
-      )
-    ].slice(0, 100);
-  }
-  function safeNumber(input, fallback) {
-    if (typeof input !== "number" && typeof input !== "string" || String(input).trim() === "")
-      return fallback;
-    const n = Number(input);
-    return Number.isFinite(n) && n >= 0 && n <= 1e10 ? n : fallback;
-  }
-  function safeText(input, fallback, max = 80) {
-    return typeof input === "string" && input.length <= max ? input : fallback;
-  }
-  function normalizeSettings(input, defaults) {
-    if (!rec(input))
-      return {
-        ...defaults,
-        allowedSites: [...defaults.allowedSites],
-        disabledSites: [...defaults.disabledSites],
-        bareDollarSites: [...defaults.bareDollarSites],
-        dollarCurrencySites: { ...defaults.dollarCurrencySites },
-        fabPosition: defaults.fabPosition && { ...defaults.fabPosition }
-      };
-    const result = {
-      ...defaults,
-      allowedSites: [...defaults.allowedSites],
-      disabledSites: [...defaults.disabledSites],
-      bareDollarSites: [...defaults.bareDollarSites],
-      dollarCurrencySites: { ...defaults.dollarCurrencySites }
-    };
-    for (const key of boolKeys) if (typeof input[key] === "boolean") result[key] = input[key];
-    for (const key of numberKeys) result[key] = safeNumber(input[key], defaults[key]);
-    for (const key of ["allowedSites", "disabledSites", "bareDollarSites"]) {
-      if (Object.prototype.hasOwnProperty.call(input, key)) result[key] = hosts(input[key]);
-    }
-    if (Object.prototype.hasOwnProperty.call(input, "dollarCurrencySites")) {
-      const overrides = /* @__PURE__ */ Object.create(null);
-      if (rec(input.dollarCurrencySites)) {
-        for (const [host, code] of Object.entries(input.dollarCurrencySites).slice(0, 200)) {
-          if (hostRE.test(host) && typeof code === "string" && dollarCodes.includes(code)) {
-            overrides[host] = code;
-          }
-          if (Object.keys(overrides).length >= 100) break;
-        }
-      }
-      result.dollarCurrencySites = overrides;
-    }
-    const source = input.calcCurrency;
-    if (typeof source === "string" && currencies.includes(source))
-      result.calcCurrency = source;
-    const target = input.targetCurrency;
-    if (typeof target === "string" && currencies.includes(target))
-      result.targetCurrency = target;
-    if (result.calcCurrency === result.targetCurrency) {
-      result.targetCurrency = result.calcCurrency === "CLP" ? "USD" : "CLP";
-    }
-    if (input.language === "auto" || input.language === "es" || input.language === "en")
-      result.language = input.language;
-    if (typeof input.exactPayCurrency === "string" && CRYPTO_LIST.some((code) => code === input.exactPayCurrency)) {
-      result.exactPayCurrency = input.exactPayCurrency;
-    }
-    result.calcAmount = safeText(input.calcAmount, defaults.calcAmount, 80);
-    result.exactPayAmount = safeText(input.exactPayAmount, defaults.exactPayAmount, 80);
-    for (const key of ["networkBTC", "networkETH", "networkLTC"]) {
-      result[key] = safeText(input[key], defaults[key], 80);
-    }
-    if (input.fabPosition === null) result.fabPosition = null;
-    else if (rec(input.fabPosition)) {
-      const { x, y } = input.fabPosition;
-      result.fabPosition = typeof x === "number" && typeof y === "number" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= 1 && y >= 0 && y <= 1 ? { x, y } : null;
-    }
-    return result;
-  }
-
   // src/core/provider-validation.ts
-  var record2 = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+  var record = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
   var positive2 = (v) => {
     if (typeof v !== "number" && typeof v !== "string") return null;
     const n = Number(v);
@@ -356,7 +195,7 @@
     return Math.abs(now - timeMs) <= CRYPTO_STALE_MS ? timeMs : null;
   };
   function validateUSDTParity(input, now) {
-    if (!record2(input) || !record2(input.tether)) return null;
+    if (!record(input) || !record(input.tether)) return null;
     const parity = positive2(input.tether.usd);
     const timestamp = fresh(input.tether.last_updated_at, now);
     return parity !== null && parity >= 0.8 && parity <= 1.2 && timestamp !== null ? parity : null;
@@ -370,7 +209,7 @@
     for (let index = 0; index < CRYPTO_LIST.length; index++) {
       const coin = CRYPTO_LIST[index];
       const entry = tickers[index];
-      if (!coin || !record2(entry) || entry.symbol !== coin + "USDT") return null;
+      if (!coin || !record(entry) || entry.symbol !== coin + "USDT") return null;
       const ask = positive2(entry.askPrice), bid = positive2(entry.bidPrice);
       if (ask === null || bid === null || ask < bid || ask / bid > 1.15) return null;
       const mid = (ask + bid) / 2 * usdtUsd;
@@ -390,7 +229,7 @@
     };
   }
   function validateCoinGeckoSnapshot(input, now) {
-    if (!record2(input) || !Number.isFinite(now)) return null;
+    if (!record(input) || !Number.isFinite(now)) return null;
     const ids = {
       BTC: "bitcoin",
       ETH: "ethereum",
@@ -400,7 +239,7 @@
     let quotedAt = Infinity;
     for (const coin of CRYPTO_LIST) {
       const item = input[ids[coin]];
-      if (!record2(item)) return null;
+      if (!record(item)) return null;
       const value = positive2(item.usd);
       const timestamp = fresh(item.last_updated_at, now);
       if (value === null || timestamp === null) return null;
@@ -415,7 +254,7 @@
     const usd = {};
     for (let index = 0; index < CRYPTO_LIST.length; index++) {
       const coin = CRYPTO_LIST[index], response = input[index];
-      if (!coin || !record2(response) || !record2(response.data) || response.data.base !== coin || response.data.currency !== "USD")
+      if (!coin || !record(response) || !record(response.data) || response.data.base !== coin || response.data.currency !== "USD")
         return null;
       const amount = positive2(response.data.amount);
       if (amount === null) return null;
@@ -1054,6 +893,251 @@
     };
   }
 
+  // src/core/cache-validation.ts
+  var record2 = (input) => typeof input === "object" && input !== null && !Array.isArray(input);
+  var positiveNumber = (input) => {
+    const value = typeof input === "number" || typeof input === "string" ? Number(input) : NaN;
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
+  function readCachedFX(input) {
+    if (!record2(input) || !Number.isFinite(input.fetchedAt) || !record2(input.rates)) return null;
+    const rates = {};
+    for (const code of [...FIAT_CODES, "CLP"]) {
+      const value = positiveNumber(input.rates[code]);
+      if (value !== null) rates[code] = value;
+    }
+    if (!rates.CLP || !rates.EUR) return null;
+    const updatedAt = typeof input.updatedAt === "string" ? input.updatedAt.slice(0, 80) : void 0;
+    return updatedAt === void 0 ? { fetchedAt: input.fetchedAt, rates } : { fetchedAt: input.fetchedAt, rates, updatedAt };
+  }
+  function readCachedCrypto(input) {
+    if (!record2(input) || !Number.isFinite(input.fetchedAt) || !record2(input.usd)) return null;
+    const usd = {};
+    for (const code of CRYPTO_LIST) {
+      const value = positiveNumber(input.usd[code]);
+      if (value === null) return null;
+      usd[code] = value;
+    }
+    const source = typeof input.source === "string" ? input.source.slice(0, 100) : void 0;
+    const parity = positiveNumber(input.usdtUsd);
+    if (source?.startsWith("Binance") && parity === null) return null;
+    const askUSDT = {};
+    const bidUSDT = {};
+    for (const code of CRYPTO_LIST) {
+      const ask = record2(input.askUSDT) ? positiveNumber(input.askUSDT[code]) : null;
+      const bid = record2(input.bidUSDT) ? positiveNumber(input.bidUSDT[code]) : null;
+      if (ask !== null) askUSDT[code] = ask;
+      if (bid !== null) bidUSDT[code] = bid;
+    }
+    const quotedAt = typeof input.quotedAt === "number" && Number.isFinite(input.quotedAt) ? input.quotedAt : void 0;
+    return {
+      fetchedAt: input.fetchedAt,
+      usd,
+      ...source === void 0 ? {} : { source },
+      ...quotedAt === void 0 ? {} : { quotedAt },
+      ...parity === null ? {} : { usdtUsd: parity },
+      ...Object.keys(askUSDT).length ? { askUSDT } : {},
+      ...Object.keys(bidUSDT).length ? { bidUSDT } : {}
+    };
+  }
+
+  // src/core/settings-validation.ts
+  var rec = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+  var hostRE = /^[a-z0-9.-]{1,255}$/;
+  var boolKeys = [
+    "enabled",
+    "historySite",
+    "compareInline",
+    "showCryptoInline",
+    "autoSyncSelection",
+    "feeKnownBTC",
+    "feeKnownETH",
+    "feeKnownLTC",
+    "spotFeeKnown",
+    "usdtFundKnown",
+    "compactMode",
+    "visualPick",
+    "prexKnown",
+    "santanderKnown",
+    "exactPayEnabled"
+  ];
+  var numberKeys = [
+    "usdClpManual",
+    "eurClpManual",
+    "prexExtra",
+    "santanderExtra",
+    "taxExtra",
+    "feeBTC",
+    "feeETH",
+    "feeLTC",
+    "spotFeePct",
+    "usdtFundPct",
+    "bufferPct"
+  ];
+  var dollarCodes = ["USD", "CLP", "CAD", "AUD"];
+  var currencies = ["CLP", ...FIAT_CODES, ...CRYPTO_LIST];
+  function hosts(input) {
+    if (!Array.isArray(input)) return [];
+    return [
+      ...new Set(
+        input.filter((host) => typeof host === "string" && hostRE.test(host))
+      )
+    ].slice(0, 100);
+  }
+  function safeNumber(input, fallback) {
+    if (typeof input !== "number" && typeof input !== "string" || String(input).trim() === "")
+      return fallback;
+    const n = Number(input);
+    return Number.isFinite(n) && n >= 0 && n <= 1e10 ? n : fallback;
+  }
+  function safeText(input, fallback, max = 80) {
+    return typeof input === "string" && input.length <= max ? input : fallback;
+  }
+  function normalizeSettings(input, defaults) {
+    if (!rec(input))
+      return {
+        ...defaults,
+        allowedSites: [...defaults.allowedSites],
+        disabledSites: [...defaults.disabledSites],
+        bareDollarSites: [...defaults.bareDollarSites],
+        dollarCurrencySites: { ...defaults.dollarCurrencySites },
+        fabPosition: defaults.fabPosition && { ...defaults.fabPosition }
+      };
+    const result = {
+      ...defaults,
+      allowedSites: [...defaults.allowedSites],
+      disabledSites: [...defaults.disabledSites],
+      bareDollarSites: [...defaults.bareDollarSites],
+      dollarCurrencySites: { ...defaults.dollarCurrencySites }
+    };
+    for (const key of boolKeys) if (typeof input[key] === "boolean") result[key] = input[key];
+    for (const key of numberKeys) result[key] = safeNumber(input[key], defaults[key]);
+    for (const key of ["allowedSites", "disabledSites", "bareDollarSites"]) {
+      if (Object.prototype.hasOwnProperty.call(input, key)) result[key] = hosts(input[key]);
+    }
+    if (Object.prototype.hasOwnProperty.call(input, "dollarCurrencySites")) {
+      const overrides = /* @__PURE__ */ Object.create(null);
+      if (rec(input.dollarCurrencySites)) {
+        for (const [host, code] of Object.entries(input.dollarCurrencySites).slice(0, 200)) {
+          if (hostRE.test(host) && typeof code === "string" && dollarCodes.includes(code)) {
+            overrides[host] = code;
+          }
+          if (Object.keys(overrides).length >= 100) break;
+        }
+      }
+      result.dollarCurrencySites = overrides;
+    }
+    const source = input.calcCurrency;
+    if (typeof source === "string" && currencies.includes(source))
+      result.calcCurrency = source;
+    const target = input.targetCurrency;
+    if (typeof target === "string" && currencies.includes(target))
+      result.targetCurrency = target;
+    if (result.calcCurrency === result.targetCurrency) {
+      result.targetCurrency = result.calcCurrency === "CLP" ? "USD" : "CLP";
+    }
+    if (input.language === "auto" || input.language === "es" || input.language === "en")
+      result.language = input.language;
+    if (typeof input.exactPayCurrency === "string" && CRYPTO_LIST.some((code) => code === input.exactPayCurrency)) {
+      result.exactPayCurrency = input.exactPayCurrency;
+    }
+    result.calcAmount = safeText(input.calcAmount, defaults.calcAmount, 80);
+    result.exactPayAmount = safeText(input.exactPayAmount, defaults.exactPayAmount, 80);
+    for (const key of ["networkBTC", "networkETH", "networkLTC"]) {
+      result[key] = safeText(input[key], defaults[key], 80);
+    }
+    if (input.fabPosition === null) result.fabPosition = null;
+    else if (rec(input.fabPosition)) {
+      const { x, y } = input.fabPosition;
+      result.fabPosition = typeof x === "number" && typeof y === "number" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= 1 && y >= 0 && y <= 1 ? { x, y } : null;
+    }
+    return result;
+  }
+
+  // src/platform/persistence-controller.ts
+  var MONCEVIA_STORAGE_KEYS = {
+    settings: "clplens_v1",
+    fx: "clplens_usd_rates_v1",
+    crypto: "clplens_crypto_rates_v2",
+    history: "clplens_history_v3"
+  };
+  function record3(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+  function isPositive2(value) {
+    if (typeof value !== "number" && typeof value !== "string") return false;
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0;
+  }
+  function readStoredHistory(value) {
+    if (!Array.isArray(value)) return [];
+    return value.slice(0, 30).filter(
+      (entry) => record3(entry) && typeof entry.at === "number" && Number.isFinite(entry.at) && typeof entry.code === "string" && isPositive2(entry.amount) && isPositive2(entry.clp)
+    );
+  }
+  function snapshot(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+  function createPersistenceController({
+    storage,
+    defaults,
+    onError = () => {
+    }
+  }) {
+    let settingsQueue = Promise.resolve();
+    let historyQueue = Promise.resolve();
+    async function read(key, fallback) {
+      try {
+        return await storage.getValue(key, fallback);
+      } catch (error) {
+        onError(key, error);
+        return fallback;
+      }
+    }
+    function enqueue(key, value, queue) {
+      let copied;
+      try {
+        copied = snapshot(value);
+      } catch (error) {
+        onError(key, error);
+        return Promise.resolve(false);
+      }
+      const previous = queue === "settings" ? settingsQueue : historyQueue;
+      const result = previous.then(() => storage.setValue(key, copied)).then((saved) => {
+        if (saved === false) throw new Error("The storage manager rejected the write");
+        return true;
+      }).catch((error) => {
+        onError(key, error);
+        return false;
+      });
+      const complete = result.then(() => void 0);
+      if (queue === "settings") settingsQueue = complete;
+      else historyQueue = complete;
+      return result;
+    }
+    return {
+      async load() {
+        const previous = await read(MONCEVIA_STORAGE_KEYS.settings, null);
+        const settings = normalizeSettings(previous, defaults);
+        const cachedFX = await read(MONCEVIA_STORAGE_KEYS.fx, null);
+        const rawHistory = await read(MONCEVIA_STORAGE_KEYS.history, []);
+        const cachedCrypto = await read(MONCEVIA_STORAGE_KEYS.crypto, null);
+        return {
+          settings,
+          fx: readCachedFX(cachedFX),
+          history: readStoredHistory(rawHistory),
+          crypto: readCachedCrypto(cachedCrypto)
+        };
+      },
+      saveSettings(settings) {
+        return enqueue(MONCEVIA_STORAGE_KEYS.settings, settings, "settings");
+      },
+      saveHistory(history) {
+        return enqueue(MONCEVIA_STORAGE_KEYS.history, history, "history");
+      }
+    };
+  }
+
   // src/detector/variant-detector.ts
   var isElement = (value) => typeof Element !== "undefined" && value instanceof Element;
   var forbiddenAction = /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i;
@@ -1403,10 +1487,8 @@
     ];
     if (HOST.endsWith(".cl") || restricted.some(matchHost) || /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) || /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname)) return;
     if (document.getElementById("clplens-widget") || document.querySelector('input[type="password"]')) return;
-    const SETTINGS_KEY = "clplens_v1";
-    const FX_KEY = "clplens_usd_rates_v1";
-    const CRYPTO_KEY = "clplens_crypto_rates_v2";
-    const HISTORY_KEY = "clplens_history_v3";
+    const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
+    const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
     const FX_TTL = 12 * 36e5;
     const FX_STALE = 3 * 864e5;
     const CRYPTO_TTL = 5 * 6e4;
@@ -1588,12 +1670,12 @@
       a.rel = "noopener noreferrer";
       return a;
     };
-    let storePromise = Promise.resolve();
-    function persist() {
-      const snapshot = JSON.parse(JSON.stringify(settings));
-      storePromise = storePromise.then(() => storage.setValue(SETTINGS_KEY, snapshot)).catch(() => {
-      });
-    }
+    const persistence = createPersistenceController({
+      storage,
+      defaults: DEFAULTS,
+      onError: (key, error) => console.info("[Moncevia] Almacenamiento " + key + ":", error?.message || error)
+    });
+    const persist = () => persistence.saveSettings(settings);
     const fabController = createFabController({
       button: () => fab,
       position: () => settings.fabPosition,
@@ -2154,8 +2236,7 @@
         units: Object.fromEntries(CRYPTOS.map((c) => [c, toUnits(amount, code, c)]))
       };
       history = [entry, ...history].slice(0, 30);
-      void storage.setValue(HISTORY_KEY, history).catch(() => {
-      });
+      void persistence.saveHistory(history);
       renderHistory();
     }
     function renderHistory() {
@@ -2165,16 +2246,16 @@
         historyOutput.append(node("p", "", "Sin consultas guardadas. Solo se registra cuando pulsas Guardar; no se almacenan direcciones ni datos bancarios."));
         return;
       }
-      for (const record3 of history) {
+      for (const record4 of history) {
         const row = node("div", "clplens-record");
-        const old = Number(record3.clp), now = toCLP(Number(record3.amount), record3.code);
+        const old = Number(record4.clp), now = toCLP(Number(record4.amount), record4.code);
         const delta = old > 0 && validPositive(now) ? (now / old - 1) * 100 : null;
-        row.append(node("strong", "", `${dateTime(record3.at)} · ${safeLabel(record3.site)} · ${record3.amount} ${record3.code}`));
+        row.append(node("strong", "", `${dateTime(record4.at)} · ${safeLabel(record4.site)} · ${record4.amount} ${record4.code}`));
         row.append(node("div", "", `Entonces ${formatCLP(old)} · Ahora ${now != null ? formatCLP(now) : "sin tasa"}`));
-        row.append(node("div", "", `Variación CLP ${delta != null ? (delta >= 0 ? "+" : "") + formatDecimal(delta, 2) + " %" : "no disponible"} · ${safeLabel(record3.cryptoSource)}`));
-        if (record3.units && typeof record3.units === "object") {
+        row.append(node("div", "", `Variación CLP ${delta != null ? (delta >= 0 ? "+" : "") + formatDecimal(delta, 2) + " %" : "no disponible"} · ${safeLabel(record4.cryptoSource)}`));
+        if (record4.units && typeof record4.units === "object") {
           const deltas = CRYPTOS.map((c) => {
-            const oldUnits = Number(record3.units[c]), current = toUnits(Number(record3.amount), record3.code, c);
+            const oldUnits = Number(record4.units[c]), current = toUnits(Number(record4.amount), record4.code, c);
             if (!validPositive(oldUnits) || !validPositive(current)) return `${c}: sin comparación`;
             const diff = 100 * (current / oldUnits - 1);
             return `${c}: ${(diff >= 0 ? "+" : "") + formatDecimal(diff, 2)} %`;
@@ -2186,12 +2267,12 @@
         load.addEventListener("click", () => {
           manualOverride = true;
           pendingSelection = null;
-          settings.calcAmount = String(record3.amount);
-          settings.calcCurrency = record3.code;
-          if (SUPPORTED_CURRENCIES.includes(record3.targetCurrency)) settings.targetCurrency = record3.targetCurrency;
-          else settings.targetCurrency = targetFallback(record3.code);
+          settings.calcAmount = String(record4.amount);
+          settings.calcCurrency = record4.code;
+          if (SUPPORTED_CURRENCIES.includes(record4.targetCurrency)) settings.targetCurrency = record4.targetCurrency;
+          else settings.targetCurrency = targetFallback(record4.code);
           calcInput.value = settings.calcAmount;
-          calcSelect.value = record3.code;
+          calcSelect.value = record4.code;
           if (targetSelect) targetSelect.value = settings.targetCurrency;
           persist();
           activateTab("calculator");
@@ -2258,7 +2339,7 @@
       languageButton.type = "button";
       languageButton.className = "mv-lang-toggle";
       languageButton.addEventListener("click", () => switchLanguage(uiLanguage() === "es" ? "en" : "es"));
-      headerActions.append(languageButton, node("span", "mv-version", "v3.12.0"));
+      headerActions.append(languageButton, node("span", "mv-version", "v3.13.0"));
       titlebar.append(headerActions);
       header.append(titlebar);
       const status = node("div", "mv-status");
@@ -2591,11 +2672,12 @@
       revokeSite.type = "button";
       revokeSite.addEventListener("click", async () => {
         if (!window.confirm("¿Revocar acceso de Moncevia a este dominio?")) return;
+        const previousAllowed = settings.allowedSites, previousDisabled = settings.disabledSites;
         settings.allowedSites = settings.allowedSites.filter((host) => host !== HOST);
         settings.disabledSites = settings.disabledSites.filter((host) => host !== HOST);
-        try {
-          await storage.setValue(SETTINGS_KEY, JSON.parse(JSON.stringify(settings)));
-        } catch (e) {
+        if (!await persist()) {
+          settings.allowedSites = previousAllowed;
+          settings.disabledSites = previousDisabled;
           window.alert("No fue posible guardar la revocación.");
           return;
         }
@@ -2608,11 +2690,11 @@
       clearHistory.type = "button";
       clearHistory.addEventListener("click", async () => {
         if (!window.confirm("¿Borrar las consultas guardadas en Moncevia?")) return;
-        history = [];
-        try {
-          await storage.setValue(HISTORY_KEY, []);
-        } catch (e) {
+        if (!await persistence.saveHistory([])) {
+          window.alert("No fue posible borrar el historial local.");
+          return;
         }
+        history = [];
         renderHistory();
       });
       pageHistory.append(clearHistory);
@@ -2794,29 +2876,29 @@
       }
     }
     async function boot() {
-      try {
-        const previous = await storage.getValue(SETTINGS_KEY, null);
-        settings = normalizeSettings(previous, DEFAULTS);
-        const oldFX = await storage.getValue(FX_KEY, null);
-        fx = readCachedFX(oldFX);
-        const hist = await storage.getValue(HISTORY_KEY, []);
-        history = Array.isArray(hist) ? hist.slice(0, 30).filter((e) => Number.isFinite(e.at) && typeof e.code === "string" && validPositive(e.amount) && validPositive(e.clp)) : [];
-        const oldCrypto = await storage.getValue(CRYPTO_KEY, null);
-        crypto = readCachedCrypto(oldCrypto);
-      } catch (e) {
-        console.info("[Moncevia] Almacenamiento no disponible:", e?.message || e);
-      }
+      const restored = await persistence.load();
+      settings = restored.settings;
+      fx = restored.fx;
+      history = restored.history;
+      crypto = restored.crypto;
       if (!isAuthorized()) {
         const opt = node("button", "", "Moncevia · activar aquí");
         opt.id = "moncevia-optin";
         opt.type = "button";
         opt.textContent = tr(opt.textContent);
         opt.setAttribute("aria-label", tr("Permitir Moncevia en este dominio"));
-        opt.setAttribute("aria-label", "Permitir Moncevia en este dominio");
         Object.assign(opt.style, { position: "fixed", bottom: "max(12px,env(safe-area-inset-bottom))", right: "10px", zIndex: "2147483645", font: "12px system-ui", color: "#e2e8f0", background: "#1e293b", padding: "9px 11px", border: "1px solid #64748b", borderRadius: "18px", opacity: "0.85" });
-        opt.addEventListener("click", () => {
+        opt.addEventListener("click", async () => {
+          if (opt.disabled) return;
+          opt.disabled = true;
+          const previousAllowed = settings.allowedSites;
           settings.allowedSites = [.../* @__PURE__ */ new Set([...settings.allowedSites, HOST])];
-          persist();
+          if (!await persist()) {
+            settings.allowedSites = previousAllowed;
+            opt.disabled = false;
+            window.alert("No fue posible guardar la autorización.");
+            return;
+          }
           opt.remove();
           startRuntime();
         });

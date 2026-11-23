@@ -49,14 +49,17 @@ function isPositive(value: unknown): boolean {
 /** Keep the pre-existing 30-item cap and historical fields; reject damaged records. */
 export function readStoredHistory(value: unknown): StoredHistoryEntry[] {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 30).filter((entry): entry is StoredHistoryEntry =>
-    record(entry) &&
-    typeof entry.at === 'number' &&
-    Number.isFinite(entry.at) &&
-    typeof entry.code === 'string' &&
-    isPositive(entry.amount) &&
-    isPositive(entry.clp),
-  );
+  return value
+    .slice(0, 30)
+    .filter(
+      (entry): entry is StoredHistoryEntry =>
+        record(entry) &&
+        typeof entry.at === 'number' &&
+        Number.isFinite(entry.at) &&
+        typeof entry.code === 'string' &&
+        isPositive(entry.amount) &&
+        isPositive(entry.clp),
+    );
 }
 
 function snapshot<T>(value: T): T {
@@ -85,11 +88,7 @@ export function createPersistenceController({
     }
   }
 
-  function enqueue(
-    key: string,
-    value: unknown,
-    queue: 'settings' | 'history',
-  ): Promise<boolean> {
+  function enqueue(key: string, value: unknown, queue: 'settings' | 'history'): Promise<boolean> {
     let copied: unknown;
     try {
       copied = snapshot(value);

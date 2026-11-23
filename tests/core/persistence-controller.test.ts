@@ -68,7 +68,10 @@ describe('Phase 10 durable state lifecycle', () => {
       async getValue<T>(key: string, fallback: T): Promise<T> {
         seen.push(key);
         if (key === MONCEVIA_STORAGE_KEYS.settings)
-          return { language: 'en', allowedSites: ['shop.riftbot.org', 'allowed.example'] } as unknown as T;
+          return {
+            language: 'en',
+            allowedSites: ['shop.riftbot.org', 'allowed.example'],
+          } as unknown as T;
         if (key === MONCEVIA_STORAGE_KEYS.fx) throw new Error('FX storage unavailable');
         if (key === MONCEVIA_STORAGE_KEYS.history)
           return [
@@ -137,9 +140,7 @@ describe('Phase 10 durable state lifecycle', () => {
       units: { LTC: 0.01 },
     }));
     expect(readStoredHistory(entries)).toHaveLength(30);
-    expect(readStoredHistory([null, {}, { at: NaN, code: 'USD', amount: 1, clp: 10 }])).toEqual(
-      [],
-    );
+    expect(readStoredHistory([null, {}, { at: NaN, code: 'USD', amount: 1, clp: 10 }])).toEqual([]);
     expect(readStoredHistory('invalid')).toEqual([]);
   });
 
