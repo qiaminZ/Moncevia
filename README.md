@@ -1,3 +1,13 @@
+## Moncevia v3.8.0 — Fase 4: variantes tipadas y control de eventos
+
+La detección avanzada de **planes, variantes, precios principales, resúmenes y símbolos monetarios ambiguos** ahora reside en `src/detector/variant-detector.ts` con tipado estricto y reglas conservadoras. El nuevo `src/detector/selection-scheduler.ts` cancela reintentos anteriores cuando el usuario cambia de opción y suspende las sincronizaciones pendientes durante una edición manual.
+
+- Evita deducir divisas a partir del símbolo `$` sin consentimiento explícito del sitio.
+- Mantiene fuera del análisis los formularios de pago, acciones de compra y controles no relacionados.
+- Conserva reglas monetarias, tasa bid/ask y almacenamiento anteriores.
+- Se agregan pruebas sobre cambios rápidos de planes, ediciones manuales y sincronización tardía, además de las regresiones comerciales y responsivas existentes.
+- **No representa una migración completa** del runtime: la interfaz y algunos manejadores de eventos permanecen en JavaScript heredado. La cobertura automatizada no sustituye pruebas reales en Opera GX y Safari.
+
 ## Moncevia v3.7.0 — Fase 3: interfaz adaptable y detector modular
 
 La **anotación de precios** ahora se ejecuta desde `src/detector/scan-controller.ts`, separada de la interfaz y de los cálculos financieros. La navegación de cinco pestañas utiliza `src/ui/tab-controller.ts`, con selección por teclado y atributos de accesibilidad. El CSS integra ajustes para celulares, tablets y orientación horizontal sin alterar el diseño de las tiendas.
