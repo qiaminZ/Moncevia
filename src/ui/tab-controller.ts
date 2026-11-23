@@ -1,7 +1,11 @@
 /** Semantic, keyboard-accessible navigation independent from the finance engine. */
 export type MonceviaTab = 'calculator' | 'crypto' | 'compare' | 'history' | 'settings';
 export const TAB_ORDER: readonly MonceviaTab[] = [
-  'calculator', 'crypto', 'compare', 'history', 'settings',
+  'calculator',
+  'crypto',
+  'compare',
+  'history',
+  'settings',
 ] as const;
 
 export interface TabControllerOptions {
@@ -31,9 +35,16 @@ export function createTabController(options: TabControllerOptions) {
     const target = event.target;
     if (!(target instanceof HTMLElement) || target.getAttribute('role') !== 'tab') return;
     const index = TAB_ORDER.indexOf(current);
-    const next = event.key === 'ArrowRight' ? (index + 1) % TAB_ORDER.length :
-      event.key === 'ArrowLeft' ? (index - 1 + TAB_ORDER.length) % TAB_ORDER.length :
-        event.key === 'Home' ? 0 : event.key === 'End' ? TAB_ORDER.length - 1 : -1;
+    const next =
+      event.key === 'ArrowRight'
+        ? (index + 1) % TAB_ORDER.length
+        : event.key === 'ArrowLeft'
+          ? (index - 1 + TAB_ORDER.length) % TAB_ORDER.length
+          : event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? TAB_ORDER.length - 1
+              : -1;
     if (next < 0) return;
     const item = TAB_ORDER[next];
     if (!item) return;
@@ -41,5 +52,11 @@ export function createTabController(options: TabControllerOptions) {
     activate(item);
     buttons[item].focus();
   }
-  return { activate, onKeydown, get current() { return current; } };
+  return {
+    activate,
+    onKeydown,
+    get current() {
+      return current;
+    },
+  };
 }

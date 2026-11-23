@@ -26,16 +26,24 @@ export function createPriceScanner(options: PriceScannerOptions) {
   function skipText(textNode: Text): boolean {
     const parent = textNode.parentElement;
     if (!parent || !parent.isConnected || !isCandidateText(textNode.nodeValue)) return true;
-    if (parent.closest(
-      '#clplens-widget, .clplens-badge, [data-clplens-ignore], [contenteditable], ' +
-      '[hidden], [aria-hidden="true"], form, [role="dialog"], [role="textbox"]',
-    )) return true;
-    if (parent.closest(
-      'button, a, input, option, select, textarea, script, style, noscript, pre, code, svg, title',
-    )) return true;
+    if (
+      parent.closest(
+        '#clplens-widget, .clplens-badge, [data-clplens-ignore], [contenteditable], ' +
+          '[hidden], [aria-hidden="true"], form, [role="dialog"], [role="textbox"]',
+      )
+    )
+      return true;
+    if (
+      parent.closest(
+        'button, a, input, option, select, textarea, script, style, noscript, pre, code, svg, title',
+      )
+    )
+      return true;
     if (parent === document.body || parent === document.documentElement) return true;
     const style = window.getComputedStyle(parent);
-    return style.display === 'none' || style.visibility === 'hidden' || !parent.getClientRects().length;
+    return (
+      style.display === 'none' || style.visibility === 'hidden' || !parent.getClientRects().length
+    );
   }
 
   function makeBadge(lines: readonly string[]): HTMLSpanElement {
@@ -62,21 +70,27 @@ export function createPriceScanner(options: PriceScannerOptions) {
       if (skipText(textNode)) continue;
       const detected = detectMoney(textNode.nodeValue || '');
       const next = textNode.nextSibling;
-      const existing = next instanceof Element && next.classList.contains('clplens-badge') &&
-        (next as HTMLElement).dataset.clplensBadge === '2' ? next : null;
+      const existing =
+        next instanceof Element &&
+        next.classList.contains('clplens-badge') &&
+        (next as HTMLElement).dataset.clplensBadge === '2'
+          ? next
+          : null;
       const lines = detected ? badgeText(detected) : null;
       if (!lines) {
         if (existing) existing.remove();
         continue;
       }
       if (existing) {
-        const previous = [...existing.children].map(item => item.textContent).join('\n');
+        const previous = [...existing.children].map((item) => item.textContent).join('\n');
         if (previous !== lines.join('\n')) {
-          existing.replaceChildren(...lines.map(line => {
-            const span = document.createElement('span');
-            span.textContent = line;
-            return span;
-          }));
+          existing.replaceChildren(
+            ...lines.map((line) => {
+              const span = document.createElement('span');
+              span.textContent = line;
+              return span;
+            }),
+          );
         }
       } else {
         textNode.parentNode?.insertBefore(makeBadge(lines), textNode.nextSibling);
@@ -86,10 +100,18 @@ export function createPriceScanner(options: PriceScannerOptions) {
   }
 
   function schedule(force = false): void {
-    if (force) document.querySelectorAll('.clplens-badge[data-clplens-badge="2"]')
-      .forEach(element => element.remove());
+    if (force)
+      document
+        .querySelectorAll('.clplens-badge[data-clplens-badge="2"]')
+        .forEach((element) => element.remove());
     if (timer !== undefined) clearTimeout(timer);
-    timer = setTimeout(() => { timer = undefined; scan(); }, force ? 70 : 550);
+    timer = setTimeout(
+      () => {
+        timer = undefined;
+        scan();
+      },
+      force ? 70 : 550,
+    );
   }
 
   function isOwnMutation(change: MutationRecord): boolean {
@@ -98,11 +120,16 @@ export function createPriceScanner(options: PriceScannerOptions) {
     if (target.parentElement?.closest('#clplens-widget,.clplens-badge')) return true;
     if (change.type === 'childList') {
       const changed = [...change.addedNodes, ...change.removedNodes];
-      if (changed.length && changed.every(item =>
-        item instanceof Element &&
-        (item.matches('#clplens-widget,.clplens-badge') ||
-          !!item.closest('#clplens-widget,.clplens-badge'))
-      )) return true;
+      if (
+        changed.length &&
+        changed.every(
+          (item) =>
+            item instanceof Element &&
+            (item.matches('#clplens-widget,.clplens-badge') ||
+              !!item.closest('#clplens-widget,.clplens-badge')),
+        )
+      )
+        return true;
     }
     return false;
   }
