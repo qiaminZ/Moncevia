@@ -1,3 +1,11 @@
+## 3.15.1 / Desktop 0.11.1-beta — Safari Userscripts startup and update metadata
+
+- Userscripts for Safari now checks a dedicated `moncevia.meta.js` for `@updateURL` and downloads the actual `moncevia.user.js`; the metadata-only file is generated from the same source header and audited in CI.
+- Waits for the document body before initializing the runtime, avoiding a silent early return when a userscript manager injects unusually early.
+- Retains all consent, denied-domain, banking and checkout exclusions; no new host permissions, data access, financial formulas or network providers.
+- Adds automated Safari-like Promise GM and pre-body bootstrap regressions on Chromium, Firefox and WebKit. Physical Safari iOS Userscripts installation remains to be verified manually.
+- Users with an older Safari installation may need to re-save the latest `.user.js` into the Userscripts directory to adopt the metadata update fix.
+
 ## Engineering phase 14 — release audit and documented certification gates
 
 - Added a fail-closed, CI-required source/bundle audit: version alignment, modern/legacy GM grants, exact external hosts, Manifest V3 permissions, HTTPS-only matching, identical generated engines and absence of temporary workflows.
