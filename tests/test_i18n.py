@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 from pathlib import Path
 from test_browser import HTML,INIT,S
 with sync_playwright() as p:
@@ -8,8 +8,9 @@ with sync_playwright() as p:
   page.set_content(HTML);page.evaluate(INIT)
   page.add_script_tag(content=Path(S).read_text().replace('const HOST = location.hostname.toLowerCase();',"const HOST = 'shop.riftbot.org';"))
   page.wait_for_selector('#clplens-fab');page.locator('#clplens-fab').click()
-  page.wait_for_function("document.querySelector('.mv-header')?.innerText.includes('Fiat rates current')",timeout=10000)
-  assert 'Fiat rates current' in page.locator('.mv-header').inner_text()
+  # Public FX requests and localized status updates complete on separate frames.
+  # Retry the actual visible label, rather than racing another asynchronous refresh.
+  expect(page.locator('.mv-header')).to_contain_text('Fiat rates current',timeout=12000)
   for tab in ['calculator','crypto','compare','history','settings']:
     page.locator('#mv-tab-'+tab).click()
     if tab=='settings':
