@@ -1,3 +1,7 @@
+## Fase 13 — Pruebas de estrés automatizadas
+
+La fase 13 añade una matriz de 180 precios de comercio y mutaciones rápidas para los motores Chromium, Firefox y WebKit, con privacidad, ausencia de anotaciones en formularios y preservación de botones de la tienda. Estas pruebas emuladas no equivalen a una certificación física ni a una publicación en tiendas de extensiones.
+
 ## Moncevia v3.15.0 — Fase 12: ciclo de vida y rendimiento
 
 El nuevo `src/platform/page-lifecycle.ts` agrupa mutaciones sucesivas por cuadro de animación, evita escaneos repetitivos en ráfagas y restaura los observadores tras volver a una pestaña mediante BFCache. Se preservan las acciones comerciales y las funciones financieras. Las pruebas físicas en Safari iOS y Opera GX aún se requieren.
