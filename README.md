@@ -1,3 +1,9 @@
+## Moncevia v3.6.1 — Fase 2: núcleo financiero tipado
+
+La migración incremental desde JavaScript heredado hacia TypeScript estricto ahora incluye **conversiones monetarias**, **unidades cripto de ocho decimales**, **validación de respuestas FX** y **validación de cotizaciones almacenadas**. La detección de precios, las interfaces y otros adaptadores permanecen en `src/legacy/runtime.js` hasta su propia revisión. La instalación sigue siendo idéntica y el código compilado se genera desde una fuente única.
+
+**Cambios internos, no una garantía de tasas bancarias ni de comisiones de retirada.** Los tests unitarios cubren bid/ask, paridad USDT/USD, vigencia, ajustes manuales y registros malformados. La compatibilidad requiere también superar las regresiones Chromium, Firefox y WebKit; las pruebas físicas de cada navegador siguen siendo independientes.
+
 ## Moncevia v3.6.0 — Motor compilado y CSS modular (migración por etapas)
 
 El desarrollo ahora parte de `src/`, con **TypeScript estricto para los módulos migrados**, CSS separado y compilación reproducible hacia el userscript y ambas extensiones nativas. La lógica heredada todavía reside en JavaScript y seguirá migrándose gradualmente: **no se afirma una conversión completa a TypeScript**.
