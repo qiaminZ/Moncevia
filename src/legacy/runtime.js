@@ -3,6 +3,7 @@ import { parseAmount } from '../core/parse-amount';
 import { createConversionEngine } from '../core/conversion';
 import { coinMinor, ceil8, roundUp2 } from '../core/crypto-units';
 import { validateFXResponse } from '../core/fx-validation';
+import { readCachedFX, readCachedCrypto } from '../core/cache-validation';
 (() => {
   'use strict';
   // No accede a cookies, formularios, credenciales, wallets ni API privadas.
@@ -1734,11 +1735,10 @@ import { validateFXResponse } from '../core/fx-validation';
         .filter(([host,currency])=>/^[a-z0-9.-]{1,255}$/.test(host) && ['USD','CLP','CAD','AUD'].includes(currency)).slice(0,100));
       settings.allowedSites=settings.allowedSites.filter(host=>typeof host==='string' && /^[a-z0-9.-]{1,255}$/.test(host)).slice(0,100);
       const oldFX=await storage.getValue(FX_KEY,null);
-      if (oldFX && Number.isFinite(oldFX.fetchedAt) && validPositive(oldFX.rates?.CLP)) fx=oldFX;
+      fx=readCachedFX(oldFX);
       const hist=await storage.getValue(HISTORY_KEY,[]);history=Array.isArray(hist)?hist.slice(0,30).filter(e=>Number.isFinite(e.at)&&typeof e.code==='string'&&validPositive(e.amount)&&validPositive(e.clp)):[];
       const oldCrypto=await storage.getValue(CRYPTO_KEY,null);
-      if (oldCrypto && Number.isFinite(oldCrypto.fetchedAt) && CRYPTOS.every(c=>validPositive(oldCrypto.usd?.[c])) &&
-        (!oldCrypto.source?.startsWith('Binance') || validPositive(oldCrypto.usdtUsd))) crypto=oldCrypto;
+      crypto=readCachedCrypto(oldCrypto);
     } catch(e) { console.info('[Moncevia] Almacenamiento no disponible:',e?.message||e); }
     // Solo el dominio explícitamente autorizado recibe escaneo, panel completo o peticiones de FX.
     if (!isAuthorized()) {
