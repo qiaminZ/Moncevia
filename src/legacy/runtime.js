@@ -1280,6 +1280,8 @@ import { createTabController } from '../ui/tab-controller';
     widget=node('div'); widget.id='clplens-widget';
     fab=node('button','','CLP · ₿'); fab.type='button'; fab.id='clplens-fab';
     fab.setAttribute('aria-label','Abrir Moncevia');
+    fab.setAttribute('aria-controls','clplens-panel');
+    fab.setAttribute('aria-expanded','false');
     fab.setAttribute('title','Arrastra para mover · toca para abrir');
     panel=node('section'); panel.id='clplens-panel'; panel.hidden=true;
     panel.setAttribute('aria-label','Moncevia — conversión y pagos');
@@ -1561,6 +1563,11 @@ import { createTabController } from '../ui/tab-controller';
     compactCard=node('div');compactCard.id='clplens-compact';compactCard.hidden=true;
     compactCard.addEventListener('click',()=>openPanelFast());
     widget.append(panel,compactCard,fab); document.body.append(widget);
+    // A real aria-expanded value follows ALL close paths, including Escape/picker.
+    const panelStateObserver=new MutationObserver(()=>{
+      fab.setAttribute('aria-expanded',String(!panel.hidden));
+    });
+    panelStateObserver.observe(panel,{attributes:true,attributeFilter:['hidden']});
     restoreFabPosition();
     enableFabDragging();
     refresh();
