@@ -41,6 +41,7 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 
 function isPositive(value: unknown): boolean {
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
   const n = Number(value);
   return Number.isFinite(n) && n > 0;
 }
