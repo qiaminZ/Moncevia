@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def test():
     script=(ROOT/'moncevia.user.js').read_bytes()
     assert script.startswith(b'// ==UserScript=='), 'Userscript metadata must be first'
-    assert b'// @version      3.14.0' in script[:900]
+    assert b'// @version      3.15.0' in script[:900]
     assert b'const HOST = location.hostname.toLowerCase()' in script
     assert b'.clplens-badge' in script, 'CSS must be embedded without external fetch'
     assert b'clplens-fab' in script
@@ -23,6 +23,8 @@ def test():
     assert b'createPanelShell' in script, 'Bundled typed panel shell missing'
     assert (ROOT/'src/platform/gm-bridge.ts').exists(), 'Typed GM transport module missing'
     assert (ROOT/'src/platform/persistence-controller.ts').exists(), 'Typed state persistence missing'
+    assert (ROOT/'src/platform/page-lifecycle.ts').exists(), 'Typed page lifecycle missing'
+    assert b'createPageLifecycle' in script, 'Bundled page lifecycle missing'
     assert b'createPersistenceController' in script, 'Bundled durable storage controller missing'
     assert b'createGMBridge' in script, 'Bundled GM transport module missing'
     assert b'createFabController' in script, 'Compiled FAB controller missing'
