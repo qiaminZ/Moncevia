@@ -59,7 +59,13 @@ export function createPanelShell(options: PanelShellOptions): PanelShell {
   const coinsLabel = appendLine(ratesInfo.content, 'Consultando criptomonedas…', 'clplens-strong');
   const sources = appendLine(ratesInfo.content, 'Fuentes: ');
   sources.append(createExternalLink('https://www.exchangerate-api.com', 'ExchangeRate-API'));
-  sources.append(' · ', createExternalLink('https://developers.binance.com/en/docs/binance-spot-api-docs/rest-api/market-data-endpoints', 'Binance Spot'));
+  sources.append(
+    ' · ',
+    createExternalLink(
+      'https://developers.binance.com/en/docs/binance-spot-api-docs/rest-api/market-data-endpoints',
+      'Binance Spot',
+    ),
+  );
   sources.append(' / ', createExternalLink('https://www.coingecko.com/en/api', 'CoinGecko'));
   sources.append(' / ', createExternalLink('https://www.coinbase.com', 'Coinbase'));
 

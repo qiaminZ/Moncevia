@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.13.0
+// @version      3.14.0
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -843,6 +843,96 @@
     return { enable, restore, reset };
   }
 
+  // src/ui/dom-factory.ts
+  function createNode(tag, className = "", text = "") {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text) element.textContent = text;
+    return element;
+  }
+  function createExternalLink(href, text) {
+    const element = createNode("a", "", text);
+    element.href = href;
+    element.target = "_blank";
+    element.rel = "noopener noreferrer";
+    return element;
+  }
+  function appendLine(parent, text, className = "") {
+    const paragraph = createNode("p", className, text);
+    parent.append(paragraph);
+    return paragraph;
+  }
+  function appendDisclosure(parent, title, expanded = false, extraClass = "") {
+    const details = createNode("details", "mv-disclosure" + (extraClass ? " " + extraClass : ""));
+    details.open = expanded;
+    const summary = createNode("summary", "", title);
+    const content = createNode("div", "mv-details-content");
+    details.append(summary, content);
+    parent.append(details);
+    return { details, content };
+  }
+  function createCardRow(key, value, full = false) {
+    const row = createNode("div", "mv-unit" + (full ? " mv-full" : ""));
+    row.append(createNode("span", "", key), createNode("strong", "", value));
+    return row;
+  }
+  function appendEmbeddedStyles(css) {
+    const style = createNode("style");
+    style.dataset.clplens = "2";
+    style.textContent = css;
+    document.head.append(style);
+    return style;
+  }
+
+  // src/ui/panel-shell.ts
+  function createPanelShell(options) {
+    const widget = createNode("div");
+    widget.id = "clplens-widget";
+    const fab = createNode("button", "", "CLP · ₿");
+    fab.type = "button";
+    fab.id = "clplens-fab";
+    fab.setAttribute("aria-label", "Abrir Moncevia");
+    fab.setAttribute("aria-controls", "clplens-panel");
+    fab.setAttribute("aria-expanded", "false");
+    fab.setAttribute("title", "Arrastra para mover · toca para abrir");
+    const panel = createNode("section");
+    panel.id = "clplens-panel";
+    panel.hidden = true;
+    panel.setAttribute("aria-label", "Moncevia — conversión y pagos");
+    const header = createNode("div", "mv-header");
+    const titlebar = createNode("div", "mv-titlebar");
+    titlebar.append(createNode("h2", "", "Moncevia"));
+    const headerActions = createNode("div", "mv-header-actions");
+    headerActions.style.cssText = "display:flex;align-items:center;gap:7px;";
+    const languageButton = createNode("button", "mv-lang-toggle", "ES");
+    languageButton.type = "button";
+    languageButton.addEventListener("click", options.onLanguageToggle);
+    headerActions.append(languageButton, createNode("span", "mv-version", "v" + options.version));
+    titlebar.append(headerActions);
+    header.append(titlebar);
+    const status = createNode("div", "mv-status");
+    status.append(createNode("span", "mv-dot"));
+    const stateLabel = createNode("span", "", "Consultando tasas…");
+    status.append(stateLabel);
+    header.append(status);
+    panel.append(header);
+    const ratesInfo = appendDisclosure(header, "Tasas y fuentes", false);
+    ratesInfo.details.classList.add("mv-rates-disclosure");
+    const coinsLabel = appendLine(ratesInfo.content, "Consultando criptomonedas…", "clplens-strong");
+    const sources = appendLine(ratesInfo.content, "Fuentes: ");
+    sources.append(createExternalLink("https://www.exchangerate-api.com", "ExchangeRate-API"));
+    sources.append(
+      " · ",
+      createExternalLink(
+        "https://developers.binance.com/en/docs/binance-spot-api-docs/rest-api/market-data-endpoints",
+        "Binance Spot"
+      )
+    );
+    sources.append(" / ", createExternalLink("https://www.coingecko.com/en/api", "CoinGecko"));
+    sources.append(" / ", createExternalLink("https://www.coinbase.com", "Coinbase"));
+    return { widget, fab, panel, header, stateLabel, coinsLabel, languageButton };
+  }
+
   // src/platform/gm-bridge.ts
   function createGMBridge({ modern = null, legacy = null }) {
     const modernGet = typeof modern?.getValue === "function";
@@ -1657,19 +1747,10 @@
       }
       return lines;
     }
-    const node = (tag, className = "", text = "") => {
-      const n = document.createElement(tag);
-      if (className) n.className = className;
-      if (text) n.textContent = text;
-      return n;
-    };
-    const makeLink = (href, text) => {
-      const a = node("a", "", text);
-      a.href = href;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      return a;
-    };
+    const node = createNode;
+    const line = appendLine;
+    const disclosure = appendDisclosure;
+    const cardRow = createCardRow;
     const persistence = createPersistenceController({
       storage,
       defaults: DEFAULTS,
@@ -1688,10 +1769,7 @@
     const resetFabPosition = (save = true) => fabController.reset(save);
     const enableFabDragging = () => fabController.enable();
     function stylesheet() {
-      const style = node("style");
-      style.dataset.clplens = "2";
-      style.textContent = moncevia_default;
-      document.head.appendChild(style);
+      appendEmbeddedStyles(moncevia_default);
     }
     function checkbox(parent, label, getter, setter) {
       const row = node("label");
@@ -1738,25 +1816,6 @@
       row.append(input);
       parent.append(row);
       return input;
-    }
-    function line(parent, text, cls = "") {
-      const p = node("p", cls, text);
-      parent.append(p);
-      return p;
-    }
-    function disclosure(parent, title, expanded = false, extra = "") {
-      const details = node("details", "mv-disclosure" + (extra ? " " + extra : ""));
-      details.open = expanded;
-      const summary = node("summary", "", title);
-      const content = node("div", "mv-details-content");
-      details.append(summary, content);
-      parent.append(details);
-      return { details, content };
-    }
-    function cardRow(key, value, full = false) {
-      const row = node("div", "mv-unit" + (full ? " mv-full" : ""));
-      row.append(node("span", "", key), node("strong", "", value));
-      return row;
     }
     function refresh() {
       if (!widget) return;
@@ -2317,45 +2376,16 @@
     }
     function createUI() {
       stylesheet();
-      widget = node("div");
-      widget.id = "clplens-widget";
-      fab = node("button", "", "CLP · ₿");
-      fab.type = "button";
-      fab.id = "clplens-fab";
-      fab.setAttribute("aria-label", "Abrir Moncevia");
-      fab.setAttribute("aria-controls", "clplens-panel");
-      fab.setAttribute("aria-expanded", "false");
-      fab.setAttribute("title", "Arrastra para mover · toca para abrir");
-      panel = node("section");
-      panel.id = "clplens-panel";
-      panel.hidden = true;
-      panel.setAttribute("aria-label", "Moncevia — conversión y pagos");
-      const header = node("div", "mv-header");
-      const titlebar = node("div", "mv-titlebar");
-      titlebar.append(node("h2", "", "Moncevia"));
-      const headerActions = node("div", "mv-header-actions");
-      headerActions.style.cssText = "display:flex;align-items:center;gap:7px;";
-      languageButton = node("button", "", "ES");
-      languageButton.type = "button";
-      languageButton.className = "mv-lang-toggle";
-      languageButton.addEventListener("click", () => switchLanguage(uiLanguage() === "es" ? "en" : "es"));
-      headerActions.append(languageButton, node("span", "mv-version", "v3.13.0"));
-      titlebar.append(headerActions);
-      header.append(titlebar);
-      const status = node("div", "mv-status");
-      status.append(node("span", "mv-dot"));
-      stateLabel = node("span", "", "Consultando tasas…");
-      status.append(stateLabel);
-      header.append(status);
-      panel.append(header);
-      const ratesInfo = disclosure(header, "Tasas y fuentes", "");
-      ratesInfo.details.classList.add("mv-rates-disclosure");
-      coinsLabel = line(ratesInfo.content, "Consultando criptomonedas…", "clplens-strong");
-      const sources = line(ratesInfo.content, "Fuentes: ");
-      sources.append(makeLink("https://www.exchangerate-api.com", "ExchangeRate-API"));
-      sources.append(" · ", makeLink("https://developers.binance.com/en/docs/binance-spot-api-docs/rest-api/market-data-endpoints", "Binance Spot"));
-      sources.append(" / ", makeLink("https://www.coingecko.com/en/api", "CoinGecko"));
-      sources.append(" / ", makeLink("https://www.coinbase.com", "Coinbase"));
+      const shell = createPanelShell({
+        version: "3.14.0",
+        onLanguageToggle: () => switchLanguage(uiLanguage() === "es" ? "en" : "es")
+      });
+      widget = shell.widget;
+      fab = shell.fab;
+      panel = shell.panel;
+      stateLabel = shell.stateLabel;
+      coinsLabel = shell.coinsLabel;
+      languageButton = shell.languageButton;
       const nav = node("nav", "mv-nav");
       nav.setAttribute("role", "tablist");
       nav.setAttribute("aria-label", "Secciones de Moncevia");
