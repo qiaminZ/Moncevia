@@ -118,9 +118,13 @@ def isolated_cache_failure(browser, mobile):
         page.locator("#clplens-fab").wait_for(timeout=12000)
         page.locator("#clplens-fab").click()
         page.locator("#mv-tab-history").click()
-        assert page.get_by_role("button", name="Reuse").count() == 1 or page.get_by_role(
-            "button", name="Reutilizar"
-        ).count() == 1
+        # The restored history entry is the invariant; the translated button
+        # label can be updated asynchronously by the UI localizer.
+        record = page.locator("#mv-page-history .clplens-record")
+        record.wait_for(timeout=8000)
+        assert record.count() == 1
+        assert "45 EUR" in record.inner_text()
+        assert record.locator("button").count() == 1
         assert page.locator("#mv-tab-history").get_attribute("aria-selected") == "true"
         assert "other.example" in page.evaluate(
             "window._persist.clplens_v1.allowedSites"
