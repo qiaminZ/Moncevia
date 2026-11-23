@@ -1,0 +1,43 @@
+# Temporary branch-only compiler. Delete this workflow after generated engines are committed.
+name: Phase 8 temporary artifact compilation
+on:
+  push:
+    branches:
+      - refactor/phase8-typed-fab
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned tooling
+        run: npm ci --no-audit --no-fund
+      - name: Format new typed components
+        run: npx prettier --write src/ui/fab-controller.ts tests/core/fab-controller.test.ts
+      - name: Check typing, lint and units
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run test:core
+      - name: Generate three identical browser engines
+        run: |
+          npm run build
+          python tests/test_architecture.py
+      - name: Commit generated source formatting and bundles
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/ui/fab-controller.ts tests/core/fab-controller.test.ts moncevia.user.js extension/chromium/engine.js extension/firefox/engine.js
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git commit -m "build: regenerate Moncevia v3.11.0 after FAB TypeScript extraction"
+          git push origin HEAD:refs/heads/refactor/phase8-typed-fab
