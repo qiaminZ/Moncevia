@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def test():
     script=(ROOT/'moncevia.user.js').read_bytes()
     assert script.startswith(b'// ==UserScript=='), 'Userscript metadata must be first'
-    assert b'// @version      3.6.0' in script[:900]
+    assert b'// @version      3.6.1' in script[:900]
     assert b'const HOST = location.hostname.toLowerCase()' in script
     assert b'.clplens-badge' in script, 'CSS must be embedded without external fetch'
     assert b'clplens-fab' in script
