@@ -38,7 +38,7 @@ def run():
             tab=page.locator('#mv-tab-calculator')
             expected='Convertir' if locale=='es-CL' else 'Convert'
             page.wait_for_function(
-              "expected => document.querySelector('#mv-tab-calculator')?.textContent.includes(expected)",
+              "expected => document.querySelector('#mv-tab-calculator')?.textContent.trim().endsWith(expected)",
               arg=expected, timeout=8000)
             page.evaluate("""() => {
               const panel=document.getElementById('mv-page-settings');
@@ -59,7 +59,7 @@ def run():
             page.locator('.mv-lang-toggle').click()
             other='Convert' if locale=='es-CL' else 'Convertir'
             page.wait_for_function(
-              "text => document.querySelector('#mv-tab-calculator')?.textContent.includes(text)",
+              "text => document.querySelector('#mv-tab-calculator')?.textContent.trim().endsWith(text)",
               arg=other,timeout=8000)
             other_text='Clear local history' if locale=='es-CL' else 'Borrar historial local'
             page.wait_for_function(
@@ -67,7 +67,7 @@ def run():
               arg=other_text,timeout=8000)
             page.locator('.mv-lang-toggle').click()
             page.wait_for_function(
-              "text => document.querySelector('#mv-tab-calculator')?.textContent.includes(text)",
+              "text => document.querySelector('#mv-tab-calculator')?.textContent.trim().endsWith(text)",
               arg=expected,timeout=8000)
             page.wait_for_function(
               "text => document.querySelector('#test-translation')?.textContent === text",
