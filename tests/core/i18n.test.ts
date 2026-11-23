@@ -17,9 +17,16 @@ describe('Moncevia Spanish-English UI dictionary', () => {
   });
   it('keeps key accessibility and financial warnings available in English', () => {
     const labels = [
-      'Abrir Moncevia', 'Convertir', 'Pagar', 'Comparar', 'Historial',
-      'Ajustes', 'Borrar historial local', 'Permitir Moncevia en este dominio',
-      'Sin tasa disponible', 'La comparación de tarjetas aplica un porcentaje configurado sobre CLP. No constituye una cotización oficial de Prex o Santander. Las comisiones de retiro no se aplican automáticamente al texto de los precios.',
+      'Abrir Moncevia',
+      'Convertir',
+      'Pagar',
+      'Comparar',
+      'Historial',
+      'Ajustes',
+      'Borrar historial local',
+      'Permitir Moncevia en este dominio',
+      'Sin tasa disponible',
+      'La comparación de tarjetas aplica un porcentaje configurado sobre CLP. No constituye una cotización oficial de Prex o Santander. Las comisiones de retiro no se aplican automáticamente al texto de los precios.',
     ];
     for (const label of labels) {
       const translated = translateUI(label, 'en');
@@ -30,11 +37,14 @@ describe('Moncevia Spanish-English UI dictionary', () => {
   it('supports dynamic status fragments with currencies and amounts unchanged', () => {
     expect(translateUI('Divisas al día', 'en')).toBe('Fiat rates current');
     expect(translateUI('Cripto al día', 'en')).toBe('Crypto rates current');
-    expect(translateUI('Importe al comercio: BTC 0.001', 'en')).toBe('Merchant receives: BTC 0.001');
+    expect(translateUI('Importe al comercio: BTC 0.001', 'en')).toBe(
+      'Merchant receives: BTC 0.001',
+    );
     expect(translateUI('Automático · EUR 25.00', 'en')).toBe('Automatic · EUR 25.00');
     expect(translateUI('Sin tasa disponible', 'en')).toBe('Rate unavailable');
-    expect(translateUI('BTC/ETH/LTC: sin cotización reciente. Actualiza para mostrar cantidades.', 'en'))
-      .toBe('BTC/ETH/LTC: rates unavailable. Refresh to display amounts.');
+    expect(
+      translateUI('BTC/ETH/LTC: sin cotización reciente. Actualiza para mostrar cantidades.', 'en'),
+    ).toBe('BTC/ETH/LTC: rates unavailable. Refresh to display amounts.');
   });
   it('contains no duplicate exact keys and stores a substantial catalog', () => {
     const keys = Object.keys(EN);

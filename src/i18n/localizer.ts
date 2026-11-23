@@ -1,7 +1,10 @@
 import { translateUI, type UILanguage } from './catalog';
 
 type ElementLabel = 'placeholder' | 'aria-label' | 'title';
-interface LocalizedText { readonly raw: string; readonly translated: string }
+interface LocalizedText {
+  readonly raw: string;
+  readonly translated: string;
+}
 export interface LocalizerOptions {
   readonly root: () => HTMLElement | null;
   readonly language: () => UILanguage;
@@ -34,19 +37,20 @@ export function createUILocalizer(options: LocalizerOptions) {
         const node = current as Text;
         if (node.parentElement?.closest('script,style')) continue;
         const before = textOrigins.get(node);
-        const raw = before && before.translated === node.nodeValue ? before.raw : (node.nodeValue || '');
+        const raw =
+          before && before.translated === node.nodeValue ? before.raw : node.nodeValue || '';
         const translated = translateUI(raw, language);
-        textOrigins.set(node, {raw, translated});
+        textOrigins.set(node, { raw, translated });
         if (node.nodeValue !== translated) node.nodeValue = translated;
       }
       for (const element of root.querySelectorAll('[placeholder],[aria-label],[title]')) {
-        for (const attribute of ['placeholder','aria-label','title'] as const) {
+        for (const attribute of ['placeholder', 'aria-label', 'title'] as const) {
           if (!element.hasAttribute(attribute)) continue;
           const saved = attributeOrigins.get(element) || {};
           const currentValue = element.getAttribute(attribute) || '';
           const previous = saved[attribute];
-          const raw = previous && previous.translated === currentValue
-            ? previous.raw : currentValue;
+          const raw =
+            previous && previous.translated === currentValue ? previous.raw : currentValue;
           const translated = translateUI(raw, language);
           saved[attribute] = { raw, translated };
           attributeOrigins.set(element, saved);
@@ -65,7 +69,9 @@ export function createUILocalizer(options: LocalizerOptions) {
       if (languageSelect && languageSelect.value !== options.savedPreference()) {
         languageSelect.value = options.savedPreference();
       }
-    } finally { applying = false; }
+    } finally {
+      applying = false;
+    }
   }
 
   function watch(): void {
@@ -79,8 +85,13 @@ export function createUILocalizer(options: LocalizerOptions) {
         if (options.root()?.isConnected) localize();
       });
     });
-    observer.observe(root, {childList: true, characterData: true, subtree: true, attributes: true,
-      attributeFilter: ['placeholder','aria-label','title']});
+    observer.observe(root, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['placeholder', 'aria-label', 'title'],
+    });
     localize();
   }
 
@@ -90,5 +101,5 @@ export function createUILocalizer(options: LocalizerOptions) {
     if (frame !== 0) cancelAnimationFrame(frame);
     frame = 0;
   }
-  return {localize, watch, stop} as const;
+  return { localize, watch, stop } as const;
 }
