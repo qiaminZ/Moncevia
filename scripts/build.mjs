@@ -30,6 +30,20 @@ if (!script.includes('clplens-fab') || !script.includes('parseAmount')) {
 }
 
 const outputs = ['moncevia.user.js', 'extension/chromium/engine.js', 'extension/firefox/engine.js'];
+// Userscripts Safari checks this dedicated metadata-only endpoint for updates.
+// The installable payload remains moncevia.user.js (the downloadURL target).
+const metaPath = resolve(root, 'moncevia.meta.js');
+const metaScript = header + '\\n';
+if (checkOnly) {
+  const existing = await readFile(metaPath, 'utf8');
+  if (existing !== metaScript) {
+    console.error('Generated metadata differs from source: moncevia.meta.js');
+    process.exitCode = 1;
+  }
+} else {
+  await writeFile(metaPath, metaScript, 'utf8');
+  console.log('Built moncevia.meta.js metadata');
+}
 let mismatch = false;
 for (const file of outputs) {
   const path = resolve(root, file);
