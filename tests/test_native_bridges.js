@@ -1,9 +1,10 @@
-'use strict';
-const fs = require('fs');
-const vm = require('vm');
-const assert = require('assert').strict;
-const path = require('path');
-const ROOT = path.resolve(__dirname, '..');
+import fs from 'node:fs';
+import vm from 'node:vm';
+import { strict as assert } from 'node:assert';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 async function testBackground(folder) {
   const called = [];
