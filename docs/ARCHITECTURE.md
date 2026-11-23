@@ -1,4 +1,4 @@
-# Moncevia — Arquitectura de ingeniería (v3.6.0)
+# Moncevia — Arquitectura de ingeniería (v3.6.1)
 
 ## Objetivo
 
@@ -7,7 +7,11 @@ Mantener un **único código fuente** para el userscript iOS/Android y las exten
 ## Estructura
 
 - `src/entry/index.ts`: punto de entrada del bundle.
-- `src/core/parse-amount.ts`: primer módulo financiero migrado a TypeScript estricto.
+- `src/core/parse-amount.ts`: análisis de importes con tipado estricto.
+- `src/core/conversion.ts`: conversiones puras entre CLP, divisas y criptomonedas, con bid/ask y vigencia.
+- `src/core/crypto-units.ts`: aritmética exacta de ocho decimales para retiros.
+- `src/core/fx-validation.ts`: validación de respuestas externas FX.
+- `src/core/cache-validation.ts`: lectura defensiva de tasas y cotizaciones desde almacenamiento local.
 - `src/types/currency.ts`: tipos y conjuntos de monedas.
 - `src/styles/moncevia.css`: estilos reales separados, integrados en el bundle como texto; no se solicita CSS a servidores externos.
 - `src/legacy/runtime.js`: lógica restante en JavaScript durante la migración. **Todavía no está tipada**; pasarla a TS sin pruebas incrementaría el riesgo de regresiones.
@@ -34,8 +38,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 ## Etapas y honestidad del estado
 
 1. **Fase 1 (este cambio):** CSS aislado, primer módulo financiero estrictamente tipado, un solo proceso de build, lockfile, pruebas y artefactos nativos.
-2. **Fase 2:** migración incremental de conversiones, validadores de APIs y almacenamiento al núcleo tipado, con pruebas unitarias por función.
-3. **Fase 3:** descomposición de detección DOM e interfaz; perfiles de rendimiento y accesibilidad multiplataforma.
+2. **Fase 2 (v3.6.1, en ejecución):** conversiones, validación FX y cachés financieras migradas a TypeScript, con pruebas unitarias. Permanecen pendientes la normalización completa de ajustes y los proveedores cripto externos, junto con futuras migraciones del runtime.
+3. **Fase 3 (pendiente):** descomposición de detección DOM e interfaz; perfiles de rendimiento y accesibilidad multiplataforma.
 
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 
