@@ -97,8 +97,9 @@ def run_journey(browser, engine, mobile):
         page.wait_for_timeout(500)
         wait_amount(page, "83")
         page.locator("#opt14").click()
-        wait_amount(page, "74.99")
-        assert page.locator("#total").inner_text() == "€74.99"
+        # Quantity remains 2: the merchant total is 2 × €74.99, not €74.99.
+        wait_amount(page, "149.98")
+        assert page.locator("#total").inner_text() == "€149.98"
 
         # Native commerce handlers are not swallowed by Moncevia's event capture.
         page.locator("#add").click()
