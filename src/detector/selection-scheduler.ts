@@ -9,11 +9,19 @@ export interface SelectionSchedulerOptions {
 export function createSelectionScheduler({ run, allowed }: SelectionSchedulerOptions) {
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   const retries = new Set<ReturnType<typeof setTimeout>>();
-  function execute(): void { if (allowed()) run(); }
+  function execute(): void {
+    if (allowed()) run();
+  }
   function debounce(delay = 160): void {
     if (!allowed()) return;
     if (debounceTimer !== undefined) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => { debounceTimer = undefined; execute(); }, Math.max(0, delay));
+    debounceTimer = setTimeout(
+      () => {
+        debounceTimer = undefined;
+        execute();
+      },
+      Math.max(0, delay),
+    );
   }
   function replaceRetries(delays: readonly number[]): void {
     for (const timer of retries) clearTimeout(timer);

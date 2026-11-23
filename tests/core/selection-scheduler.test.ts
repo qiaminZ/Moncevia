@@ -3,7 +3,10 @@ import { createSelectionScheduler } from '../../src/detector/selection-scheduler
 
 describe('Cancellable storefront update retries', () => {
   beforeEach(() => vi.useFakeTimers());
-  afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
   it('coalesces repeated DOM mutation syncs into one read', () => {
     const run = vi.fn();
     const scheduler = createSelectionScheduler({ run, allowed: () => true });

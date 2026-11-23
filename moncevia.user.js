@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.7.0
+// @version      3.8.0
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -374,6 +374,313 @@
     };
   }
 
+  // src/detector/variant-detector.ts
+  var isElement = (value) => typeof Element !== "undefined" && value instanceof Element;
+  var forbiddenAction = /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i;
+  var variantWords = /\b(?:days?|weeks?|months?|years?|lifetime|license|licen[cs]e|tier|plan|size|color|colour|medium|large|small|basic|standard|premium)\b/i;
+  function createVariantDetector(options) {
+    const { parseAmount: parseAmount2, prefixCurrency, prefixRE, suffixRE, figure, cryptoCodes } = options;
+    const dollarRE = new RegExp("(?<![\\p{L}\\d])\\$\\s*(" + figure + ")(?![\\p{L}\\d])", "gu");
+    function originalText(element) {
+      if (!element || (element.textContent || "").length > 1600) return "";
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const parts = [];
+      let count = 0;
+      let current;
+      while ((current = walker.nextNode()) && count++ < 120) {
+        const text = current;
+        if (text.parentElement?.closest('#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"]'))
+          continue;
+        const content = (text.nodeValue || "").trim();
+        if (content) parts.push(content);
+      }
+      return parts.join("\n").slice(0, 650);
+    }
+    function matchesInText(rawText) {
+      const text = String(rawText || "").replace(/[\u00a0\u202f]/g, " ").slice(0, 650);
+      const out = [];
+      for (const [rx, isSuffix] of [
+        [prefixRE, false],
+        [suffixRE, true]
+      ]) {
+        rx.lastIndex = 0;
+        let found;
+        while (found = rx.exec(text)) {
+          if (found[0].includes("\n")) continue;
+          const rawAmount = found[1];
+          if (!rawAmount) continue;
+          const currency = isSuffix ? (found[2] || "").toUpperCase() : prefixCurrency(found[0].slice(0, found[0].indexOf(rawAmount)).trim());
+          if (!currency) continue;
+          const amount = parseAmount2(rawAmount, currency);
+          if (!Number.isFinite(amount) || amount < (cryptoCodes.includes(currency) ? 1e-8 : 0.01))
+            continue;
+          const before = text.slice(Math.max(0, found.index - 18), found.index).toLowerCase();
+          const after = text.slice(found.index + found[0].length, found.index + found[0].length + 30).toLowerCase();
+          const perUnit = /^\s*(?:per\s*(?:day|week|month|unit)|\/\s*(?:day|week|month)|por\s*(?:d[ií]a|semana|mes|unidad))\b/.test(
+            after
+          );
+          const former = /(?:antes|original|was|regular|list price)\s*:?\s*$/.test(before);
+          out.push({ amount, code: currency, perUnit, former, index: found.index });
+        }
+      }
+      return out.sort((a, b) => a.index - b.index);
+    }
+    function bestVisiblePrice(element) {
+      if (!element || !element.isConnected) return null;
+      if (element.closest("#clplens-widget, .clplens-badge, [data-clplens-ignore]")) return null;
+      const raw = originalText(element);
+      if (!raw || raw.length > 650) return null;
+      const matches = matchesInText(raw);
+      if (!matches.length || matches.length > 6 || matches.every((m) => m.perUnit || m.former))
+        return null;
+      const score = (match) => (match.perUnit ? -100 : 0) + (match.former ? -60 : 0) + (cryptoCodes.includes(match.code) ? -5 : 0);
+      const chosen = [...matches].sort((a, b) => score(b) - score(a) || b.index - a.index)[0];
+      return chosen ? { amount: chosen.amount, code: chosen.code } : null;
+    }
+    function selectionLabel(raw) {
+      const lines = raw.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+      const at = lines.findIndex(
+        (line) => /^selected\s+(?:access|option|plan|duration|item|product)\b/i.test(line) || /^opci[oó]n\s+seleccionada\b/i.test(line)
+      );
+      if (at >= 0) {
+        const next = lines.slice(at + 1).find((line) => !matchesInText(line).length && line.length < 65);
+        return next || "Opcion seleccionada";
+      }
+      return "Precio seleccionado";
+    }
+    function selectedSummaryPrice() {
+      if (!document.body) return null;
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let text;
+      let scanned = 0;
+      while ((text = walker.nextNode()) && scanned++ < 12e3) {
+        if (!/^\s*(?:selected\s+(?:access|option|plan|duration|item|product)|opci[oó]n\s+seleccionada)\s*:?\s*$/i.test(
+          text.nodeValue || ""
+        ))
+          continue;
+        let element = text.parentElement;
+        for (let depth = 0; element && depth < 6; depth++, element = element.parentElement) {
+          if (element.closest("#clplens-widget, .clplens-badge")) break;
+          const content = originalText(element);
+          if (content.length > 420) break;
+          const price = bestVisiblePrice(element);
+          if (price) return { ...price, label: selectionLabel(content), source: "resumen" };
+        }
+      }
+      return null;
+    }
+    function productHeroPrice() {
+      const headings = [
+        ...document.querySelectorAll('main h1,article h1,[itemtype*="Product"] h1')
+      ].filter((element) => element.isConnected && element.getClientRects().length);
+      if (headings.length !== 1) return null;
+      let root = headings[0]?.parentElement ?? null;
+      for (let depth = 0; root && root !== document.body && depth < 5; depth++, root = root.parentElement) {
+        if (!root.querySelector('[class*="variant"],[id*="variant"],[role="option"],[data-variant]'))
+          continue;
+        const raw = originalText(root);
+        if (!raw) continue;
+        const lines = raw.split("\n").map((line) => line.trim());
+        const at = lines.findIndex(
+          (line) => /^(?:variant|variants|option|options|choose variant|select variant)$/i.test(line)
+        );
+        if (at < 1) continue;
+        const unique = new Map(
+          matchesInText(lines.slice(0, at).join("\n")).filter((match) => !match.former && !match.perUnit).map((match) => [match.code + ":" + match.amount, match])
+        );
+        if (unique.size !== 1) continue;
+        const price = [...unique.values()][0];
+        return price ? {
+          amount: price.amount,
+          code: price.code,
+          label: "Precio actual del producto",
+          source: "precio principal"
+        } : null;
+      }
+      return null;
+    }
+    function currentProductPrice() {
+      const selectors = [
+        '[data-testid="product-price"]',
+        '[data-testid="current-price"]',
+        "[data-price-current]",
+        '[data-price-role="current"]',
+        ".product__price",
+        ".product-price",
+        ".price--current",
+        '[itemprop="price"]'
+      ];
+      const results = /* @__PURE__ */ new Map();
+      let scanned = 0;
+      for (const selector of selectors) {
+        for (const element of document.querySelectorAll(selector)) {
+          if (++scanned > 90) break;
+          if (!element.isConnected || element.closest(
+            '#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"],del,s,strike,.price--old,.price--compare,.compare-at-price,[class*="variant"],[id*="variant"],[role="option"],[role="listbox"],form[action*="checkout"]'
+          ))
+            continue;
+          if (!element.getClientRects().length || getComputedStyle(element).visibility === "hidden")
+            continue;
+          const live = element.querySelector(".price--current,ins,[data-price-current]") || element;
+          const chosen = bestVisiblePrice(live);
+          if (!chosen) continue;
+          const key = chosen.code + ":" + chosen.amount;
+          results.set(key, {
+            ...chosen,
+            label: "Precio actual del producto",
+            source: "precio principal"
+          });
+        }
+        if (scanned > 90) break;
+      }
+      if (results.size === 1) return [...results.values()][0] || null;
+      if (results.size > 1) return null;
+      return productHeroPrice();
+    }
+    function sameMonetaryPrice(a, b) {
+      return !!a && !!b && a.code === b.code && Math.abs(a.amount - b.amount) < 1e-8;
+    }
+    function variantControl(target) {
+      if (!isElement(target) || target.closest(
+        '#clplens-widget,#moncevia-dollar-dialog,.clplens-badge,input,textarea,[contenteditable],a[href*="checkout"],form[action*="checkout"]'
+      ))
+        return null;
+      const control = target.closest(
+        '[data-variant],[data-product-option],[role="option"],[role="radio"],[aria-pressed],[aria-selected],[data-option-value],[class*="variant-card"],[class*="variant-option"],[class*="option-card"],button,label'
+      );
+      if (!control || control.matches('[disabled],[aria-disabled="true"]') || control.closest('header,nav,footer,[role="navigation"]'))
+        return null;
+      const name = (originalText(control) || control.getAttribute("aria-label") || "").trim();
+      if (forbiddenAction.test(name)) return null;
+      const hint = control.closest(
+        '[data-variant],[data-product-option],[class*="variant"],[id*="variant"],[class*="product-option"],[role="listbox"]'
+      );
+      return hint || (variantWords.test(name) ? control : null);
+    }
+    function unlabeledDollarPrice(target) {
+      if (options.dollarCurrencyForSite() || !isElement(target) || target.closest(
+        "#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, input, textarea, select, [contenteditable]"
+      ))
+        return null;
+      if (target.closest("a,button,form") && !variantControl(target)) return null;
+      let element = target;
+      for (let depth = 0; element && depth < 7 && element !== document.body; depth++, element = element.parentElement) {
+        const raw = originalText(element);
+        if (!raw || raw.length > 520) continue;
+        const matches = [...raw.matchAll(dollarRE)].filter(
+          (match) => !!match[1] && Number.isFinite(parseAmount2(match[1], "USD"))
+        );
+        if (matches.length !== 1 || matchesInText(raw).length) continue;
+        const priceText = matches[0]?.[1];
+        if (!priceText) continue;
+        const amount = parseAmount2(priceText, "USD");
+        const lines = raw.split("\n").map((line) => line.trim()).filter(Boolean);
+        const label = lines.find(
+          (line) => /\b(?:days?|weeks?|months?|lifetime|annual|year|plan|tier|license)\b/i.test(line) && !line.includes("$")
+        );
+        return {
+          amount,
+          code: null,
+          label: label || "Precio seleccionado",
+          source: "precio estático"
+        };
+      }
+      return null;
+    }
+    function tappedPrice(target) {
+      if (!isElement(target) || target.closest(
+        "#clplens-widget,.clplens-badge,[data-clplens-ignore],input,textarea,select,[contenteditable],form"
+      ))
+        return null;
+      const control = variantControl(target);
+      const actionable = target.closest('button,a,[role="button"]');
+      const actionLabel = actionable ? originalText(actionable).trim() : "";
+      if (actionable && forbiddenAction.test(actionLabel)) return null;
+      const boundedCard = actionable && !control ? actionable.closest(
+        'article,li,[data-product-id],[class*="product-card"],[class*="item-card"]'
+      ) : null;
+      if (actionable && !control && !boundedCard && !matchesInText(originalText(actionable)).length)
+        return null;
+      let element = target;
+      for (let depth = 0; element && depth < 8; depth++, element = element.parentElement) {
+        if (element === document.body) break;
+        if (boundedCard && !boundedCard.contains(element)) break;
+        if (control && element !== control && element.contains(control)) {
+          const otherOptions = element.querySelectorAll(
+            '[data-variant],[role="option"],[role="radio"]'
+          );
+          if (otherOptions.length > 1 || element !== control.parentElement && !/\b(?:variant|option|tier|plan|card)\b/i.test(String(element.className)))
+            continue;
+        }
+        const matches = matchesInText(originalText(element)).filter(
+          (match) => !match.perUnit && !match.former
+        );
+        const distinct = new Set(matches.map((match) => match.code + ":" + match.amount));
+        if (distinct.size > 1 && !control) continue;
+        const price = bestVisiblePrice(element);
+        if (price) {
+          const parts = originalText(element).split(/\n/).map((line) => line.trim()).filter(Boolean);
+          const label = parts.find(
+            (line) => /\b(?:key|plan|days?|weeks?|months?|lifetime|access)\b/i.test(line) && !matchesInText(line).length
+          );
+          return { ...price, label: label || "Precio tocado", source: "toque" };
+        }
+      }
+      return null;
+    }
+    return {
+      originalText,
+      matchesInText,
+      bestVisiblePrice,
+      selectedSummaryPrice,
+      currentProductPrice,
+      sameMonetaryPrice,
+      variantControl,
+      unlabeledDollarPrice,
+      tappedPrice
+    };
+  }
+
+  // src/detector/selection-scheduler.ts
+  function createSelectionScheduler({ run, allowed }) {
+    let debounceTimer;
+    const retries = /* @__PURE__ */ new Set();
+    function execute() {
+      if (allowed()) run();
+    }
+    function debounce(delay = 160) {
+      if (!allowed()) return;
+      if (debounceTimer !== void 0) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(
+        () => {
+          debounceTimer = void 0;
+          execute();
+        },
+        Math.max(0, delay)
+      );
+    }
+    function replaceRetries(delays) {
+      for (const timer of retries) clearTimeout(timer);
+      retries.clear();
+      if (!allowed()) return;
+      for (const delay of new Set(delays)) {
+        if (!Number.isFinite(delay) || delay < 0 || delay > 1e4) continue;
+        const timer = setTimeout(() => {
+          retries.delete(timer);
+          execute();
+        }, delay);
+        retries.add(timer);
+      }
+    }
+    function cancel() {
+      if (debounceTimer !== void 0) clearTimeout(debounceTimer);
+      debounceTimer = void 0;
+      for (const timer of retries) clearTimeout(timer);
+      retries.clear();
+    }
+    return { debounce, replaceRetries, cancel };
+  }
+
   // src/legacy/runtime.js
   (() => {
     "use strict";
@@ -506,7 +813,7 @@
     let widget, fab, panel, stateLabel, sampleLabel, coinsLabel, calcOutput, calcInput, calcSelect, targetSelect, calcSource;
     let compactCard, compareOutput, transferOutput, historyOutput, history = [], pickBtn, exactAmountInput, exactCurrencySelect, exactToggle;
     let pickerActive = false, flashTarget = null, flashTimer = null, pendingTab = "calculator";
-    let observer, timer, selectionTimer, tab = "calculator";
+    let observer, timer, tab = "calculator";
     let panelOpenTicket = 0;
     let settingsBankGroup = null;
     const verifyBoxes = /* @__PURE__ */ Object.create(null);
@@ -1068,164 +1375,26 @@
       renderCalc();
       if (tab === "history") renderHistory();
     }
-    function originalText(element) {
-      if (!element || (element.textContent || "").length > 1600) return "";
-      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-      const parts = [];
-      let text, count = 0;
-      while ((text = walker.nextNode()) && count++ < 120) {
-        if (text.parentElement?.closest('#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"]')) continue;
-        const str = (text.nodeValue || "").trim();
-        if (str) parts.push(str);
-      }
-      return parts.join("\n").slice(0, 650);
-    }
-    function matchesInText(rawText) {
-      const text = String(rawText || "").replace(/[\u00a0\u202f]/g, " ").slice(0, 650);
-      const out = [];
-      for (const [rx, isSuffix] of [[prefixRE, false], [suffixRE, true]]) {
-        rx.lastIndex = 0;
-        let m;
-        while (m = rx.exec(text)) {
-          const currency = isSuffix ? m[2].toUpperCase() : prefixCurrency(m[0].slice(0, m[0].indexOf(m[1])).trim());
-          if (!currency) continue;
-          const amount = parseAmount(m[1], currency);
-          if (!Number.isFinite(amount) || amount < (CRYPTOS.includes(currency) ? 1e-8 : 0.01)) continue;
-          const before = text.slice(Math.max(0, m.index - 18), m.index).toLowerCase();
-          const after = text.slice(m.index + m[0].length, m.index + m[0].length + 30).toLowerCase();
-          const perUnit = /^\s*(?:per\s*(?:day|week|month|unit)|\/\s*(?:day|week|month)|por\s*(?:d[ií]a|semana|mes|unidad))\b/.test(after);
-          const former = /(?:antes|original|was|regular|list price)\s*:?\s*$/.test(before);
-          out.push({ amount, code: currency, perUnit, former, index: m.index });
-        }
-      }
-      return out.sort((a, b) => a.index - b.index);
-    }
-    function bestVisiblePrice(element) {
-      if (!element || element.nodeType !== 1 || !element.isConnected) return null;
-      if (element.closest("#clplens-widget, .clplens-badge, [data-clplens-ignore]")) return null;
-      const raw = originalText(element);
-      if (!raw || raw.length > 650) return null;
-      const matches = matchesInText(raw);
-      if (!matches.length || matches.length > 6 || matches.every((m) => m.perUnit || m.former)) return null;
-      const chosen = [...matches].sort((a, b) => {
-        const score = (m) => (m.perUnit ? -100 : 0) + (m.former ? -60 : 0) + (m.code === "BTC" || m.code === "ETH" || m.code === "LTC" ? -5 : 0);
-        return score(b) - score(a) || b.index - a.index;
-      })[0];
-      return chosen ? { amount: chosen.amount, code: chosen.code } : null;
-    }
-    function selectionLabel(text) {
-      const lines = String(text || "").split(/\n+/).map((s) => s.trim()).filter(Boolean);
-      const idx = lines.findIndex((s) => /^selected\s+(?:access|option|plan|duration|item|product)\b/i.test(s) || /^opci[oó]n\s+seleccionada\b/i.test(s));
-      if (idx >= 0) {
-        const next = lines.slice(idx + 1).find((s) => !matchesInText(s).length && s.length < 65);
-        return next || "Opcion seleccionada";
-      }
-      return "Precio seleccionado";
-    }
-    function selectedSummaryPrice() {
-      const tree = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-      let text, scanned = 0;
-      while ((text = tree.nextNode()) && scanned++ < 12e3) {
-        if (!/^\s*(?:selected\s+(?:access|option|plan|duration|item|product)|opci[oó]n\s+seleccionada)\s*:?\s*$/i.test(text.nodeValue || "")) continue;
-        let el = text.parentElement;
-        for (let depth = 0; el && depth < 6; depth++, el = el.parentElement) {
-          if (el.closest("#clplens-widget, .clplens-badge")) break;
-          const content = originalText(el);
-          if (content.length > 420) break;
-          const price = bestVisiblePrice(el);
-          if (price) return { ...price, label: selectionLabel(content), source: "resumen" };
-        }
-      }
-      return null;
-    }
-    function currentProductPrice() {
-      const selectors = [
-        '[data-testid="product-price"]',
-        '[data-testid="current-price"]',
-        "[data-price-current]",
-        '[data-price-role="current"]',
-        ".product__price",
-        ".product-price",
-        ".price--current",
-        '[itemprop="price"]'
-      ];
-      const results = /* @__PURE__ */ new Map();
-      let scanned = 0;
-      for (const selector of selectors) {
-        for (const el of document.querySelectorAll(selector)) {
-          if (++scanned > 90) break;
-          if (!el.isConnected || el.closest(
-            '#clplens-widget,.clplens-badge,[hidden],[aria-hidden="true"],del,s,strike,.price--old,.price--compare,.compare-at-price,[class*="variant"],[id*="variant"],[role="option"],[role="listbox"],form[action*="checkout"]'
-          )) continue;
-          if (!el.getClientRects().length || getComputedStyle(el).visibility === "hidden") continue;
-          const live = el.querySelector(".price--current,ins,[data-price-current]") || el;
-          const chosen = bestVisiblePrice(live);
-          if (!chosen) continue;
-          const key = chosen.code + ":" + chosen.amount;
-          results.set(key, { ...chosen, label: "Precio actual del producto", source: "precio principal" });
-        }
-        if (scanned > 90) break;
-      }
-      if (results.size === 1) return [...results.values()][0];
-      if (results.size > 1) return null;
-      return productHeroPrice();
-    }
-    function productHeroPrice() {
-      const headings = [...document.querySelectorAll('main h1,article h1,[itemtype*="Product"] h1')].filter((el) => el.isConnected && el.getClientRects().length);
-      if (headings.length !== 1) return null;
-      let root = headings[0].parentElement;
-      for (let depth = 0; root && root !== document.body && depth < 5; depth++, root = root.parentElement) {
-        if (!root.querySelector('[class*="variant"],[id*="variant"],[role="option"],[data-variant]'))
-          continue;
-        const raw = originalText(root);
-        if (!raw) continue;
-        const lines = raw.split("\n").map((x) => x.trim());
-        const at = lines.findIndex((x) => /^(?:variant|variants|option|options|choose variant|select variant)$/i.test(x));
-        if (at < 1) continue;
-        const matches = matchesInText(lines.slice(0, at).join("\n")).filter((m) => !m.former && !m.perUnit);
-        const unique = new Map(matches.map((m) => [m.code + ":" + m.amount, m]));
-        if (unique.size !== 1) continue;
-        const price = [...unique.values()][0];
-        return { amount: price.amount, code: price.code, label: "Precio actual del producto", source: "precio principal" };
-      }
-      return null;
-    }
-    function sameMonetaryPrice(a, b) {
-      return !!a && !!b && a.code === b.code && Math.abs(a.amount - b.amount) < 1e-8;
-    }
-    function variantControl(target) {
-      if (!target || target.nodeType !== 1 || target.closest(
-        '#clplens-widget,#moncevia-dollar-dialog,.clplens-badge,input,textarea,[contenteditable],a[href*="checkout"],form[action*="checkout"]'
-      )) return null;
-      const control = target.closest(
-        '[data-variant],[data-product-option],[role="option"],[role="radio"],[aria-pressed],[aria-selected],[data-option-value],[class*="variant-card"],[class*="variant-option"],[class*="option-card"],button,label'
-      );
-      if (!control || control.matches('[disabled],[aria-disabled="true"]') || control.closest('header,nav,footer,[role="navigation"]')) return null;
-      const name = (originalText(control) || control.getAttribute("aria-label") || "").trim();
-      if (/^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(name)) return null;
-      const hint = control.closest(
-        '[data-variant],[data-product-option],[class*="variant"],[id*="variant"],[class*="product-option"],[role="listbox"]'
-      );
-      return hint || (/\b(?:days?|weeks?|months?|years?|lifetime|license|licen[cs]e|tier|plan|size|color|colour|medium|large|small|basic|standard|premium)\b/i.test(name) ? control : null);
-    }
-    function unlabeledDollarPrice(target) {
-      if (dollarCurrencyForSite() || !target || target.nodeType !== 1 || target.closest("#clplens-widget, #moncevia-dollar-dialog, .clplens-badge, input, textarea, select, [contenteditable]")) return null;
-      if (target.closest("a,button,form") && !variantControl(target)) return null;
-      const rx = new RegExp(String.raw`(?<![\p{L}\d])\$\s*(${figure})(?![\p{L}\d])`, "gu");
-      let el = target;
-      for (let depth = 0; el && depth < 7 && el !== document.body; depth++, el = el.parentElement) {
-        const raw = originalText(el);
-        if (!raw || raw.length > 520) continue;
-        const matches = [...raw.matchAll(rx)].filter((m) => Number.isFinite(parseAmount(m[1], "USD")));
-        if (matches.length !== 1) continue;
-        if (matchesInText(raw).length) continue;
-        const amount = parseAmount(matches[0][1], "USD");
-        const lines = raw.split("\n").map((x) => x.trim()).filter(Boolean);
-        const label = lines.find((x) => /\b(?:days?|weeks?|months?|lifetime|annual|year|plan|tier|license)\b/i.test(x) && !x.includes("$"));
-        return { amount, code: null, label: label || "Precio seleccionado", source: "precio estático" };
-      }
-      return null;
-    }
+    const variantDetector = createVariantDetector({
+      parseAmount,
+      prefixCurrency,
+      prefixRE,
+      suffixRE,
+      figure,
+      cryptoCodes: CRYPTOS,
+      dollarCurrencyForSite
+    });
+    const {
+      originalText,
+      matchesInText,
+      bestVisiblePrice,
+      selectedSummaryPrice,
+      currentProductPrice,
+      sameMonetaryPrice,
+      variantControl,
+      unlabeledDollarPrice,
+      tappedPrice
+    } = variantDetector;
     function selectPriceDirect(price) {
       if (!price || !SUPPORTED_CURRENCIES.includes(price.code)) return;
       manualOverride = false;
@@ -1315,36 +1484,6 @@
       document.body.append(overlay);
       choice.focus();
     }
-    function tappedPrice(target) {
-      if (!target || target.nodeType !== 1 || target.closest("#clplens-widget,.clplens-badge,[data-clplens-ignore],input,textarea,select,[contenteditable],form")) return null;
-      const control = variantControl(target);
-      const actionable = target.closest('button,a,[role="button"]');
-      const actionLabel = actionable && originalText(actionable).trim() || "";
-      if (actionable && /^(?:purchase|buy|checkout|cart|add to cart|help|faq|login|search|pay|submit|comprar|pagar|ayuda)\b/i.test(actionLabel))
-        return null;
-      const boundedCard = actionable && !control ? actionable.closest('article,li,[data-product-id],[class*="product-card"],[class*="item-card"]') : null;
-      if (actionable && !control && !boundedCard && !matchesInText(originalText(actionable)).length)
-        return null;
-      let el = target;
-      for (let depth = 0; el && depth < 8; depth++, el = el.parentElement) {
-        if (el === document.body) break;
-        if (boundedCard && !boundedCard.contains(el)) break;
-        if (control && el !== control && el.contains(control)) {
-          const otherOptions = el.querySelectorAll('[data-variant],[role="option"],[role="radio"]');
-          if (otherOptions.length > 1 || el !== control.parentElement && !/\b(?:variant|option|tier|plan|card)\b/i.test(String(el.className))) continue;
-        }
-        const matches = matchesInText(originalText(el)).filter((m) => !m.perUnit && !m.former);
-        const distinct = new Set(matches.map((m) => m.code + ":" + m.amount));
-        if (distinct.size > 1 && !control) continue;
-        const price = bestVisiblePrice(el);
-        if (price) {
-          const parts = originalText(el).split(/\n/).map((s) => s.trim()).filter(Boolean);
-          const label = parts.find((t) => /\b(?:key|plan|days?|weeks?|months?|lifetime|access)\b/i.test(t) && !matchesInText(t).length);
-          return { ...price, label: label || "Precio tocado", source: "toque" };
-        }
-      }
-      return null;
-    }
     function priceSignature(price) {
       return `${price.code}:${price.amount}:${price.label || ""}`;
     }
@@ -1416,10 +1555,12 @@
       }
       if (selected) applySelectedPrice(selected);
     }
+    const selectionScheduler = createSelectionScheduler({
+      run: () => syncSelectedPrice(),
+      allowed: () => settings.autoSyncSelection && isActive() && !manualOverride
+    });
     function scheduleSelectionSync(delay = 160) {
-      if (!settings.autoSyncSelection || manualOverride) return;
-      clearTimeout(selectionTimer);
-      selectionTimer = setTimeout(syncSelectedPrice, delay);
+      selectionScheduler.debounce(delay);
     }
     function pageClickCapture(event) {
       if (pickerActive) {
@@ -1479,14 +1620,14 @@
           pendingVariantChange = { before: before2, at: Date.now(), seq: ++clickSequence };
           updateSourceLabel();
           scheduleSelectionSync(100);
-          for (const delay of [380, 800, 1500, 2600]) setTimeout(syncSelectedPrice, delay);
+          selectionScheduler.replaceRetries([380, 800, 1500, 2600]);
           return;
         }
         const action = event.target.closest('button,[role="button"]');
         const quantityAction = action && (action.closest('.quantity,[data-quantity],[class*="quantity"]') || /^(?:plus|minus|increase|decrease|increment|decrement|qty)/i.test(action.id || "") || /^(?:\+|−|-)$/u.test((action.textContent || "").trim()));
         if (currentSelection || quantityAction) {
           scheduleSelectionSync(140);
-          setTimeout(syncSelectedPrice, 460);
+          selectionScheduler.replaceRetries([460]);
         }
         return;
       }
@@ -1496,7 +1637,7 @@
       pendingSelection = { price, before, at: Date.now(), seq: ++clickSequence };
       applySelectedPrice(price);
       scheduleSelectionSync(130);
-      for (const delay of [450, 1200, 2600]) setTimeout(syncSelectedPrice, delay);
+      selectionScheduler.replaceRetries([450, 1200, 2600]);
     }
     function pageChangeCapture(event) {
       if (!settings.autoSyncSelection || !isActive() || event.target.closest?.("#clplens-widget")) return;
@@ -1517,7 +1658,7 @@
       pendingSelection = null;
       pendingVariantChange = null;
       scheduleSelectionSync(180);
-      setTimeout(syncSelectedPrice, 500);
+      selectionScheduler.replaceRetries([500]);
     }
     function flashPrice(target) {
       if (flashTarget) flashTarget.classList.remove("clplens-price-flash");
@@ -1797,7 +1938,7 @@
       languageButton.type = "button";
       languageButton.className = "mv-lang-toggle";
       languageButton.addEventListener("click", () => switchLanguage(uiLanguage() === "es" ? "en" : "es"));
-      headerActions.append(languageButton, node("span", "mv-version", "v3.7.0"));
+      headerActions.append(languageButton, node("span", "mv-version", "v3.8.0"));
       titlebar.append(headerActions);
       header.append(titlebar);
       const status = node("div", "mv-status");
@@ -1883,12 +2024,14 @@
         manualOverride = true;
         pendingSelection = null;
         pendingVariantChange = null;
+        selectionScheduler.cancel();
         updateSourceLabel();
       });
       amountInput.addEventListener("input", () => {
         manualOverride = true;
         pendingSelection = null;
         pendingVariantChange = null;
+        selectionScheduler.cancel();
         settings.calcAmount = amountInput.value;
         updateSourceLabel();
         renderCalc();
@@ -2432,6 +2575,10 @@
       window.addEventListener("pageshow", syncRates);
       document.addEventListener("visibilitychange", syncRates);
       window.setInterval(syncRates, 10 * 6e4);
+      window.addEventListener("pagehide", () => {
+        selectionScheduler.cancel();
+        priceScanner.dispose();
+      }, { once: true });
       if (isActive()) void Promise.all([updateFX(false), updateCrypto(false)]);
     }
     boot();
