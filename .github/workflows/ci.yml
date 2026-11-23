@@ -36,6 +36,9 @@ jobs:
           python -m playwright install --with-deps chromium firefox webkit
       - name: Browser regression tests
         run: |
+          python tests/test_safari_bootstrap.py
+          MONCEVIA_TEST_BROWSER=firefox python tests/test_safari_bootstrap.py
+          MONCEVIA_TEST_BROWSER=webkit python tests/test_safari_bootstrap.py
           python tests/test_browser.py
           python tests/test_phase5_security.py
           python tests/test_ui_mobile.py
