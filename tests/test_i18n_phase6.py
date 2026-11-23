@@ -71,7 +71,7 @@ def run():
               arg=expected,timeout=8000)
             page.wait_for_function(
               "text => document.querySelector('#test-translation')?.textContent === text",
-              expected_text,timeout=8000)
+              arg=expected_text,timeout=8000)
             assert not errors, (engine,locale,errors)
             page.close()
         browser.close()
