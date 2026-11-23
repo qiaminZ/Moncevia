@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  clampFab,
-  fabBoundsForViewport,
-  normalizedFabPosition,
-} from '../../src/ui/fab-controller';
+import { clampFab, fabBoundsForViewport, normalizedFabPosition } from '../../src/ui/fab-controller';
 
 describe('floating launcher positioning', () => {
   it('preserves the original viewport margins', () => {

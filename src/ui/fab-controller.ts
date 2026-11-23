@@ -54,9 +54,11 @@ export function normalizedFabPosition(
   bounds: FabBounds,
 ): FabRelativePosition {
   return {
-    x: (clampFab(left, bounds.minX, bounds.maxX) - bounds.minX) /
+    x:
+      (clampFab(left, bounds.minX, bounds.maxX) - bounds.minX) /
       Math.max(1, bounds.maxX - bounds.minX),
-    y: (clampFab(top, bounds.minY, bounds.maxY) - bounds.minY) /
+    y:
+      (clampFab(top, bounds.minY, bounds.maxY) - bounds.minY) /
       Math.max(1, bounds.maxY - bounds.minY),
   };
 }
