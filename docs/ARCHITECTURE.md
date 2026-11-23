@@ -75,6 +75,8 @@ El compilador **no** ejecuta transacciones ni lee wallets. Las APIs públicas y 
 
 13. **Fase 13 (sin cambio de versión):** pruebas de estrés adicionales con 180 precios, ráfagas de mutaciones, límite de anotaciones, respeto de controles comerciales, formularios ocultos y bloqueo de contextos sensibles en Chromium/Firefox/WebKit. La certificación física no es sustituida por emulación.
 
+14. **Fase 14 (sin versión nueva):** auditoría reproducible de manifests, permisos, claves de red, paridad de motores, documentación de riesgos y matriz física pendiente. La etiqueta de estable queda bloqueada hasta completar las pruebas físicas y, cuando corresponda, firma/publicación en tiendas.
+
 No se afirma que toda la aplicación esté escrita en TypeScript mientras siga existiendo `src/legacy/runtime.js`. No se modifican tasas, comisiones ni permisos en esta fase.
 
 ## Distribución
