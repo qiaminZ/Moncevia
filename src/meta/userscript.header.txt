@@ -1,0 +1,23 @@
+// ==UserScript==
+// @name         Moncevia — Currency & Crypto Companion
+// @namespace    https://local.clplens.userscript/
+// @version      3.6.0
+// @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
+// @match        https://*/*
+// @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
+// @updateURL    https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
+// @noframes
+// @run-at       document-idle
+// @inject-into  content
+// @grant        GM.getValue
+// @grant        GM.setValue
+// @grant        GM.xmlHttpRequest
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
+// @connect      data-api.binance.vision
+// @connect      api.binance.com
+// @connect      open.er-api.com
+// @connect      api.coingecko.com
+// @connect      api.coinbase.com
+// ==/UserScript==
