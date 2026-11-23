@@ -33,7 +33,7 @@ const outputs = ['moncevia.user.js', 'extension/chromium/engine.js', 'extension/
 // Userscripts Safari checks this dedicated metadata-only endpoint for updates.
 // The installable payload remains moncevia.user.js (the downloadURL target).
 const metaPath = resolve(root, 'moncevia.meta.js');
-const metaScript = header + '\\n';
+const metaScript = header + '\n';
 if (checkOnly) {
   const existing = await readFile(metaPath, 'utf8');
   if (existing !== metaScript) {
