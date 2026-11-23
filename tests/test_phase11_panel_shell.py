@@ -31,7 +31,7 @@ def run():
                 try:
                     page.set_content(HTML)
                     page.evaluate(INIT)
-                    original_merchant = page.locator("#total").inner_text()
+                    original_merchant = page.locator("#total").evaluate("el => el.firstChild.nodeValue")
                     page.add_script_tag(content=SCRIPT)
                     fab = page.locator("#clplens-fab")
                     fab.wait_for(timeout=12000)
@@ -62,7 +62,7 @@ def run():
                     page.wait_for_function(
                         """() => document.getElementById('mv-tab-calculator')?.innerText.endsWith('Convert')"""
                     )
-                    assert page.locator("#total").inner_text() == original_merchant
+                    assert page.locator("#total").evaluate("el => el.firstChild.nodeValue") == original_merchant
                     assert page.locator("#clplens-panel .mv-titlebar h2").inner_text() == "Moncevia"
                     assert not errors, (engine, mobile, errors)
                 finally:
