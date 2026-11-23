@@ -1,6 +1,6 @@
 /** Canonical ISO-like currency identifiers used by Moncevia. */
-export const FIAT_CODES = ['USD','EUR','GBP','CAD','AUD','JPY','KRW','BRL','CNY'] as const;
-export const CRYPTO_LIST = ['BTC','ETH','LTC'] as const;
+export const FIAT_CODES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'KRW', 'BRL', 'CNY'] as const;
+export const CRYPTO_LIST = ['BTC', 'ETH', 'LTC'] as const;
 export const CRYPTO_CODES: ReadonlySet<string> = new Set(CRYPTO_LIST);
 export type FiatCurrency = (typeof FIAT_CODES)[number] | 'CLP';
 export type CryptoCurrency = (typeof CRYPTO_LIST)[number];

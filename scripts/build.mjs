@@ -29,11 +29,7 @@ if (!script.includes('clplens-fab') || !script.includes('parseAmount')) {
   throw new Error('Generated bundle is missing required runtime features');
 }
 
-const outputs = [
-  'moncevia.user.js',
-  'extension/chromium/engine.js',
-  'extension/firefox/engine.js',
-];
+const outputs = ['moncevia.user.js', 'extension/chromium/engine.js', 'extension/firefox/engine.js'];
 let mismatch = false;
 for (const file of outputs) {
   const path = resolve(root, file);
