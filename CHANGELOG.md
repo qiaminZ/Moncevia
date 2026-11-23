@@ -1,3 +1,13 @@
+## 3.13.0 / Desktop 0.9.0-beta — Phase 10: typed persistence and consent lifecycle
+
+- Extracted startup restoration and ordered settings/history writes to `src/platform/persistence-controller.ts`; preserved `clplens_v1`, `clplens_usd_rates_v1`, `clplens_crypto_rates_v2` and `clplens_history_v3`.
+- Restores storage keys independently so a corrupt or unavailable rate cache does not discard valid site consent, preferences or history.
+- Captures immutable snapshots before queuing asynchronous writes, preserving the user's update order across modern and legacy userscript managers.
+- Enforces durable opt-in: never activates an unapproved merchant site or requests public quotations until its permission was stored successfully. Failed writes restore in-memory consent and leave the prompt available.
+- Serializes explicit permission revocation after prior writes; a failed revocation does not reload the page or pretend permission was removed. Clear-history failure no longer falsely clears the visible history.
+- Adds Vitest fault-injection and sequence tests, plus Chromium/Firefox/WebKit integration checks on desktop and emulated mobile. No changes to exchange rates, fees, network hosts, checkout exclusions or browser permissions.
+- Physical Safari iOS, VoiceOver and Opera GX installation checks remain independent.
+
 ## 3.12.0 / Desktop 0.8.0-beta — Phase 9: typed GM storage and transport boundary
 
 - Extracted the modern/legacy userscript-manager adapter into strict `src/platform/gm-bridge.ts`: `GM.getValue`, `GM.setValue`, `GM.xmlHttpRequest`, `GM_getValue`, `GM_setValue`, and `GM_xmlhttpRequest`.
