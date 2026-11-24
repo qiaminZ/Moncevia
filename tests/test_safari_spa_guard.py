@@ -36,7 +36,7 @@ def setup(browser, host="shop.riftbot.org", mobile=False):
 def wait_badge(page, selector="#price"):
     page.wait_for_function(
         """sel => document.querySelector(sel + ' .clplens-badge')?.textContent?.startsWith('≈')""",
-        selector, timeout=14000,
+        arg=selector, timeout=14000,
     )
 
 
