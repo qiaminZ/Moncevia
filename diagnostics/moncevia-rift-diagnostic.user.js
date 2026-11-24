@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Moncevia RIFT - Diagnostico de Safari (temporal)
 // @namespace    https://github.com/qiaminZ/Moncevia/diagnostics
-// @version      1.0.0
+// @version      1.0.1
 // @description  Verifica si Safari Userscripts inyecta un script en la tienda RIFT; sin acceso a datos.
 // @match        https://shop.riftbot.org/*
+// @match        https://shop.riftbots.org/*
 // @match        https://riftbot.mysellauth.com/*
 // @noframes
+// @inject-into  content
 // @run-at       document-idle
 // @grant        none
 // ==/UserScript==
