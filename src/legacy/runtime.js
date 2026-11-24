@@ -55,8 +55,9 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   // Continue blocking any *visible* password input and restricted routes.
   const hasVisiblePasswordInput = () => [...document.querySelectorAll('input[type="password"]')]
     .some(input => {
-      if (!input.isConnected || !input.getClientRects().length ||
-          input.closest('[hidden],[inert],[aria-hidden="true"]')) return false;
+      // ARIA-hidden and inert are not visual hiding mechanisms. A password
+      // field that is still rendered must always suspend storefront scanning.
+      if (!input.isConnected || !input.getClientRects().length) return false;
       const style=getComputedStyle(input);
       return style.visibility !== 'hidden' && style.visibility !== 'collapse' &&
         style.display !== 'none';
