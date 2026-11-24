@@ -41,7 +41,7 @@ def run():
                     assert fab.get_attribute("aria-expanded") == "false"
                     assert page.locator("#clplens-widget style").count() == 0
                     assert page.locator("style[data-clplens='2']").count() == 1
-                    assert page.locator(".mv-version").inner_text() == "v3.15.1"
+                    assert page.locator(".mv-version").inner_text() == "v3.15.2"
                     assert page.locator(".mv-rates-disclosure").count() == 1
 
                     links = page.locator(".mv-rates-disclosure a")

@@ -1,3 +1,11 @@
+## RIFT — comprobación de Safari
+
+**Moncevia v3.15.2** reconoce una tienda aunque su código HTML incluya una **ventana de inicio de sesión cerrada**. Antes se bloqueaba todo el userscript por el simple hecho de existir un campo de contraseña oculto. La protección permanece activa si el formulario de contraseña está visible, y en rutas de login, cuenta, checkout o pago.
+
+En `https://shop.riftbot.org/` el dominio viene permitido inicialmente. En `https://riftbot.mysellauth.com/` y otros dominios nuevos primero debe aparecer **Moncevia · activar aquí**, y solo después del consentimiento persistido se habilitan el botón y las tasas. Si el navegador está mostrando un dominio distinto, revisa el **host exacto** que aparece en la barra de direcciones.
+
+Si Moncevia continúa ausente, utiliza el [userscript de diagnóstico de Safari](../diagnostics/moncevia-rift-diagnostic.user.js) **solo como prueba temporal** en el mismo dominio. Muestra localmente si el gestor inyectó un userscript y el dominio actual; no hace solicitudes ni lee/escribe preferencias. Si tampoco aparece su tarjeta, revisa permisos y carpeta de Userscripts antes de modificar el motor financiero.
+
 ## Safari iPhone/iPad — si Moncevia no aparece
 
 1. Comprueba en **Ajustes de iOS → Apps → Safari → Extensiones** que **Userscripts** esté habilitada y tenga permiso para el sitio. En Safari, abre el menú de extensiones, entra en **Userscripts** y verifica que `moncevia.user.js` figure activo; al editar o reemplazar archivos, abre de nuevo su panel para actualizar la lista.
