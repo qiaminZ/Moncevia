@@ -11,7 +11,7 @@ from test_browser import INIT, S
 SCRIPT = open(S, encoding="utf-8").read()
 
 HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
-<title>RIFT shop SPA</title></head><body>
+<title>RIFT shop SPA</title><style>.auth-closed{display:none}</style></head><body>
 <main><h1>RIFT</h1><article id="price">€9.99</article></main>
 <aside id="auth" hidden aria-hidden="true">
 <form><label>Password<input id="password" type="password"></label></form>
@@ -76,6 +76,29 @@ def test_spa_recovery(browser, engine, mobile):
             timeout=8000,
         )
         assert page.locator("#clplens-widget").is_visible()
+        wait_badge(page)
+
+        # Frameworks also toggle dialog visibility with only a CSS class:
+        # no nodes are added or removed during these transitions.
+        page.evaluate("""() => {
+          const auth=document.getElementById('auth');
+          auth.classList.add('auth-closed');
+          auth.hidden=false;
+          auth.removeAttribute('aria-hidden');
+        }""")
+        assert page.locator("#clplens-widget").is_visible()
+        page.evaluate("document.getElementById('auth').classList.remove('auth-closed')")
+        page.wait_for_function(
+            """() => document.getElementById('clplens-widget')?.style.display === 'none'""",
+            timeout=8000,
+        )
+        assert page.locator("#clplens-widget").is_hidden()
+        assert page.locator(".clplens-badge").count() == 0
+        page.evaluate("document.getElementById('auth').classList.add('auth-closed')")
+        page.wait_for_function(
+            """() => document.getElementById('clplens-widget')?.style.display !== 'none'""",
+            timeout=8000,
+        )
         wait_badge(page)
 
         # Simulate a SPA checkout route: no full reload and no DOM mutation is
