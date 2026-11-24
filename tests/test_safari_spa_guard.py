@@ -61,6 +61,7 @@ def test_spa_recovery(browser, engine, mobile):
             """() => document.getElementById('clplens-widget')?.style.display === 'none'""",
             timeout=8000,
         )
+        assert page.locator("#clplens-widget").is_hidden()
         assert page.locator(".clplens-badge").count() == 0
         assert page.locator("#price").evaluate("el => el.firstChild.nodeValue") == "€9.99"
 
@@ -74,6 +75,7 @@ def test_spa_recovery(browser, engine, mobile):
             """() => document.getElementById('clplens-widget')?.style.display !== 'none'""",
             timeout=8000,
         )
+        assert page.locator("#clplens-widget").is_visible()
         wait_badge(page)
 
         # Simulate a SPA checkout route: no full reload and no DOM mutation is
@@ -86,6 +88,7 @@ def test_spa_recovery(browser, engine, mobile):
             """() => document.getElementById('clplens-widget')?.style.display === 'none'""",
             timeout=8000,
         )
+        assert page.locator("#clplens-widget").is_hidden()
         assert page.locator(".clplens-badge").count() == 0
         page.evaluate("""() => {
           history.replaceState({}, '', '/products');
