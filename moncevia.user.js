@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.15.1
+// @version      3.15.2
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -1656,7 +1656,8 @@
         "login.microsoftonline.com"
       ];
       if (HOST.endsWith(".cl") || restricted.some(matchHost) || /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) || /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname)) return;
-      if (document.getElementById("clplens-widget") || document.querySelector('input[type="password"]')) return;
+      const hasVisiblePasswordInput = () => [...document.querySelectorAll('input[type="password"]')].some((input) => input.isConnected && input.getClientRects().length > 0 && getComputedStyle(input).visibility !== "hidden" && getComputedStyle(input).display !== "none");
+      if (document.getElementById("clplens-widget") || hasVisiblePasswordInput()) return;
       const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
       const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
       const FX_TTL = 12 * 36e5;
@@ -2457,7 +2458,7 @@
       function createUI() {
         stylesheet();
         const shell = createPanelShell({
-          version: "3.15.1",
+          version: "3.15.2",
           onLanguageToggle: () => switchLanguage(uiLanguage() === "es" ? "en" : "es")
         });
         widget = shell.widget;
