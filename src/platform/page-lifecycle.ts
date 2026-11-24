@@ -77,6 +77,9 @@ export function createPageLifecycle(options: PageLifecycleOptions) {
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pageshow', onPageShow);
     window.addEventListener('pagehide', suspend);
+    // Browser history navigation does not always mutate the document.
+    window.addEventListener('popstate', onRefresh);
+    window.addEventListener('hashchange', onRefresh);
     document.addEventListener('visibilitychange', onRefresh);
     interval = setInterval(onRefresh, options.refreshIntervalMs ?? 10 * 60_000);
   }
@@ -90,6 +93,8 @@ export function createPageLifecycle(options: PageLifecycleOptions) {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('pageshow', onPageShow);
     window.removeEventListener('pagehide', suspend);
+    window.removeEventListener('popstate', onRefresh);
+    window.removeEventListener('hashchange', onRefresh);
     document.removeEventListener('visibilitychange', onRefresh);
     if (interval !== undefined) clearInterval(interval);
     interval = undefined;
