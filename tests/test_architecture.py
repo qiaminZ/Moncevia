@@ -11,7 +11,7 @@ def test():
     header=(ROOT/'src/meta/userscript.header.txt').read_text().rstrip()
     assert (ROOT/'moncevia.meta.js').read_text()==header+'\n', 'Safari update metadata mismatch'
     assert b'// @updateURL    https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.meta.js' in script[:950]
-    assert b'// @version      3.15.1' in script[:900]
+    assert b'// @version      3.15.2' in script[:900]
     assert b'const HOST = location.hostname.toLowerCase()' in script
     assert b'.clplens-badge' in script, 'CSS must be embedded without external fetch'
     assert b'clplens-fab' in script
