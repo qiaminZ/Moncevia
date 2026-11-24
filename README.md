@@ -2,7 +2,7 @@
 
 **Currency & Crypto Companion** — conversor de divisas y criptomonedas para navegadores, con estimaciones en pesos chilenos (CLP).
 
-**Versión:** userscript **v3.15.2** · extensiones para Chromium y Firefox **v0.11.2-beta**.
+**Versión:** userscript **v3.15.3** · extensiones para Chromium y Firefox **v0.11.3-beta**.
 
 Moncevia reconoce precios en páginas compatibles, permite convertir entre monedas y ayuda a estimar costos de pagos con criptomonedas. **Es una herramienta informativa: no compra, vende ni transfiere fondos, y no sustituye el importe final indicado por el comercio o el exchange.**
 
