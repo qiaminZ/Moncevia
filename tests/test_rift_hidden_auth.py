@@ -62,6 +62,10 @@ def exercise(browser, engine: str, mobile: bool, host: str, login: str,
                 text: el.textContent
             })""")
             assert merchant["first"] == "€9.99", (engine, mobile, host, path, merchant)
+            page.wait_for_function(
+                "() => document.querySelector('#price .clplens-badge')?.textContent?.startsWith('≈')",
+                timeout=12000,
+            )
         elif expect == "consent":
             page.locator("#moncevia-optin").wait_for(timeout=12000)
             assert page.locator("#clplens-widget").count() == 0
@@ -72,6 +76,10 @@ def exercise(browser, engine: str, mobile: bool, host: str, login: str,
                 window._persist.clplens_v1.allowedSites.includes(host)
             """, host)
             page.wait_for_function("() => window._requests.length > 0", timeout=12000)
+            page.wait_for_function(
+                "() => document.querySelector('#price .clplens-badge')?.textContent?.startsWith('≈')",
+                timeout=12000,
+            )
         else:
             page.wait_for_timeout(250)
             assert page.locator("#clplens-fab,#clplens-widget,#moncevia-optin").count() == 0
