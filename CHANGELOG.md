@@ -6,7 +6,7 @@
 - Observe document element rather than the replaceable body, so React-style storefront body replacement does not strand the runtime.
 - Handle browser history `popstate` / `hashchange` events in the typed lifecycle and unregister them during disposal.
 - Make consent opt-in fail closed if a storefront navigates into checkout before the user clicks; re-check the route after asynchronous storage restores.
-- Treat password fields within hidden, inert, or ARIA-hidden containers as inactive, while continuing to block visible authentication and protected financial routes.
+- Distinguish genuinely invisible password fields from rendered ones: ARIA-hidden or inert attributes alone never override protection when the credential field remains visible.
 - Add six desktop/mobile integration flows across Chromium, Firefox and WebKit for login modal open/close, checkout history navigation, BODY replacement and consent isolation. All rates are mocked; no purchases or account access.
 - No additional network hosts, browser permissions, sensitive data collection, or change to financial conversion formulas. Physical Safari on iOS remains unverified.
 
