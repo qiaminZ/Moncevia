@@ -1137,7 +1137,10 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     const sensitive=isSensitiveContext();
     if (sensitive === sensitivePaused) return;
     sensitivePaused=sensitive;
-    widget.style.display=sensitive?'none':'';
+    // The panel's CSS uses "all:initial!important"; hiding must also be
+    // inline !important or Safari will keep the launcher visible on checkout.
+    if (sensitive) widget.style.setProperty('display','none','important');
+    else widget.style.removeProperty('display');
     if (sensitive) {
       if (pickerActive) stopPicker();
       panel.hidden=true;
