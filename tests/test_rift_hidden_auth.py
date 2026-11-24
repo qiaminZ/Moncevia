@@ -27,7 +27,7 @@ VISIBLE_LOGIN = """<section aria-label="account login">
 
 def page_html(login: str) -> str:
     return (
-        "<!doctype html><html lang='en'><head><title>RIFT Store</title></head>"
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'><title>RIFT Store</title></head>"
         "<body><main><h1>RIFT</h1><article id='price'>€9.99</article></main>"
         + login + "</body></html>"
     )
@@ -46,7 +46,7 @@ def exercise(browser, engine: str, mobile: bool, host: str, login: str,
         # Network is entirely local: the host and pathname are preserved.
         url = "https://" + host + path
         page.route("**/*", lambda route: route.fulfill(
-            status=200, content_type="text/html", body=page_html(login)
+            status=200, content_type="text/html; charset=utf-8", body=page_html(login)
         ))
         page.goto(url, wait_until="domcontentloaded")
         page.evaluate(INIT)
