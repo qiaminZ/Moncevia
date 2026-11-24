@@ -1,6 +1,6 @@
 # Moncevia — Release readiness and risk assessment
 
-**Target code baseline:** userscript v3.15.1; Chromium/Firefox native extension 0.11.1-beta.
+**Target code baseline:** userscript v3.15.2; Chromium/Firefox native extension 0.11.2-beta.
 **Distribution status:** BETA / NOT STABLE / NOT STORE-APPROVED.
 **Approval status:** NOT CERTIFIED on physical devices.
 
@@ -53,7 +53,7 @@ See QA_DEVICE_MATRIX.md for steps, evidence requirements and exit criteria.
 ## Release decision
 
 Publish beta source and reviewed build artifacts only after CI passes on the
-exact final commit. Keep extension version 0.11.1-beta and do not label the
+exact final commit. Keep extension version 0.11.2-beta and do not label the
 project as fully stable, physically certified, or add-on-store approved until
 all mandatory physical and distribution checks have real evidence.
 
