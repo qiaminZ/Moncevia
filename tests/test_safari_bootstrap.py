@@ -34,9 +34,12 @@ def exercise(browser, engine, mobile: bool, authorized: bool) -> None:
         # An injection while BODY is absent used to return permanently, leaving
         # no opt-in and no launcher even once the page became ready.
         page.evaluate("document.body.remove()")
-        page.add_script_tag(content=SCRIPT if authorized else SCRIPT.replace(
+        payload = SCRIPT if authorized else SCRIPT.replace(
             "const HOST = 'shop.riftbot.org';", "const HOST = 'new.example';"
-        ))
+        )
+        # Concurrent injections before BODY must still yield a single runtime.
+        page.add_script_tag(content=payload)
+        page.add_script_tag(content=payload)
         assert page.locator("#clplens-fab,#moncevia-optin").count() == 0
         assert page.evaluate("window._requests.length") == 0
         page.evaluate("""() => {
@@ -55,6 +58,10 @@ def exercise(browser, engine, mobile: bool, authorized: bool) -> None:
         else:
             consent = page.locator("#moncevia-optin")
             consent.wait_for(timeout=14000)
+            page.wait_for_timeout(300)
+            assert consent.count() == 1
+            page.add_script_tag(content=payload)
+            assert consent.count() == 1
             assert page.locator("#clplens-widget").count() == 0
             assert page.evaluate("window._requests.length") == 0
             consent.click()
