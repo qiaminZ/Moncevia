@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moncevia — Currency & Crypto Companion
 // @namespace    https://local.clplens.userscript/
-// @version      3.15.2
+// @version      3.15.3
 // @description  Conversor de monedas y criptomonedas para Safari, Firefox y navegadores Chromium compatibles (PC y Android).
 // @match        https://*/*
 // @downloadURL  https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js
@@ -949,7 +949,15 @@
     });
     function observe() {
       if (!options.root.isConnected) return;
-      observer.observe(options.root, { childList: true, subtree: true, characterData: true });
+      observer.observe(options.root, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        // Most storefront login dialogs open by toggling CSS classes or attributes
+        // without adding nodes. Keep the sensitive-context guard in sync.
+        attributes: true,
+        attributeFilter: ["hidden", "style", "aria-hidden", "inert", "class", "open", "data-state"]
+      });
     }
     function onScroll() {
       if (!suspended) options.onScroll();
@@ -985,6 +993,8 @@
       window.addEventListener("scroll", onScroll, { passive: true });
       window.addEventListener("pageshow", onPageShow);
       window.addEventListener("pagehide", suspend);
+      window.addEventListener("popstate", onRefresh);
+      window.addEventListener("hashchange", onRefresh);
       document.addEventListener("visibilitychange", onRefresh);
       interval = setInterval(onRefresh, options.refreshIntervalMs ?? 10 * 6e4);
     }
@@ -997,6 +1007,8 @@
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("pageshow", onPageShow);
       window.removeEventListener("pagehide", suspend);
+      window.removeEventListener("popstate", onRefresh);
+      window.removeEventListener("hashchange", onRefresh);
       document.removeEventListener("visibilitychange", onRefresh);
       if (interval !== void 0) clearInterval(interval);
       interval = void 0;
@@ -1655,9 +1667,15 @@
         "accounts.google.com",
         "login.microsoftonline.com"
       ];
-      if (HOST.endsWith(".cl") || restricted.some(matchHost) || /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) || /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname)) return;
-      const hasVisiblePasswordInput = () => [...document.querySelectorAll('input[type="password"]')].some((input) => input.isConnected && input.getClientRects().length > 0 && getComputedStyle(input).visibility !== "hidden" && getComputedStyle(input).display !== "none");
-      if (document.getElementById("clplens-widget") || hasVisiblePasswordInput()) return;
+      const isProtectedRoute = () => /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname);
+      if (HOST.endsWith(".cl") || restricted.some(matchHost) || /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) || isProtectedRoute()) return;
+      const hasVisiblePasswordInput = () => [...document.querySelectorAll('input[type="password"]')].some((input) => {
+        if (!input.isConnected || !input.getClientRects().length) return false;
+        const style = getComputedStyle(input);
+        return style.visibility !== "hidden" && style.visibility !== "collapse" && style.display !== "none";
+      });
+      const isSensitiveContext = () => isProtectedRoute() || hasVisiblePasswordInput();
+      if (document.getElementById("clplens-widget") || isSensitiveContext()) return;
       const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
       const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
       const FX_TTL = 12 * 36e5;
@@ -1758,7 +1776,7 @@
       const percent = (v) => Math.max(0, Math.min(30, Number(v) || 0));
       const validPositive = (n) => Number.isFinite(Number(n)) && Number(n) > 0;
       const isAuthorized = () => settings.allowedSites.includes(HOST);
-      const isActive = () => isAuthorized() && settings.enabled && !settings.disabledSites.includes(HOST);
+      const isActive = () => isAuthorized() && settings.enabled && !settings.disabledSites.includes(HOST) && !isSensitiveContext();
       const inDate2 = (obj, time) => obj && Number.isFinite(obj.fetchedAt) && Date.now() - obj.fetchedAt >= 0 && Date.now() - obj.fetchedAt < time;
       const conversion = () => createConversionEngine({ settings, fx, crypto, now: Date.now() });
       const activeCrypto = () => conversion().activeCrypto();
@@ -2458,7 +2476,7 @@
       function createUI() {
         stylesheet();
         const shell = createPanelShell({
-          version: "3.15.2",
+          version: "3.15.3",
           onLanguageToggle: () => switchLanguage(uiLanguage() === "es" ? "en" : "es")
         });
         widget = shell.widget;
@@ -2995,6 +3013,7 @@
         fx = restored.fx;
         history = restored.history;
         crypto = restored.crypto;
+        if (isSensitiveContext()) return;
         if (!isAuthorized()) {
           const opt = node("button", "", "Moncevia · activar aquí");
           opt.id = "moncevia-optin";
@@ -3004,6 +3023,10 @@
           Object.assign(opt.style, { position: "fixed", bottom: "max(12px,env(safe-area-inset-bottom))", right: "10px", zIndex: "2147483645", font: "12px system-ui", color: "#e2e8f0", background: "#1e293b", padding: "9px 11px", border: "1px solid #64748b", borderRadius: "18px", opacity: "0.85" });
           opt.addEventListener("click", async () => {
             if (opt.disabled) return;
+            if (isSensitiveContext()) {
+              opt.remove();
+              return;
+            }
             opt.disabled = true;
             const previousAllowed = settings.allowedSites;
             settings.allowedSites = [.../* @__PURE__ */ new Set([...settings.allowedSites, HOST])];
@@ -3021,21 +3044,51 @@
         }
         startRuntime();
       }
+      let sensitivePaused = false;
+      function syncSiteVisibility() {
+        if (!widget || !document.body) return;
+        if (!widget.isConnected) document.body.append(widget);
+        const sensitive = isSensitiveContext();
+        if (sensitive === sensitivePaused) return;
+        sensitivePaused = sensitive;
+        if (sensitive) widget.style.setProperty("display", "none", "important");
+        else widget.style.removeProperty("display");
+        if (sensitive) {
+          if (pickerActive) stopPicker();
+          panel.hidden = true;
+          priceScanner.dispose();
+          selectionScheduler.cancel();
+          document.querySelectorAll('.clplens-badge[data-clplens-badge="2"]').forEach((badge) => badge.remove());
+        } else if (isActive()) {
+          refresh();
+          reScan(true);
+          scheduleSelectionSync(180);
+        }
+      }
       function startRuntime() {
-        if (document.getElementById("clplens-widget")) return;
+        if (document.getElementById("clplens-widget") || isSensitiveContext()) return;
         createUI();
         scan();
         renderHistory();
         renderCompact();
         const lifecycle = createPageLifecycle({
-          root: document.body,
+          root: document.documentElement,
           isOwnMutation: ownMutation,
           onMutation: () => {
-            reScan();
-            scheduleSelectionSync(160);
+            syncSiteVisibility();
+            if (isActive()) {
+              reScan();
+              scheduleSelectionSync(160);
+            }
           },
-          onClick: pageClickCapture,
-          onChange: pageChangeCapture,
+          onClick: (event) => {
+            pageClickCapture(event);
+            queueMicrotask(syncSiteVisibility);
+          },
+          onChange: (event) => {
+            pageChangeCapture(event);
+            queueMicrotask(syncSiteVisibility);
+          },
           onKeydown: (event) => {
             if (pickerActive && event.key === "Escape") {
               stopPicker();
@@ -3048,8 +3101,12 @@
               renderCompact();
             }
           },
-          onScroll: () => reScan(),
+          onScroll: () => {
+            syncSiteVisibility();
+            if (isActive()) reScan();
+          },
           onRefresh: () => {
+            syncSiteVisibility();
             if (document.visibilityState === "visible" && isActive()) {
               void Promise.all([updateFX(false), updateCrypto(false)]);
               refresh();
@@ -3061,7 +3118,10 @@
             priceScanner.dispose();
             uiLocalizer.stop();
           },
-          onResume: () => uiLocalizer.watch()
+          onResume: () => {
+            uiLocalizer.watch();
+            syncSiteVisibility();
+          }
         });
         lifecycle.start();
         scheduleSelectionSync(180);

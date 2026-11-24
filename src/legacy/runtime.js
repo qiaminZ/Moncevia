@@ -45,17 +45,25 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     'mercadopago.cl','mercadopago.com','webpay.cl','transbank.cl',
     'appleid.apple.com','accounts.google.com','login.microsoftonline.com'
   ];
+  const isProtectedRoute = () =>
+    /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname);
   if (HOST.endsWith('.cl') || restricted.some(matchHost) ||
       /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) ||
-      /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname)) return;
+      isProtectedRoute()) return;
   // Stores commonly pre-render a CLOSED login dialog. Its hidden password
   // field is not evidence that the storefront itself is a login page.
   // Continue blocking any *visible* password input and restricted routes.
   const hasVisiblePasswordInput = () => [...document.querySelectorAll('input[type="password"]')]
-    .some(input => input.isConnected && input.getClientRects().length > 0 &&
-      getComputedStyle(input).visibility !== 'hidden' &&
-      getComputedStyle(input).display !== 'none');
-  if (document.getElementById('clplens-widget') || hasVisiblePasswordInput()) return;
+    .some(input => {
+      // ARIA-hidden and inert are not visual hiding mechanisms. A password
+      // field that is still rendered must always suspend storefront scanning.
+      if (!input.isConnected || !input.getClientRects().length) return false;
+      const style=getComputedStyle(input);
+      return style.visibility !== 'hidden' && style.visibility !== 'collapse' &&
+        style.display !== 'none';
+    });
+  const isSensitiveContext = () => isProtectedRoute() || hasVisiblePasswordInput();
+  if (document.getElementById('clplens-widget') || isSensitiveContext()) return;
 
   const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
   const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
@@ -127,7 +135,8 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   const percent = v => Math.max(0, Math.min(30, Number(v) || 0));
   const validPositive = n => Number.isFinite(Number(n)) && Number(n) > 0;
   const isAuthorized = () => settings.allowedSites.includes(HOST);
-  const isActive = () => isAuthorized() && settings.enabled && !settings.disabledSites.includes(HOST);
+  const isActive = () => isAuthorized() && settings.enabled &&
+    !settings.disabledSites.includes(HOST) && !isSensitiveContext();
   const inDate = (obj, time) => obj && Number.isFinite(obj.fetchedAt) && Date.now() - obj.fetchedAt >= 0 && Date.now() - obj.fetchedAt < time;
   // Rate calculations are pure, typed and receive a fresh immutable state snapshot.
   const conversion = () => createConversionEngine({ settings, fx, crypto, now: Date.now() });
@@ -722,7 +731,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   function createUI() {
     stylesheet();
     const shell=createPanelShell({
-      version:'3.15.2',
+      version:'3.15.3',
       onLanguageToggle:()=>switchLanguage(uiLanguage()==='es'?'en':'es')
     });
     widget=shell.widget;fab=shell.fab;panel=shell.panel;
@@ -1091,6 +1100,8 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   async function boot() {
     const restored=await persistence.load();
     settings=restored.settings;fx=restored.fx;history=restored.history;crypto=restored.crypto;
+    // Auth / checkout may have replaced the initial storefront while storage loaded.
+    if (isSensitiveContext()) return;
     // Solo el dominio explícitamente autorizado recibe escaneo, panel completo o peticiones de FX.
     if (!isAuthorized()) {
       const opt=node('button','','Moncevia · activar aquí');
@@ -1100,6 +1111,8 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
       Object.assign(opt.style,{position:'fixed',bottom:'max(12px,env(safe-area-inset-bottom))',right:'10px',zIndex:'2147483645',font:'12px system-ui',color:'#e2e8f0',background:'#1e293b',padding:'9px 11px',border:'1px solid #64748b',borderRadius:'18px',opacity:'0.85'});
       opt.addEventListener('click',async()=>{
         if (opt.disabled) return;
+        // A single-page app may navigate into authentication without reloading.
+        if (isSensitiveContext()) { opt.remove(); return; }
         opt.disabled=true;
         const previousAllowed=settings.allowedSites;
         settings.allowedSites=[...new Set([...settings.allowedSites,HOST])];
@@ -1117,15 +1130,41 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     }
     startRuntime();
   }
+  let sensitivePaused = false;
+  function syncSiteVisibility() {
+    if (!widget || !document.body) return;
+    // RIFT-like single-page apps can replace BODY without a full navigation.
+    if (!widget.isConnected) document.body.append(widget);
+    const sensitive=isSensitiveContext();
+    if (sensitive === sensitivePaused) return;
+    sensitivePaused=sensitive;
+    // The panel's CSS uses "all:initial!important"; hiding must also be
+    // inline !important or Safari will keep the launcher visible on checkout.
+    if (sensitive) widget.style.setProperty('display','none','important');
+    else widget.style.removeProperty('display');
+    if (sensitive) {
+      if (pickerActive) stopPicker();
+      panel.hidden=true;
+      priceScanner.dispose();
+      selectionScheduler.cancel();
+      document.querySelectorAll('.clplens-badge[data-clplens-badge="2"]')
+        .forEach(badge=>badge.remove());
+    } else if (isActive()) {
+      refresh();reScan(true);scheduleSelectionSync(180);
+    }
+  }
   function startRuntime() {
-    if (document.getElementById('clplens-widget')) return;
+    if (document.getElementById('clplens-widget') || isSensitiveContext()) return;
     createUI(); scan();renderHistory();renderCompact();
     const lifecycle=createPageLifecycle({
-      root:document.body,
+      root:document.documentElement,
       isOwnMutation:ownMutation,
-      onMutation:()=>{reScan();scheduleSelectionSync(160);},
-      onClick:pageClickCapture,
-      onChange:pageChangeCapture,
+      onMutation:()=>{
+        syncSiteVisibility();
+        if (isActive()) {reScan();scheduleSelectionSync(160);}
+      },
+      onClick:event=>{pageClickCapture(event);queueMicrotask(syncSiteVisibility);},
+      onChange:event=>{pageChangeCapture(event);queueMicrotask(syncSiteVisibility);},
       onKeydown:event=>{
         if(pickerActive && event.key==='Escape'){
           stopPicker();panel.hidden=false;refresh();
@@ -1134,15 +1173,16 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
           panel.hidden=true;fab.focus();renderCompact();
         }
       },
-      onScroll:()=>reScan(),
+      onScroll:()=>{syncSiteVisibility();if(isActive()) reScan();},
       onRefresh:()=>{
+        syncSiteVisibility();
         if(document.visibilityState==='visible' && isActive()){
           void Promise.all([updateFX(false),updateCrypto(false)]);
           refresh();reScan(true);
         }
       },
       onSuspend:()=>{selectionScheduler.cancel();priceScanner.dispose();uiLocalizer.stop();},
-      onResume:()=>uiLocalizer.watch()
+      onResume:()=>{uiLocalizer.watch();syncSiteVisibility();}
     });
     lifecycle.start();
     scheduleSelectionSync(180);

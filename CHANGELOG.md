@@ -1,3 +1,15 @@
+## 3.15.3 / Desktop 0.11.3-beta — Final Safari / RIFT SPA audit
+
+- Re-check authentication and checkout context after dynamic navigation; prevent the launcher and price annotations from remaining on sensitive screens in single-page storefronts.
+- Hide the widget with inline `display:none!important` to override the existing component reset CSS while a visible password form or protected checkout route is active.
+- Resume the same widget and price scanning after a protected screen closes or the user returns to a non-sensitive store route; preserve the original merchant price.
+- Observe document element rather than the replaceable body, so React-style storefront body replacement does not strand the runtime.
+- Handle browser history `popstate` / `hashchange` events in the typed lifecycle and unregister them during disposal.
+- Make consent opt-in fail closed if a storefront navigates into checkout before the user clicks; re-check the route after asynchronous storage restores.
+- Distinguish genuinely invisible password fields from rendered ones: ARIA-hidden or inert attributes alone never override protection when the credential field remains visible.
+- Add six desktop/mobile integration flows across Chromium, Firefox and WebKit for login modal open/close, checkout history navigation, BODY replacement and consent isolation. All rates are mocked; no purchases or account access.
+- No additional network hosts, browser permissions, sensitive data collection, or change to financial conversion formulas. Physical Safari on iOS remains unverified.
+
 ## 3.15.2 / Desktop 0.11.2-beta — RIFT storefront sign-in isolation
 
 - Fixed a global password-field gate that silently disabled the entire userscript when a storefront rendered an **inactive hidden login form** in its DOM.

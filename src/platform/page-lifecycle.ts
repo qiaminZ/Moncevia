@@ -36,7 +36,15 @@ export function createPageLifecycle(options: PageLifecycleOptions) {
 
   function observe(): void {
     if (!options.root.isConnected) return;
-    observer.observe(options.root, { childList: true, subtree: true, characterData: true });
+    observer.observe(options.root, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      // Most storefront login dialogs open by toggling CSS classes or attributes
+      // without adding nodes. Keep the sensitive-context guard in sync.
+      attributes: true,
+      attributeFilter: ['hidden', 'style', 'aria-hidden', 'inert', 'class', 'open', 'data-state'],
+    });
   }
 
   function onScroll(): void {
@@ -77,6 +85,9 @@ export function createPageLifecycle(options: PageLifecycleOptions) {
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pageshow', onPageShow);
     window.addEventListener('pagehide', suspend);
+    // Browser history navigation does not always mutate the document.
+    window.addEventListener('popstate', onRefresh);
+    window.addEventListener('hashchange', onRefresh);
     document.addEventListener('visibilitychange', onRefresh);
     interval = setInterval(onRefresh, options.refreshIntervalMs ?? 10 * 60_000);
   }
@@ -90,6 +101,8 @@ export function createPageLifecycle(options: PageLifecycleOptions) {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('pageshow', onPageShow);
     window.removeEventListener('pagehide', suspend);
+    window.removeEventListener('popstate', onRefresh);
+    window.removeEventListener('hashchange', onRefresh);
     document.removeEventListener('visibilitychange', onRefresh);
     if (interval !== undefined) clearInterval(interval);
     interval = undefined;
