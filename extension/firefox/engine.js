@@ -1670,7 +1670,7 @@
       const isProtectedRoute = () => /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname);
       if (HOST.endsWith(".cl") || restricted.some(matchHost) || /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) || isProtectedRoute()) return;
       const hasVisiblePasswordInput = () => [...document.querySelectorAll('input[type="password"]')].some((input) => {
-        if (!input.isConnected || !input.getClientRects().length || input.closest('[hidden],[inert],[aria-hidden="true"]')) return false;
+        if (!input.isConnected || !input.getClientRects().length) return false;
         const style = getComputedStyle(input);
         return style.visibility !== "hidden" && style.visibility !== "collapse" && style.display !== "none";
       });
