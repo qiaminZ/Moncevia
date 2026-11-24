@@ -55,7 +55,8 @@ def test_spa_recovery(browser, engine, mobile):
         page.evaluate("""() => {
           const auth=document.getElementById('auth');
           auth.hidden=false;
-          auth.removeAttribute('aria-hidden');
+          // ARIA-hidden changes screen-reader exposure, not visual visibility.
+          // Keep aria-hidden=true so the guard must use the rendered password.
         }""")
         page.wait_for_function(
             """() => document.getElementById('clplens-widget')?.style.display === 'none'""",
@@ -146,6 +147,22 @@ def test_spa_recovery(browser, engine, mobile):
         page.close()
 
 
+def test_visible_aria_hidden_password_blocks(browser, engine, mobile):
+    page = setup(browser, mobile=mobile)
+    try:
+        page.evaluate("""() => {
+          const auth=document.getElementById('auth');
+          auth.hidden=false;
+          auth.setAttribute('aria-hidden','true');
+        }""")
+        page.add_script_tag(content=SCRIPT)
+        page.wait_for_timeout(350)
+        assert page.locator("#clplens-widget,#clplens-fab").count() == 0
+        assert page.evaluate("window._requests.length") == 0
+    finally:
+        page.close()
+
+
 def test_consent_after_spa_checkout(browser, engine, mobile):
     page = setup(browser, host="riftbot.mysellauth.com", mobile=mobile)
     errors = []
@@ -182,6 +199,7 @@ def run():
         try:
             for mobile in (False, True):
                 test_spa_recovery(browser, engine, mobile)
+                test_visible_aria_hidden_password_blocks(browser, engine, mobile)
                 test_consent_after_spa_checkout(browser, engine, mobile)
         finally:
             browser.close()
