@@ -1,3 +1,12 @@
+## 3.15.2 / Desktop 0.11.2-beta — RIFT storefront sign-in isolation
+
+- Fixed a global password-field gate that silently disabled the entire userscript when a storefront rendered an **inactive hidden login form** in its DOM.
+- Actual visible login fields, authentication/checkout routes, financial websites and domain-specific consent restrictions remain blocked. No access to credentials, payments or account data.
+- Added true-host route-intercepted Chromium/Firefox/WebKit regressions for `shop.riftbot.org` and `riftbot.mysellauth.com` (desktop/mobile): hidden login can coexist with merchant prices, but alternative storefront domains still require explicit permission.
+- Added a temporary, site-restricted no-grant Safari injection diagnostic; it performs no requests and reads no personal data.
+- The same build generates Safari userscript, Safari update metadata and both native extension engines; no external API, quote validation or financial calculation change.
+- Physical Safari iPhone behavior remains unverified until real-device testing.
+
 ## 3.15.1 / Desktop 0.11.1-beta — Safari Userscripts startup and update metadata
 
 - Userscripts for Safari now checks a dedicated `moncevia.meta.js` for `@updateURL` and downloads the actual `moncevia.user.js`; the metadata-only file is generated from the same source header and audited in CI.
