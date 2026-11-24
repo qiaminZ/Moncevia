@@ -1,3 +1,10 @@
+## 3.15.3 / Desktop 0.11.3-beta — Safari preflight
+
+- Prevent duplicate site authorization controls when the userscript is injected more than once, including concurrent startup before BODY exists.
+- Recheck the visible password gate after asynchronous storage restoration.
+- Extend Safari-like bootstrap tests for duplicate injection across the three browser engines.
+- Correct stale installation-version references. No new permissions or financial calculation changes. Physical Safari validation remains pending.
+
 ## 3.15.2 / Desktop 0.11.2-beta — RIFT storefront sign-in isolation
 
 - Fixed a global password-field gate that silently disabled the entire userscript when a storefront rendered an **inactive hidden login form** in its DOM.

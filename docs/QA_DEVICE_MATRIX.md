@@ -21,7 +21,7 @@ details, orders, personal data or payment information in test evidence.
 
 ## Acceptance cases per physical environment
 
-- [ ] Script installs without syntax errors and the expected v3.15.2 / extension 0.11.2-beta is visible.
+- [ ] Script installs without syntax errors and the expected v3.15.3 / extension 0.11.3-beta is visible.
 - [ ] No widget, network quote requests or data collection on a shop before explicit consent.
 - [ ] Site consent survives browser reload, and revoking consent prevents future scans.
 - [ ] Password fields, payment routes and restricted banking or exchange sites remain excluded.

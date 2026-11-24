@@ -1,6 +1,6 @@
 ## RIFT — comprobación de Safari
 
-**Moncevia v3.15.2** reconoce una tienda aunque su código HTML incluya una **ventana de inicio de sesión cerrada**. Antes se bloqueaba todo el userscript por el simple hecho de existir un campo de contraseña oculto. La protección permanece activa si el formulario de contraseña está visible, y en rutas de login, cuenta, checkout o pago.
+**Moncevia v3.15.3** reconoce una tienda aunque su código HTML incluya una **ventana de inicio de sesión cerrada**. Antes se bloqueaba todo el userscript por el simple hecho de existir un campo de contraseña oculto. La protección permanece activa si el formulario de contraseña está visible, y en rutas de login, cuenta, checkout o pago.
 
 En `https://shop.riftbot.org/` el dominio viene permitido inicialmente. En `https://riftbot.mysellauth.com/` y otros dominios nuevos primero debe aparecer **Moncevia · activar aquí**, y solo después del consentimiento persistido se habilitan el botón y las tasas. Si el navegador está mostrando un dominio distinto, revisa el **host exacto** que aparece en la barra de direcciones.
 
@@ -9,7 +9,7 @@ Si Moncevia continúa ausente, utiliza el [userscript de diagnóstico de Safari]
 ## Safari iPhone/iPad — si Moncevia no aparece
 
 1. Comprueba en **Ajustes de iOS → Apps → Safari → Extensiones** que **Userscripts** esté habilitada y tenga permiso para el sitio. En Safari, abre el menú de extensiones, entra en **Userscripts** y verifica que `moncevia.user.js` figure activo; al editar o reemplazar archivos, abre de nuevo su panel para actualizar la lista.
-2. Abre la aplicación **Userscripts** y comprueba qué carpeta de Archivos tiene seleccionada. Guarda allí el [archivo completo moncevia.user.js](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js) **v3.15.1**, no `moncevia.meta.js` ni un enlace guardado como texto. Evita archivos duplicados o versiones anteriores.
+2. Abre la aplicación **Userscripts** y comprueba qué carpeta de Archivos tiene seleccionada. Guarda allí el [archivo completo moncevia.user.js](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js) **v3.15.3**, no `moncevia.meta.js` ni un enlace guardado como texto. Evita archivos duplicados o versiones anteriores.
 3. Recarga una tienda HTTPS compatible. En sitios nuevos, toca **Moncevia · activar aquí** para autorizarla; en sitios aprobados aparece el botón **CLP · ₿**. Los dominios `.cl`, inicios de sesión, checkout y otras páginas sensibles están excluidos intencionalmente.
 4. Si el botón aparece pero no las tasas, comprueba que el gestor permita las solicitudes a los proveedores públicos. No elimines tus datos de Userscripts sin respaldar las preferencias o el historial que quieras conservar.
 5. **Actualizaciones:** desde v3.15.1 se publica `moncevia.meta.js` como destino de `@updateURL`, con `moncevia.user.js` como archivo de descarga. Una versión antigua ya instalada puede necesitar **reemplazo manual** para adoptar esta corrección; no presupongas que se actualizará sola.
@@ -26,7 +26,7 @@ Si Moncevia continúa ausente, utiliza el [userscript de diagnóstico de Safari]
 
 ## Fase 10 — Recuperación y permisos persistidos
 
-**Versión actual:** userscript **3.13.0** y extensiones de escritorio **0.9.0-beta**. Las preferencias e historial local anteriores se conservan sin intervención. Si el navegador bloquea el almacenamiento, Moncevia no activará un dominio nuevo hasta confirmar que su autorización quedó guardada. Comprueba que el botón de activación desaparezca antes de usar el panel; si aparece un error, revisa los permisos de almacenamiento de Userscripts o del navegador.
+**Versión de la fase 10:** userscript **3.13.0** y extensiones de escritorio **0.9.0-beta**. Las preferencias e historial local anteriores se conservan sin intervención. Si el navegador bloquea el almacenamiento, Moncevia no activará un dominio nuevo hasta confirmar que su autorización quedó guardada. Comprueba que el botón de activación desaparezca antes de usar el panel; si aparece un error, revisa los permisos de almacenamiento de Userscripts o del navegador.
 
 **English:** Userscript 3.13.0 and desktop extension 0.9.0-beta retain existing local keys and refuse to activate a new merchant domain when consent cannot be saved. Re-enable the manager's storage permissions and retry.
 
@@ -82,7 +82,7 @@ La posición se guarda en cada navegador por separado, y se reajusta cuando la p
 
 # Moncevia — Installation guide / Guía de instalación
 
-**Versión nativa:** 0.11.0-beta (motor compartido con Moncevia Userscript 3.15.0). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
+**Versión nativa:** 0.11.3-beta (motor compartido con Moncevia Userscript 3.15.3). Descarga únicamente desde el [repositorio oficial](https://github.com/qiaminZ/Moncevia). La extensión aún **no está publicada ni firmada por ninguna tienda**. No incluye software de pago ni solicita claves de Binance.
 
 ## Elige tu dispositivo y navegador
 

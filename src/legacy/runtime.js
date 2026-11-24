@@ -55,7 +55,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     .some(input => input.isConnected && input.getClientRects().length > 0 &&
       getComputedStyle(input).visibility !== 'hidden' &&
       getComputedStyle(input).display !== 'none');
-  if (document.getElementById('clplens-widget') || hasVisiblePasswordInput()) return;
+  if (document.getElementById('clplens-widget') || document.getElementById('moncevia-optin') || hasVisiblePasswordInput()) return;
 
   const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
   const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
@@ -722,7 +722,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   function createUI() {
     stylesheet();
     const shell=createPanelShell({
-      version:'3.15.2',
+      version:'3.15.3',
       onLanguageToggle:()=>switchLanguage(uiLanguage()==='es'?'en':'es')
     });
     widget=shell.widget;fab=shell.fab;panel=shell.panel;
@@ -1090,6 +1090,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   }
   async function boot() {
     const restored=await persistence.load();
+    if (document.getElementById('clplens-widget') || document.getElementById('moncevia-optin') || hasVisiblePasswordInput()) return;
     settings=restored.settings;fx=restored.fx;history=restored.history;crypto=restored.crypto;
     // Solo el dominio explícitamente autorizado recibe escaneo, panel completo o peticiones de FX.
     if (!isAuthorized()) {
