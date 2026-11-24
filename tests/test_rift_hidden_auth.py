@@ -55,9 +55,13 @@ def exercise(browser, engine: str, mobile: bool, host: str, login: str,
             page.locator("#clplens-fab").wait_for(timeout=12000)
             page.wait_for_function("() => window._requests.length > 0", timeout=12000)
             assert page.locator("#clplens-widget").count() == 1
-            assert page.locator("#price").evaluate(
-                "el => el.firstChild.nodeValue"
-            ) == "€9.99"
+            merchant = page.locator("#price").evaluate("""el => ({
+                first: el.firstChild?.nodeValue,
+                type: el.firstChild?.nodeType,
+                html: el.outerHTML.slice(0, 1200),
+                text: el.textContent
+            })""")
+            assert merchant["first"] == "€9.99", (engine, mobile, host, path, merchant)
         elif expect == "consent":
             page.locator("#moncevia-optin").wait_for(timeout=12000)
             assert page.locator("#clplens-widget").count() == 0
