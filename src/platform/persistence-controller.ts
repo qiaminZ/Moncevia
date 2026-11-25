@@ -84,6 +84,7 @@ export function createPersistenceController({
       return await storage.getValue(key, fallback);
     } catch (error) {
       onError(key, error);
+      if (key === MONCEVIA_STORAGE_KEYS.settings) throw error;
       return fallback;
     }
   }

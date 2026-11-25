@@ -63,7 +63,9 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
         style.display !== 'none';
     });
   const isSensitiveContext = () => isProtectedRoute() || hasVisiblePasswordInput();
-  if (document.getElementById('clplens-widget') || isSensitiveContext()) return;
+  const hasStartupUI = () => !!(document.getElementById('clplens-widget') ||
+    document.getElementById('moncevia-optin') || document.getElementById('moncevia-startup-error'));
+  if (hasStartupUI() || isSensitiveContext()) return;
 
   const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
   const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
@@ -1027,6 +1029,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   const ownMutation=change=>priceScanner.isOwnMutation(change);
 
   async function requestJSON(url) {
+    if (!isActive()) throw Error('Inactive site');
     const result=await storage.xmlHttpRequest({ method:'GET',url, timeout:11000,responseType:'text',headers:{Accept:'application/json'} });
     if (!result || result.status!==200) throw Error('HTTP '+result?.status);
     return JSON.parse(result.responseText || result.response);
@@ -1097,11 +1100,33 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     cryptoRequest = updateCryptoImpl(force);
     try {return await cryptoRequest;} finally {cryptoRequest = null;}
   }
+  async function restoreWithDeadline() {
+    let timer;
+    try {
+      return await Promise.race([persistence.load(), new Promise((_, reject) => {
+        timer = setTimeout(() => reject(Error('Startup storage timeout')), 5000);
+      })]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  function showStartupError() {
+    if (!document.body || hasStartupUI() || isSensitiveContext()) return;
+    const notice = document.createElement('button');
+    notice.id = 'moncevia-startup-error';
+    notice.type = 'button';
+    notice.textContent = tr('Moncevia: error de inicio · recargar');
+    notice.style.cssText = 'position:fixed!important;bottom:80px!important;right:12px!important;z-index:2147483645!important;background:#17243a!important;color:white!important;padding:12px!important;border-radius:10px!important;border:1px solid #f59e0b!important;';
+    notice.addEventListener('click', () => {
+      if (!isSensitiveContext()) location.reload();
+    });
+    document.body.append(notice);
+  }
   async function boot() {
-    const restored=await persistence.load();
+    const restored=await restoreWithDeadline();
     settings=restored.settings;fx=restored.fx;history=restored.history;crypto=restored.crypto;
-    // Auth / checkout may have replaced the initial storefront while storage loaded.
-    if (isSensitiveContext()) return;
+    // Recheck after asynchronous restoration, including concurrent injections.
+    if (!document.body || hasStartupUI() || isSensitiveContext()) return;
     // Solo el dominio explícitamente autorizado recibe escaneo, panel completo o peticiones de FX.
     if (!isAuthorized()) {
       const opt=node('button','','Moncevia · activar aquí');
@@ -1188,7 +1213,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     scheduleSelectionSync(180);
     if (isActive()) void Promise.all([updateFX(false),updateCrypto(false)]);
   }
-  boot();
+  boot().catch(showStartupError);
   }
   if (document.body) initializeAfterBody();
   else {
