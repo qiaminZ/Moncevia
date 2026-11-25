@@ -90,8 +90,8 @@ export const EN = {
     'Site permissions: RIFT is initially allowed. You must explicitly approve Moncevia on other supported sites. No price scanning or API requests occur before approval.',
   'Binance publica pares en USDT; el cambio de USDT a USD se obtiene por separado. Si falta, se deshabilita la conversión cruzada de Binance. Los retiros necesitan verificar red, mínimo y comisión en Binance.':
     'Binance quotes pairs in USDT; USDT/USD is sourced independently. Without it, Binance cross-currency conversion is disabled. Verify withdrawal network, minimum and fee in Binance.',
-  'No actúa en dominios .cl, sitios financieros protegidos ni rutas de pago. $ sin prefijo solo se trata como USD cuando lo autorices para este sitio.':
-    'Moncevia does not run on .cl domains, protected financial sites or payment paths. A bare $ is treated as USD only when authorized on this site.',
+  'No actúa en sitios financieros protegidos ni rutas de pago. Los comercios .cl requieren autorización. $ sin prefijo requiere elegir su moneda para este sitio.':
+    'Moncevia does not run on protected financial sites or payment paths. .cl shops require authorization. A bare $ requires choosing its currency for this site.',
   'Revocar acceso a este sitio': 'Revoke access to this website',
   '¿Revocar acceso de Moncevia a este dominio?': 'Revoke Moncevia access to this domain?',
   'No fue posible guardar la revocación.': 'Could not save the revocation.',

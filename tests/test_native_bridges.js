@@ -43,10 +43,12 @@ async function testBackground(folder) {
     'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_last_updated_at=true&api_key=abc'
   ];
   for(const url of denied){const res=await send(url);assert.equal(res.ok,false,url)}
-  for (const sender of [{tab:{id:2},url:'https://mybank.cl/'},{tab:{id:2},url:'https://example.com/checkout'},{}]) {
+  for (const sender of [{tab:{id:2},url:'https://mybank.cl/'},{tab:{id:2},url:'https://www.bci.cl/'},{tab:{id:2},url:'https://flow.cl/'},{tab:{id:2},url:'https://example.com/checkout'},{tab:{id:2},url:'https://shop.example.cl/pago'},{tab:{id:2},url:'https://shop.example.cl/iniciar-sesion'},{}]) {
     const res=await send(good[0],sender);assert.equal(res.ok,false,'sender bypass');
   }
   assert.equal(called.length,good.length,'denied request must not use fetch');
+  const chileanShop=await send(good[0],{tab:{id:3},url:'https://shop.example.cl/producto'});
+  assert.equal(chileanShop.ok,true,'ordinary Chilean shop');
 }
 
 async function testBridge(folder, firefox) {

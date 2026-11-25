@@ -24,7 +24,18 @@ const result = await build({
   outfile: 'moncevia.generated.js',
 });
 if (result.outputFiles?.length !== 1) throw new Error('Expected one JS bundle');
-const script = header + '\n\n' + result.outputFiles[0].text;
+// Userscripts 4.x runs content scripts in Function('{GM,...}', code).
+// A strict directive in a function with destructured parameters is a SyntaxError.
+// Keep strict semantics inside the generated IIFE, not in the host wrapper.
+const generated = result.outputFiles[0].text;
+const strictPrefix = '"use strict";\n(() => {\n';
+if (!generated.startsWith(strictPrefix)) {
+  throw new Error('Unexpected bundle prefix; review Userscripts wrapper compatibility');
+}
+const body = '(() => {\n  "use strict";\n' + generated.slice(strictPrefix.length);
+const script = header + '\n\n' + body;
+// Syntax-only validation of the exact non-simple parameter style used by Userscripts.
+new Function('{GM,GM_info,GM_xmlhttpRequest}', script);
 if (!script.includes('clplens-fab') || !script.includes('parseAmount')) {
   throw new Error('Generated bundle is missing required runtime features');
 }

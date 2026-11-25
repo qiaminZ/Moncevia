@@ -72,6 +72,7 @@ export function createGMBridge({ modern = null, legacy = null }: GMBridgeOptions
         const finish = (ok: boolean, value: unknown): void => {
           if (completed) return;
           completed = true;
+          clearTimeout(timer);
           if (ok) resolve(value as GMTransportResponse);
           else reject(value);
         };
@@ -82,6 +83,12 @@ export function createGMBridge({ modern = null, legacy = null }: GMBridgeOptions
           ontimeout: () => finish(false, new Error('Network request timed out')),
           onabort: () => finish(false, new Error('Network request cancelled')),
         };
+        // Some managers ignore the requested timeout or never settle their Promise.
+        // Bound our own wait even when neither callback nor Promise responds.
+        const timer = setTimeout(
+          () => finish(false, new Error('Network request timed out')),
+          options.timeout && options.timeout > 0 ? options.timeout : 30_000,
+        );
         try {
           const result = modernRequest
             ? modern!.xmlHttpRequest!(wrapped)

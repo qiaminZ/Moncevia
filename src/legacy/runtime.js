@@ -43,11 +43,12 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     'scotiabank.cl','itau.cl','bancofalabella.cl','paypal.com','stripe.com',
     'wise.com','revolut.com','binance.com','coinbase.com','kraken.com','crypto.com',
     'mercadopago.cl','mercadopago.com','webpay.cl','transbank.cl',
-    'appleid.apple.com','accounts.google.com','login.microsoftonline.com'
+    'appleid.apple.com','accounts.google.com','login.microsoftonline.com',
+    'machbank.cl','tenpo.cl','coopeuch.cl','consorcio.cl','security.cl','bice.cl','hsbc.cl','bancoripley.cl','tapp.cl','servipag.com','servipag.cl','khipu.com','khipu.cl','flow.cl','fintual.cl','buda.com','orionx.com','cryptomkt.com'
   ];
   const isProtectedRoute = () =>
-    /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname);
-  if (HOST.endsWith('.cl') || restricted.some(matchHost) ||
+    /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart|pago[s]?|pagar|carrito|cuenta|sesion|iniciar-sesion|autenticacion|transferencia[s]?|billetera|facturacion)(?:[/?#-]|$)/i.test(location.pathname);
+  if (restricted.some(matchHost) || (HOST.endsWith('.cl') && /(?:bank|banco|banking|santander|prex|webpay|transbank|mercadopago)/i.test(HOST)) ||
       /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) ||
       isProtectedRoute()) return;
   // Stores commonly pre-render a CLOSED login dialog. Its hidden password
@@ -63,7 +64,9 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
         style.display !== 'none';
     });
   const isSensitiveContext = () => isProtectedRoute() || hasVisiblePasswordInput();
-  if (document.getElementById('clplens-widget') || isSensitiveContext()) return;
+  const hasStartupUI = () => !!(document.getElementById('clplens-widget') ||
+    document.getElementById('moncevia-optin') || document.getElementById('moncevia-startup-error'));
+  if (hasStartupUI() || isSensitiveContext()) return;
 
   const FX_KEY = MONCEVIA_STORAGE_KEYS.fx;
   const CRYPTO_KEY = MONCEVIA_STORAGE_KEYS.crypto;
@@ -919,7 +922,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     line(pageSettings,'El importe se actualiza cuando tocas una opcion con precio o cuando cambia un resumen de seleccion reconocido (por ejemplo SELECTED ACCESS). Si escribes manualmente, se mantiene tu cifra hasta tocar otra opcion o pulsar Usar precio seleccionado.');
     line(pageSettings,'Activación por sitio: RIFT se permite inicialmente. En otras webs compatibles debes autorizar Moncevia expresamente. No se ejecuta el detector ni se consulta ninguna API antes de activar.');
     line(pageSettings,'Binance publica pares en USDT; el cambio de USDT a USD se obtiene por separado. Si falta, se deshabilita la conversión cruzada de Binance. Los retiros necesitan verificar red, mínimo y comisión en Binance.');
-    line(pageSettings,'No actúa en dominios .cl, sitios financieros protegidos ni rutas de pago. $ sin prefijo solo se trata como USD cuando lo autorices para este sitio.');
+    line(pageSettings,'No actúa en sitios financieros protegidos ni rutas de pago. Los comercios .cl requieren autorización. $ sin prefijo requiere elegir su moneda para este sitio.');
 
     // La revocación borra la autorización para este dominio y vuelve a cargar
     // para desmontar observadores, estilos y conversiones actuales.
@@ -1027,6 +1030,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
   const ownMutation=change=>priceScanner.isOwnMutation(change);
 
   async function requestJSON(url) {
+    if (!isActive()) throw Error('Inactive site');
     const result=await storage.xmlHttpRequest({ method:'GET',url, timeout:11000,responseType:'text',headers:{Accept:'application/json'} });
     if (!result || result.status!==200) throw Error('HTTP '+result?.status);
     return JSON.parse(result.responseText || result.response);
@@ -1097,11 +1101,33 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     cryptoRequest = updateCryptoImpl(force);
     try {return await cryptoRequest;} finally {cryptoRequest = null;}
   }
+  async function restoreWithDeadline() {
+    let timer;
+    try {
+      return await Promise.race([persistence.load(), new Promise((_, reject) => {
+        timer = setTimeout(() => reject(Error('Startup storage timeout')), 5000);
+      })]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  function showStartupError() {
+    if (!document.body || hasStartupUI() || isSensitiveContext()) return;
+    const notice = document.createElement('button');
+    notice.id = 'moncevia-startup-error';
+    notice.type = 'button';
+    notice.textContent = tr('Moncevia: error de inicio · recargar');
+    notice.style.cssText = 'position:fixed!important;bottom:80px!important;right:12px!important;z-index:2147483645!important;background:#17243a!important;color:white!important;padding:12px!important;border-radius:10px!important;border:1px solid #f59e0b!important;';
+    notice.addEventListener('click', () => {
+      if (!isSensitiveContext()) location.reload();
+    });
+    document.body.append(notice);
+  }
   async function boot() {
-    const restored=await persistence.load();
+    const restored=await restoreWithDeadline();
     settings=restored.settings;fx=restored.fx;history=restored.history;crypto=restored.crypto;
-    // Auth / checkout may have replaced the initial storefront while storage loaded.
-    if (isSensitiveContext()) return;
+    // Recheck after asynchronous restoration, including concurrent injections.
+    if (!document.body || hasStartupUI() || isSensitiveContext()) return;
     // Solo el dominio explícitamente autorizado recibe escaneo, panel completo o peticiones de FX.
     if (!isAuthorized()) {
       const opt=node('button','','Moncevia · activar aquí');
@@ -1188,7 +1214,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     scheduleSelectionSync(180);
     if (isActive()) void Promise.all([updateFX(false),updateCrypto(false)]);
   }
-  boot();
+  boot().catch(showStartupError);
   }
   if (document.body) initializeAfterBody();
   else {

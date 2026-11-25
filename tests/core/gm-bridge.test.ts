@@ -98,6 +98,56 @@ describe('userscript manager transport boundary', () => {
     },
   );
 
+  it.each(['modern', 'legacy'] as const)(
+    'times out independently when the %s manager never responds',
+    async (mode) => {
+      vi.useFakeTimers();
+      try {
+        let captured: GMCallbackRequestOptions | undefined;
+        const operations: GMOperations = {
+          getValue: (_key, fallback) => fallback,
+          setValue: () => true,
+          xmlHttpRequest: (request) => {
+            captured = request;
+            return mode === 'modern' ? new Promise(() => {}) : undefined;
+          },
+        };
+        const bridge = createGMBridge({ [mode]: operations })!;
+        const result = bridge.xmlHttpRequest({
+          method: 'GET',
+          url: 'https://example.test',
+          timeout: 1000,
+        });
+        const assertion = expect(result).rejects.toThrow('timed out');
+        await vi.advanceTimersByTimeAsync(1000);
+        await assertion;
+        captured?.onload({ status: 200 });
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it('clears its watchdog when the manager completes immediately', async () => {
+    vi.useFakeTimers();
+    try {
+      const bridge = createGMBridge({
+        modern: {
+          getValue: (_key, fallback) => fallback,
+          setValue: () => true,
+          xmlHttpRequest: (request) => request.onload({ status: 200 }),
+        },
+      })!;
+      await expect(
+        bridge.xmlHttpRequest({ method: 'GET', url: 'https://example.test' }),
+      ).resolves.toEqual({ status: 200 });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('converts synchronous transport failures into rejected Promises', async () => {
     const modern: GMOperations = {
       getValue: (_key, fallback) => fallback,

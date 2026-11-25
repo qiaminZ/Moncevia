@@ -1,3 +1,7 @@
+## Corrección de compatibilidad Userscripts 4.x (PR #30)
+
+El compilador mantiene `use strict` dentro de la función IIFE; no como directiva del envoltorio que Userscripts crea con parámetros desestructurados. La regresión se comprueba con el mismo patrón `Function('{GM,...}', code)` en los tres motores de navegador. Las variantes de recuperación y Startup Trace antiguas conservan el defecto y no deben instalarse. La aceptación física de iOS continúa pendiente hasta probar el candidato.
+
 ## Última auditoría de Safari — v3.15.3
 
 La versión **3.15.3** protege también la navegación interna de RIFT: si una tienda abre un inicio de sesión visible o cambia a la ruta de checkout sin recargar, Moncevia oculta el botón y retira sus anotaciones; al regresar a la tienda, restaura el panel y las conversiones. También recupera el panel si una aplicación web reemplaza el elemento `body`.
@@ -18,7 +22,7 @@ Si Moncevia continúa ausente, utiliza el [userscript de diagnóstico de Safari]
 
 1. Comprueba en **Ajustes de iOS → Apps → Safari → Extensiones** que **Userscripts** esté habilitada y tenga permiso para el sitio. En Safari, abre el menú de extensiones, entra en **Userscripts** y verifica que `moncevia.user.js` figure activo; al editar o reemplazar archivos, abre de nuevo su panel para actualizar la lista.
 2. Abre la aplicación **Userscripts** y comprueba qué carpeta de Archivos tiene seleccionada. Guarda allí el [archivo completo moncevia.user.js](https://raw.githubusercontent.com/qiaminZ/Moncevia/main/moncevia.user.js) **v3.15.3**, no `moncevia.meta.js` ni un enlace guardado como texto. Evita archivos duplicados o versiones anteriores.
-3. Recarga una tienda HTTPS compatible. En sitios nuevos, toca **Moncevia · activar aquí** para autorizarla; en sitios aprobados aparece el botón **CLP · ₿**. Los dominios `.cl`, inicios de sesión, checkout y otras páginas sensibles están excluidos intencionalmente.
+3. Recarga una tienda HTTPS compatible. En sitios nuevos, toca **Moncevia · activar aquí** para autorizarla; en sitios aprobados aparece el botón **CLP · ₿**. Los comercios `.cl` requieren autorización explícita; las entidades financieras conocidas, inicios de sesión, checkout y otras páginas sensibles se excluyen. Para precios con `$` sin código, elige la moneda del sitio en Ajustes. No autorices sitios financieros no incluidos en las exclusiones.
 4. Si el botón aparece pero no las tasas, comprueba que el gestor permita las solicitudes a los proveedores públicos. No elimines tus datos de Userscripts sin respaldar las preferencias o el historial que quieras conservar.
 5. **Actualizaciones:** desde v3.15.1 se publica `moncevia.meta.js` como destino de `@updateURL`, con `moncevia.user.js` como archivo de descarga. Una versión antigua ya instalada puede necesitar **reemplazo manual** para adoptar esta corrección; no presupongas que se actualizará sola.
 
