@@ -26,8 +26,8 @@ def exercise(browser, engine, mobile, case):
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     try:
-        host = "shop.example.cl" if case == "blocked-cl" else HOST
-        path = "/checkout" if case == "checkout" else "/products/riftbot-base"
+        host = {"chile-shop": "shop.example.cl", "chile-bank": "mybank.cl", "chile-bci": "www.bci.cl", "chile-payment": "flow.cl"}.get(case, HOST)
+        path = {"checkout": "/checkout", "spanish-payment": "/pago", "spanish-login": "/iniciar-sesion"}.get(case, "/products/riftbot-base")
         page.route("**/*", lambda route: route.fulfill(
             status=200, content_type="text/html; charset=utf-8", body=HTML))
         page.goto("https://" + host + path)
@@ -52,7 +52,7 @@ def exercise(browser, engine, mobile, case):
         page.add_script_tag(content=SCRIPT)
         if case == "duplicate":
             page.add_script_tag(content=SCRIPT)
-        if case in ("checkout", "password", "blocked-cl"):
+        if case in ("checkout", "password", "chile-bank", "chile-bci", "chile-payment", "spanish-payment", "spanish-login"):
             page.wait_for_timeout(300)
             assert page.locator("#moncevia-optin,#clplens-widget,#moncevia-startup-error").count() == 0
         elif case in ("hung", "late", "reject"):
@@ -71,13 +71,13 @@ def exercise(browser, engine, mobile, case):
             assert page.locator("#moncevia-startup-error,#clplens-widget").count() == 0
         assert page.evaluate("window._requests.length") == 0
         assert not errors, (engine, mobile, case, errors)
-        if case == "consent":
+        if case in ("consent", "chile-shop"):
             consent.click()
             page.locator("#clplens-fab").wait_for(timeout=12000)
             page.wait_for_function("() => window._requests.length > 0", timeout=12000)
             page.wait_for_function("() => document.querySelector('#price .clplens-badge')?.textContent?.startsWith('≈')", timeout=12000)
             assert page.locator("#price").evaluate("el=>el.firstChild.nodeValue") == "€24.99"
-            assert page.evaluate("window._persist.clplens_v1.allowedSites.includes('shop.riftbots.org')")
+            assert page.evaluate("(host) => window._persist.clplens_v1.allowedSites.includes(host)", host)
             assert not errors, errors
     finally:
         page.close()
@@ -92,11 +92,11 @@ def run():
         browser = getattr(playwright, engine).launch(**opts)
         try:
             for mobile in (False, True):
-                for case in ("consent", "duplicate", "hung", "late", "reject", "checkout", "password", "blocked-cl"):
+                for case in ("consent", "duplicate", "hung", "late", "reject", "checkout", "password", "chile-shop", "chile-bank", "chile-bci", "chile-payment", "spanish-payment", "spanish-login"):
                     exercise(browser, engine, mobile, case)
         finally:
             browser.close()
-    print("PASS", engine, "16 startup scenarios (desktop and mobile emulation)", flush=True)
+    print("PASS", engine, "26 startup scenarios (desktop and mobile emulation)", flush=True)
 
 
 if __name__ == "__main__":

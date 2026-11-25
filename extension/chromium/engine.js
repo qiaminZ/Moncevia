@@ -344,7 +344,7 @@
     "El importe se actualiza cuando tocas una opcion con precio o cuando cambia un resumen de seleccion reconocido (por ejemplo SELECTED ACCESS). Si escribes manualmente, se mantiene tu cifra hasta tocar otra opcion o pulsar Usar precio seleccionado.": "The amount updates when you tap a priced option or a recognized selection summary changes (such as SELECTED ACCESS). Manual amounts remain until you tap another option or select Use selected price.",
     "Activación por sitio: RIFT se permite inicialmente. En otras webs compatibles debes autorizar Moncevia expresamente. No se ejecuta el detector ni se consulta ninguna API antes de activar.": "Site permissions: RIFT is initially allowed. You must explicitly approve Moncevia on other supported sites. No price scanning or API requests occur before approval.",
     "Binance publica pares en USDT; el cambio de USDT a USD se obtiene por separado. Si falta, se deshabilita la conversión cruzada de Binance. Los retiros necesitan verificar red, mínimo y comisión en Binance.": "Binance quotes pairs in USDT; USDT/USD is sourced independently. Without it, Binance cross-currency conversion is disabled. Verify withdrawal network, minimum and fee in Binance.",
-    "No actúa en dominios .cl, sitios financieros protegidos ni rutas de pago. $ sin prefijo solo se trata como USD cuando lo autorices para este sitio.": "Moncevia does not run on .cl domains, protected financial sites or payment paths. A bare $ is treated as USD only when authorized on this site.",
+    "No actúa en sitios financieros protegidos ni rutas de pago. Los comercios .cl requieren autorización. $ sin prefijo requiere elegir su moneda para este sitio.": "Moncevia does not run on protected financial sites or payment paths. .cl shops require authorization. A bare $ requires choosing its currency for this site.",
     "Revocar acceso a este sitio": "Revoke access to this website",
     "¿Revocar acceso de Moncevia a este dominio?": "Revoke Moncevia access to this domain?",
     "No fue posible guardar la revocación.": "Could not save the revocation.",
@@ -1671,10 +1671,28 @@
         "transbank.cl",
         "appleid.apple.com",
         "accounts.google.com",
-        "login.microsoftonline.com"
+        "login.microsoftonline.com",
+        "machbank.cl",
+        "tenpo.cl",
+        "coopeuch.cl",
+        "consorcio.cl",
+        "security.cl",
+        "bice.cl",
+        "hsbc.cl",
+        "bancoripley.cl",
+        "tapp.cl",
+        "servipag.com",
+        "servipag.cl",
+        "khipu.com",
+        "khipu.cl",
+        "flow.cl",
+        "fintual.cl",
+        "buda.com",
+        "orionx.com",
+        "cryptomkt.com"
       ];
-      const isProtectedRoute = () => /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname);
-      if (HOST.endsWith(".cl") || restricted.some(matchHost) || /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) || isProtectedRoute()) return;
+      const isProtectedRoute = () => /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart|pago[s]?|pagar|carrito|cuenta|sesion|iniciar-sesion|autenticacion|transferencia[s]?|billetera|facturacion)(?:[/?#-]|$)/i.test(location.pathname);
+      if (restricted.some(matchHost) || HOST.endsWith(".cl") && /(?:bank|banco|banking|santander|prex|webpay|transbank|mercadopago)/i.test(HOST) || /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) || isProtectedRoute()) return;
       const hasVisiblePasswordInput = () => [...document.querySelectorAll('input[type="password"]')].some((input) => {
         if (!input.isConnected || !input.getClientRects().length) return false;
         const style = getComputedStyle(input);
@@ -2803,7 +2821,7 @@
         line(pageSettings, "El importe se actualiza cuando tocas una opcion con precio o cuando cambia un resumen de seleccion reconocido (por ejemplo SELECTED ACCESS). Si escribes manualmente, se mantiene tu cifra hasta tocar otra opcion o pulsar Usar precio seleccionado.");
         line(pageSettings, "Activación por sitio: RIFT se permite inicialmente. En otras webs compatibles debes autorizar Moncevia expresamente. No se ejecuta el detector ni se consulta ninguna API antes de activar.");
         line(pageSettings, "Binance publica pares en USDT; el cambio de USDT a USD se obtiene por separado. Si falta, se deshabilita la conversión cruzada de Binance. Los retiros necesitan verificar red, mínimo y comisión en Binance.");
-        line(pageSettings, "No actúa en dominios .cl, sitios financieros protegidos ni rutas de pago. $ sin prefijo solo se trata como USD cuando lo autorices para este sitio.");
+        line(pageSettings, "No actúa en sitios financieros protegidos ni rutas de pago. Los comercios .cl requieren autorización. $ sin prefijo requiere elegir su moneda para este sitio.");
         const revokeSite = node("button", "", "Revocar acceso a este sitio");
         revokeSite.type = "button";
         revokeSite.addEventListener("click", async () => {

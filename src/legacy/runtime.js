@@ -43,11 +43,12 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     'scotiabank.cl','itau.cl','bancofalabella.cl','paypal.com','stripe.com',
     'wise.com','revolut.com','binance.com','coinbase.com','kraken.com','crypto.com',
     'mercadopago.cl','mercadopago.com','webpay.cl','transbank.cl',
-    'appleid.apple.com','accounts.google.com','login.microsoftonline.com'
+    'appleid.apple.com','accounts.google.com','login.microsoftonline.com',
+    'machbank.cl','tenpo.cl','coopeuch.cl','consorcio.cl','security.cl','bice.cl','hsbc.cl','bancoripley.cl','tapp.cl','servipag.com','servipag.cl','khipu.com','khipu.cl','flow.cl','fintual.cl','buda.com','orionx.com','cryptomkt.com'
   ];
   const isProtectedRoute = () =>
-    /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart)(?:[/?#-]|$)/i.test(location.pathname);
-  if (HOST.endsWith('.cl') || restricted.some(matchHost) ||
+    /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart|pago[s]?|pagar|carrito|cuenta|sesion|iniciar-sesion|autenticacion|transferencia[s]?|billetera|facturacion)(?:[/?#-]|$)/i.test(location.pathname);
+  if (restricted.some(matchHost) || (HOST.endsWith('.cl') && /(?:bank|banco|banking|santander|prex|webpay|transbank|mercadopago)/i.test(HOST)) ||
       /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/.test(HOST) ||
       isProtectedRoute()) return;
   // Stores commonly pre-render a CLOSED login dialog. Its hidden password
@@ -921,7 +922,7 @@ import { createSelectionScheduler } from '../detector/selection-scheduler';
     line(pageSettings,'El importe se actualiza cuando tocas una opcion con precio o cuando cambia un resumen de seleccion reconocido (por ejemplo SELECTED ACCESS). Si escribes manualmente, se mantiene tu cifra hasta tocar otra opcion o pulsar Usar precio seleccionado.');
     line(pageSettings,'Activación por sitio: RIFT se permite inicialmente. En otras webs compatibles debes autorizar Moncevia expresamente. No se ejecuta el detector ni se consulta ninguna API antes de activar.');
     line(pageSettings,'Binance publica pares en USDT; el cambio de USDT a USD se obtiene por separado. Si falta, se deshabilita la conversión cruzada de Binance. Los retiros necesitan verificar red, mínimo y comisión en Binance.');
-    line(pageSettings,'No actúa en dominios .cl, sitios financieros protegidos ni rutas de pago. $ sin prefijo solo se trata como USD cuando lo autorices para este sitio.');
+    line(pageSettings,'No actúa en sitios financieros protegidos ni rutas de pago. Los comercios .cl requieren autorización. $ sin prefijo requiere elegir su moneda para este sitio.');
 
     // La revocación borra la autorización para este dominio y vuelve a cargar
     // para desmontar observadores, estilos y conversiones actuales.
