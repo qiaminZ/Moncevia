@@ -49,9 +49,15 @@ def exercise(browser, engine, mobile, case):
                     return original(key,fallback);
                 };
             }""", case)
-        page.add_script_tag(content=SCRIPT)
+        # Userscripts 4.x constructs a Function with destructured API parameters.
+        # This catches strict-directive failures invisible to add_script_tag.
+        inject = """code => {
+            const apis = {GM: window.GM, GM_info: {}, GM_xmlhttpRequest: window.GM_xmlhttpRequest};
+            Function('{' + Object.keys(apis).join(',') + '}', code)(apis);
+        }"""
+        page.evaluate(inject, SCRIPT)
         if case == "duplicate":
-            page.add_script_tag(content=SCRIPT)
+            page.evaluate(inject, SCRIPT)
         if case in ("checkout", "password", "chile-bank", "chile-bci", "chile-payment", "spanish-payment", "spanish-login"):
             page.wait_for_timeout(300)
             assert page.locator("#moncevia-optin,#clplens-widget,#moncevia-startup-error").count() == 0

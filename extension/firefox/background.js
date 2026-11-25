@@ -4,7 +4,7 @@
   const api = typeof globalThis.browser !== 'undefined' ? globalThis.browser : globalThis.chrome;
   const COINS = new Set(['BTCUSDT','ETHUSDT','LTCUSDT']);
   const RESTRICTED = ['prexcard.com','prexcard.cl','santander.cl','bancoestado.cl','bancochile.cl','bci.cl','scotiabank.cl','itau.cl','bancofalabella.cl','paypal.com','stripe.com','wise.com','revolut.com','binance.com','coinbase.com','kraken.com','crypto.com','mercadopago.cl','mercadopago.com','webpay.cl','transbank.cl','appleid.apple.com','accounts.google.com','login.microsoftonline.com','machbank.cl','tenpo.cl','coopeuch.cl','consorcio.cl','security.cl','bice.cl','hsbc.cl','bancoripley.cl','tapp.cl','servipag.com','servipag.cl','khipu.com','khipu.cl','flow.cl','fintual.cl','buda.com','orionx.com','cryptomkt.com'];
-  const EXCLUDED = /(?:^|[.-])(bank|banco|banking|binance|paypal|coinbase|webpay|transbank|mercadopago)(?:[.-]|$)/i;
+  const EXCLUDED = /(?:^|[.-])(bank|banco|banking|santander|prex|binance|paypal|coinbase|mercadopago|webpay|transbank)(?:[.-]|$)/i;
   const RISKY_PATH = /\/(login|sign[/-]?in|sign[/-]?up|checkout|payment|pay|billing|banking|wallet|transfer|auth|account|cart|pago[s]?|pagar|carrito|cuenta|sesion|iniciar-sesion|autenticacion|transferencia[s]?|billetera|facturacion)(?:[/?#-]|$)/i;
   const PROVIDERS = new Set(['data-api.binance.vision','api.binance.com','open.er-api.com','api.coingecko.com','api.coinbase.com']);
   function allowedRateUrl(raw) {
