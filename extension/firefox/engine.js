@@ -1044,11 +1044,10 @@
       xmlHttpRequest(options) {
         return new Promise((resolve, reject) => {
           let completed = false;
-          let timer;
           const finish = (ok, value) => {
             if (completed) return;
             completed = true;
-            if (timer !== void 0) clearTimeout(timer);
+            clearTimeout(timer);
             if (ok) resolve(value);
             else reject(value);
           };
@@ -1059,7 +1058,7 @@
             ontimeout: () => finish(false, new Error("Network request timed out")),
             onabort: () => finish(false, new Error("Network request cancelled"))
           };
-          timer = setTimeout(
+          const timer = setTimeout(
             () => finish(false, new Error("Network request timed out")),
             options.timeout && options.timeout > 0 ? options.timeout : 3e4
           );
